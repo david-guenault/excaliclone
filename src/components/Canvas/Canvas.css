@@ -1,0 +1,6 @@
+.excalibox-canvas {
+  display: block;
+  cursor: crosshair;
+  background-color: #fafafa;
+  border: 1px solid #e0e0e0;
+}

@@ -67,6 +67,26 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
 
 # Specific Technologies
 
+## Python
+
+- we use uv for python package management
+- you don't need to use a requirements.txt
+- run a script by `uv run <script.py>`
+- add packages by `uv add <package>`
+- packages are stored in pyproject.toml
+
+## Workflow
+
+- if there is a todo.md, then check off any work you have completed.
+
+## Tests
+
+- Make sure testing always passes before the task is done
+
+## Linting
+
+- Make sure linting passes before the task is done
+
 - @~/.claude/docs/python.md
 - @~/.claude/docs/source-control.md
 - @~/.claude/docs/using-uv.md
