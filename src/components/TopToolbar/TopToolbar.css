@@ -1,0 +1,153 @@
+/* ABOUTME: Styles for the top horizontal toolbar */
+/* ABOUTME: Clean, minimalist design matching Excalidraw aesthetic */
+
+.top-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid #e1e5e9;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  z-index: 1000;
+  user-select: none;
+}
+
+.top-toolbar__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.top-toolbar__brand {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.top-toolbar__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.top-toolbar__tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+  max-width: 600px;
+}
+
+.top-toolbar__tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 64px;
+  height: 48px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #6b7280;
+  font-family: inherit;
+}
+
+.top-toolbar__tool:hover {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.top-toolbar__tool.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+}
+
+.top-toolbar__tool.active:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.top-toolbar__tool-name {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.top-toolbar__tool-shortcut {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+.top-toolbar__tool.active .top-toolbar__tool-shortcut {
+  opacity: 0.9;
+}
+
+.top-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .top-toolbar__content {
+    padding: 0 12px;
+  }
+  
+  .top-toolbar__brand {
+    display: none; /* Hide title on mobile to save space */
+  }
+  
+  .top-toolbar__tool {
+    min-width: 52px;
+    height: 44px;
+    padding: 6px 8px;
+  }
+  
+  .top-toolbar__tool-name {
+    font-size: 11px;
+  }
+  
+  .top-toolbar__tool-shortcut {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-toolbar__tools {
+    gap: 2px;
+  }
+  
+  .top-toolbar__tool {
+    min-width: 48px;
+    height: 40px;
+    padding: 4px 6px;
+  }
+  
+  .top-toolbar__tool-name {
+    font-size: 10px;
+  }
+  
+  .top-toolbar__tool-shortcut {
+    display: none; /* Hide shortcuts on very small screens */
+  }
+}

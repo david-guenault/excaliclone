@@ -48,6 +48,16 @@ export interface Viewport {
   bounds: Rect;
 }
 
+export interface UIState {
+  propertiesPanel: {
+    visible: boolean;
+    width: number; // 250-400px
+  };
+  topToolbar: {
+    visible: boolean;
+  };
+}
+
 export interface AppState {
   viewport: Viewport;
   elements: Element[];
@@ -55,10 +65,7 @@ export interface AppState {
   activeTool: ToolType;
   toolOptions: ToolOptions;
   theme: 'light' | 'dark';
-  panels: {
-    toolbar: boolean;
-    sidebar: boolean;
-  };
+  ui: UIState;
   history: Element[][];
   historyIndex: number;
   clipboard: Element[] | null;

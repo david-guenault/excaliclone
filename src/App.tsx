@@ -3,6 +3,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Canvas } from './components/Canvas';
+import { TopToolbar } from './components/TopToolbar';
+import { PropertiesPanel } from './components/PropertiesPanel';
 import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import type { Point } from './types';
@@ -15,6 +17,7 @@ function App() {
     addElement, 
     activeTool, 
     toolOptions,
+    ui,
     setActiveTool,
     undo,
     redo,
@@ -31,8 +34,25 @@ function App() {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState<Point | null>(null);
   const panStartViewport = useRef<Point | null>(null);
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
 
-  const handleCanvasMouseDown = (point: Point, event: MouseEvent) => {
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleCanvasMouseDown = (point: Point, _event: MouseEvent) => {
     // Check for space+drag panning
     if (keyboardManager.isSpacePressedNow()) {
       setIsPanning(true);
@@ -44,6 +64,24 @@ function App() {
     console.log('Mouse down at:', point);
     
     const modifiers = keyboardManager.getModifierState();
+    
+    // Check if we're clicking on an existing element (for selection)
+    if (activeTool === 'select') {
+      const clickedElement = elements.find(element => {
+        return point.x >= element.x && 
+               point.x <= element.x + element.width &&
+               point.y >= element.y && 
+               point.y <= element.y + element.height;
+      });
+      
+      if (clickedElement) {
+        useAppStore.getState().selectElement(clickedElement.id);
+        return;
+      } else {
+        useAppStore.getState().clearSelection();
+        return;
+      }
+    }
     
     if (activeTool === 'rectangle') {
       let width = 100;
@@ -92,7 +130,7 @@ function App() {
     }
   };
 
-  const handleCanvasMouseMove = (point: Point, event: MouseEvent) => {
+  const handleCanvasMouseMove = (point: Point, _event: MouseEvent) => {
     if (isPanning && panStart && panStartViewport.current) {
       const deltaX = point.x - panStart.x;
       const deltaY = point.y - panStart.y;
@@ -104,7 +142,7 @@ function App() {
     }
   };
 
-  const handleCanvasMouseUp = (point: Point, event: MouseEvent) => {
+  const handleCanvasMouseUp = (_point: Point, _event: MouseEvent) => {
     if (isPanning) {
       setIsPanning(false);
       setPanStart(null);
@@ -149,34 +187,20 @@ function App() {
 
   return (
     <div className="excalibox-app">
-      <header className="app-header">
-        <h1>Excalibox</h1>
-        <div className="tool-selector">
-          <button 
-            className={activeTool === 'select' ? 'active' : ''}
-            onClick={() => useAppStore.getState().setActiveTool('select')}
-          >
-            Select
-          </button>
-          <button 
-            className={activeTool === 'rectangle' ? 'active' : ''}
-            onClick={() => useAppStore.getState().setActiveTool('rectangle')}
-          >
-            Rectangle
-          </button>
-          <button 
-            className={activeTool === 'circle' ? 'active' : ''}
-            onClick={() => useAppStore.getState().setActiveTool('circle')}
-          >
-            Circle
-          </button>
-        </div>
-      </header>
+      <TopToolbar />
+      <PropertiesPanel />
       
-      <main className="app-main">
+      <main 
+        className="app-main"
+        style={{
+          marginTop: '64px', // Account for top toolbar
+          marginLeft: ui.propertiesPanel.visible ? `${ui.propertiesPanel.width}px` : '0',
+          transition: 'margin-left 0.2s ease-out'
+        }}
+      >
         <Canvas
-          width={viewport.bounds.width}
-          height={viewport.bounds.height}
+          width={windowSize.width - (ui.propertiesPanel.visible ? ui.propertiesPanel.width : 0)}
+          height={windowSize.height - 64}
           elements={elements}
           viewport={viewport}
           onMouseDown={handleCanvasMouseDown}

@@ -24,9 +24,13 @@ interface AppStore extends AppState {
   paste: () => void;
   undo: () => void;
   redo: () => void;
+  // UI Actions
+  setPropertiesPanelVisible: (visible: boolean) => void;
+  setPropertiesPanelWidth: (width: number) => void;
+  setTopToolbarVisible: (visible: boolean) => void;
 }
 
-export const useAppStore = create<AppStore>((set, get) => ({
+export const useAppStore = create<AppStore>((set) => ({
   // Initial state
   viewport: {
     zoom: CANVAS_CONFIG.DEFAULT_ZOOM,
@@ -38,9 +42,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
   activeTool: 'select',
   toolOptions: DEFAULT_TOOL_OPTIONS,
   theme: 'light',
-  panels: {
-    toolbar: true,
-    sidebar: true,
+  ui: {
+    propertiesPanel: {
+      visible: false, // Hidden by default, shows when elements selected
+      width: 300,
+    },
+    topToolbar: {
+      visible: true,
+    },
   },
   history: [[]],
   historyIndex: 0,
@@ -92,13 +101,29 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectElement: (id) => {
-    set(() => ({
+    set((state) => ({
       selectedElementIds: [id],
+      ui: {
+        ...state.ui,
+        propertiesPanel: {
+          ...state.ui.propertiesPanel,
+          visible: true, // Show properties panel when element selected
+        },
+      },
     }));
   },
 
   clearSelection: () => {
-    set({ selectedElementIds: [] });
+    set((state) => ({ 
+      selectedElementIds: [],
+      ui: {
+        ...state.ui,
+        propertiesPanel: {
+          ...state.ui.propertiesPanel,
+          visible: false, // Hide properties panel when no selection
+        },
+      },
+    }));
   },
 
   setActiveTool: (tool) => {
@@ -167,6 +192,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   selectAll: () => {
     set((state) => ({
       selectedElementIds: state.elements.map((el) => el.id),
+      ui: {
+        ...state.ui,
+        propertiesPanel: {
+          ...state.ui.propertiesPanel,
+          visible: state.elements.length > 0, // Show if elements exist
+        },
+      },
     }));
   },
 
@@ -249,5 +281,42 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+  },
+
+  // UI Actions
+  setPropertiesPanelVisible: (visible: boolean) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        propertiesPanel: {
+          ...state.ui.propertiesPanel,
+          visible,
+        },
+      },
+    }));
+  },
+
+  setPropertiesPanelWidth: (width: number) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        propertiesPanel: {
+          ...state.ui.propertiesPanel,
+          width: Math.max(250, Math.min(400, width)),
+        },
+      },
+    }));
+  },
+
+  setTopToolbarVisible: (visible: boolean) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        topToolbar: {
+          ...state.ui.topToolbar,
+          visible,
+        },
+      },
+    }));
   },
 }));
