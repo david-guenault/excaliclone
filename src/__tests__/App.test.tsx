@@ -217,7 +217,7 @@ describe('App Component', () => {
       expect(state.elements).toHaveLength(1);
       expect(state.elements[0].type).toBe('circle');
       expect(state.elements[0].width).toBe(80);
-      expect(state.elements[0].height).toBe(80);
+      expect(state.elements[0].height).toBe(60); // Default ellipse behavior without Shift
     });
 
     it('handleCanvasMouseDown does nothing when select tool active', async () => {

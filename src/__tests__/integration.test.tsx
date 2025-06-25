@@ -195,7 +195,7 @@ describe('Integration Tests - Drawing Workflow', () => {
       expect(circle).toMatchObject({
         type: 'circle',
         width: 80,
-        height: 80,
+        height: 60, // Default ellipse behavior without Shift
         angle: 0,
         strokeColor: '#000000',
         backgroundColor: 'transparent',

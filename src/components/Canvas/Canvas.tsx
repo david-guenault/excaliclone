@@ -11,9 +11,10 @@ interface CanvasProps {
   height: number;
   elements: Element[];
   viewport: Viewport;
-  onMouseDown?: (point: Point) => void;
-  onMouseMove?: (point: Point) => void;
-  onMouseUp?: (point: Point) => void;
+  onMouseDown?: (point: Point, event: MouseEvent) => void;
+  onMouseMove?: (point: Point, event: MouseEvent) => void;
+  onMouseUp?: (point: Point, event: MouseEvent) => void;
+  onWheel?: (event: WheelEvent) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -24,6 +25,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   onMouseDown,
   onMouseMove,
   onMouseUp,
+  onWheel,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
@@ -41,18 +43,22 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   const handleMouseDown = useCallback((event: MouseEvent) => {
     const point = getCanvasPoint(event);
-    onMouseDown?.(point);
+    onMouseDown?.(point, event);
   }, [getCanvasPoint, onMouseDown]);
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
     const point = getCanvasPoint(event);
-    onMouseMove?.(point);
+    onMouseMove?.(point, event);
   }, [getCanvasPoint, onMouseMove]);
 
   const handleMouseUp = useCallback((event: MouseEvent) => {
     const point = getCanvasPoint(event);
-    onMouseUp?.(point);
+    onMouseUp?.(point, event);
   }, [getCanvasPoint, onMouseUp]);
+
+  const handleWheel = useCallback((event: WheelEvent) => {
+    onWheel?.(event);
+  }, [onWheel]);
 
   // Initialize renderer
   useEffect(() => {
@@ -82,13 +88,15 @@ export const Canvas: React.FC<CanvasProps> = ({
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('wheel', handleWheel);
 
     return () => {
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('wheel', handleWheel);
     };
-  }, [handleMouseDown, handleMouseMove, handleMouseUp]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleWheel]);
 
   return (
     <canvas

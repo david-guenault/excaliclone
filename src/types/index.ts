@@ -61,4 +61,5 @@ export interface AppState {
   };
   history: Element[][];
   historyIndex: number;
+  clipboard: Element[] | null;
 }
