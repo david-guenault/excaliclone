@@ -79,11 +79,31 @@ interface GridState {
   size: number;
   snapEnabled: boolean;
 }
+
+interface UIState {
+  propertiesPanel: {
+    visible: boolean;
+    width: number; // 250-400px
+  };
+  toolPalette: {
+    position: 'top';
+    visible: boolean;
+  };
+}
 ```
 
 ## Feature Specification
 
 ### Phase 1: Core Drawing Tools (MVP)
+
+#### User Interface Behavior
+- **Header Removal**: No application header, maximizes canvas space
+- **Top Tool Palette**: Always visible, horizontal layout at screen top
+- **Conditional Properties Panel**: 
+  - Only visible when elements are selected
+  - Automatically shows/hides based on selection state
+  - Smooth slide animation from left edge
+  - Contains all element styling and manipulation controls
 
 #### Canvas System
 - **Infinite Canvas**: Dynamically expanding drawing surface
@@ -185,24 +205,39 @@ interface GridState {
 ### Layout Structure
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Application Header                    │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  ┌─────────┐                                           │
-│  │Floating │              Infinite Canvas               │
-│  │Tool     │                                           │
-│  │Palette  │                                           │
-│  │         │                                           │
-│  └─────────┘                                           │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+│                    Tool Palette (Top)                   │
+├─────────┬───────────────────────────────────────────────┤
+│Properties│                                             │
+│Panel     │              Infinite Canvas                 │
+│(Left)    │                                             │
+│(Visible  │                                             │
+│only when │                                             │
+│elements  │                                             │
+│selected) │                                             │
+│          │                                             │
+└─────────┴─────────────────────────────────────────────┘
 ```
 
-### Floating Tool Palette
-- **Position**: Left side, vertically stacked
-- **Contents**: Tool icons, style controls, color picker
-- **Behavior**: Always visible, semi-transparent when not focused
-- **Customization**: Fixed position (no dragging in Phase 1)
+### Top Tool Palette
+- **Position**: Top of screen, horizontally arranged
+- **Contents**: Tool icons (Select, Rectangle, Circle, Line, Arrow, Pen, Text)
+- **Layout**: Centered or left-aligned toolbar
+- **Behavior**: Always visible, compact design
+- **Style**: Clean, minimalist design matching Excalidraw
+
+### Left Properties Panel
+- **Position**: Left side of screen, vertical panel
+- **Visibility**: Only appears when one or more elements are selected
+- **Contents**: 
+  - Element properties (stroke color, fill color, stroke width)
+  - Style controls (stroke style, opacity, roughness)
+  - Alignment and positioning tools
+  - Element-specific options
+- **Behavior**: 
+  - Slides in from left when elements selected
+  - Auto-hides when selection is cleared
+  - Resizable width (minimum 250px, maximum 400px)
+- **Animation**: Smooth slide transition (200ms)
 
 ### Keyboard Shortcuts
 
