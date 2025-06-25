@@ -16,18 +16,20 @@ Based on the technical specification, this plan breaks down development into imp
 - ✅ Integrated with App component and store actions
 - ✅ Input focus handling to prevent editor conflicts
 
-### 2. UI Layout Restructure ⏳
-**Status**: Not Started  
-**Description**: Implement new layout structure according to updated specifications.
-- Remove application header to maximize canvas space
-- Restructure App.tsx to new layout without header
-- Create TopToolbar component for horizontal tool palette
-- Implement conditional PropertiesPanel component (left side)
-- Add UIState management to store for panel visibility
-- Implement smooth slide animations for properties panel
-- Update Canvas component to accommodate new layout
-- Add responsive behavior for different screen sizes
-- Comprehensive tests for new UI components and interactions
+### 2. UI Layout Restructure ✅
+**Status**: Completed  
+**Description**: New layout structure implemented according to updated specifications.
+- ✅ Remove application header to maximize canvas space
+- ✅ Restructure App.tsx to new layout without header
+- ✅ Create TopToolbar component for horizontal tool palette
+- ✅ Implement conditional PropertiesPanel component (left side)
+- ✅ Add UIState management to store for panel visibility
+- ✅ Implement smooth slide animations for properties panel
+- ✅ Update Canvas component to accommodate new layout
+- ✅ Add responsive behavior for different screen sizes
+- ✅ Comprehensive tests for new UI components and interactions
+- ✅ Element selection shows properties panel automatically
+- ✅ Panel resizing functionality with handle
 
 ### 3. Rough.js Integration ⏳
 **Status**: Not Started  
@@ -305,4 +307,4 @@ Based on the technical specification, this plan breaks down development into imp
 
 ## Current Priority
 
-Next step: **Prompt 2: UI Layout Restructure** to implement the new layout structure with top toolbar and conditional properties panel.
+Next step: **Prompt 3: Rough.js Integration** to add hand-drawn aesthetic matching Excalidraw.
