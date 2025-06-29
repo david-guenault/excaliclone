@@ -3,16 +3,17 @@
 
 import { create } from 'zustand';
 import type { AppState, Element, ToolType, Point } from '../types';
-import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG } from '../constants';
+import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG, RECENT_COLORS_STORAGE_KEY, MAX_RECENT_COLORS, GRID_CONFIG } from '../constants';
 import { generateId } from '../utils';
 
 interface AppStore extends AppState {
   // Actions
-  addElement: (element: Omit<Element, 'id'>) => void;
+  addElement: (element: Omit<Element, 'id'>) => Element;
   updateElement: (id: string, updates: Partial<Element>) => void;
   deleteElement: (id: string) => void;
   deleteSelectedElements: () => void;
   selectElement: (id: string) => void;
+  selectElements: (ids: string[]) => void;
   selectAll: () => void;
   clearSelection: () => void;
   setActiveTool: (tool: ToolType) => void;
@@ -28,9 +29,31 @@ interface AppStore extends AppState {
   setPropertiesPanelVisible: (visible: boolean) => void;
   setPropertiesPanelWidth: (width: number) => void;
   setTopToolbarVisible: (visible: boolean) => void;
+  setCanvasLocked: (locked: boolean) => void;
+  toggleCanvasLock: () => void;
+  // Color Actions
+  setStrokeColor: (color: string) => void;
+  setBackgroundColor: (color: string) => void;
+  addRecentColor: (color: string) => void;
+  clearRecentColors: () => void;
+  // Grid Actions
+  setGridEnabled: (enabled: boolean) => void;
+  setGridSize: (size: number) => void;
+  setGridSnapEnabled: (enabled: boolean) => void;
+  setGridVisible: (visible: boolean) => void;
+  setGridSnapDistance: (distance: number) => void;
+  toggleGrid: () => void;
+  snapToGrid: (point: Point) => Point;
+  // Element Management Actions
+  duplicateElement: (id: string) => void;
+  bringForward: (id: string) => void;
+  sendBackward: (id: string) => void;
+  bringToFront: (id: string) => void;
+  sendToBack: (id: string) => void;
+  toggleElementLock: (id: string) => void;
 }
 
-export const useAppStore = create<AppStore>((set) => ({
+export const useAppStore = create<AppStore>((set, get) => ({
   // Initial state
   viewport: {
     zoom: CANVAS_CONFIG.DEFAULT_ZOOM,
@@ -45,25 +68,50 @@ export const useAppStore = create<AppStore>((set) => ({
   ui: {
     propertiesPanel: {
       visible: false, // Hidden by default, shows when elements selected
-      width: 300,
+      width: 200, // Fixed width from new design
     },
     topToolbar: {
       visible: true,
+    },
+    canvasLocked: false,
+    grid: {
+      enabled: true,
+      size: GRID_CONFIG.DEFAULT_SIZE,
+      snapToGrid: false,
+      snapDistance: GRID_CONFIG.DEFAULT_SNAP_DISTANCE,
+      showGrid: false, // Hidden by default, can be toggled
+      color: GRID_CONFIG.COLOR,
+      opacity: GRID_CONFIG.OPACITY,
     },
   },
   history: [[]],
   historyIndex: 0,
   clipboard: null,
+  recentColors: JSON.parse(localStorage.getItem(RECENT_COLORS_STORAGE_KEY) || '[]'),
 
   // Actions
   addElement: (elementData) => {
+    let createdElement: Element;
+    
     set((state) => {
-      const element: Element = {
+      createdElement = {
+        // Apply provided data first, then defaults for missing properties
         ...elementData,
+        // Default properties for new elements (only if not provided)
+        strokeStyle: elementData.strokeStyle || 'solid',
+        fillStyle: elementData.fillStyle || 'transparent',
+        cornerStyle: elementData.cornerStyle || 'sharp',
+        fontFamily: elementData.fontFamily || 'Inter',
+        fontSize: elementData.fontSize || 16,
+        fontWeight: elementData.fontWeight || 'normal',
+        fontStyle: elementData.fontStyle || 'normal',
+        textAlign: elementData.textAlign || 'left',
+        locked: elementData.locked || false,
+        zIndex: elementData.zIndex || 0,
         id: generateId(),
       };
       
-      const newElements = [...state.elements, element];
+      const newElements = [...state.elements, createdElement];
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
       
@@ -73,6 +121,8 @@ export const useAppStore = create<AppStore>((set) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    
+    return createdElement;
   },
 
   updateElement: (id, updates) => {
@@ -202,6 +252,21 @@ export const useAppStore = create<AppStore>((set) => ({
     }));
   },
 
+  selectElements: (ids) => {
+    set((state) => ({
+      selectedElementIds: ids.filter(id => 
+        state.elements.some(el => el.id === id)
+      ), // Only select IDs that actually exist
+      ui: {
+        ...state.ui,
+        propertiesPanel: {
+          ...state.ui.propertiesPanel,
+          visible: ids.length > 0, // Show properties panel if elements selected
+        },
+      },
+    }));
+  },
+
   resetZoom: () => {
     set((state) => ({
       viewport: { 
@@ -318,5 +383,234 @@ export const useAppStore = create<AppStore>((set) => ({
         },
       },
     }));
+  },
+
+  setCanvasLocked: (locked: boolean) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        canvasLocked: locked,
+      },
+    }));
+  },
+
+  toggleCanvasLock: () => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        canvasLocked: !state.ui.canvasLocked,
+      },
+    }));
+  },
+
+  // Color Actions
+  setStrokeColor: (color: string) => {
+    set((state) => ({
+      toolOptions: {
+        ...state.toolOptions,
+        strokeColor: color,
+      },
+    }));
+  },
+
+  setBackgroundColor: (color: string) => {
+    set((state) => ({
+      toolOptions: {
+        ...state.toolOptions,
+        backgroundColor: color,
+      },
+    }));
+  },
+
+  addRecentColor: (color: string) => {
+    set((state) => {
+      const newRecentColors = [
+        color,
+        ...state.recentColors.filter(c => c !== color)
+      ].slice(0, MAX_RECENT_COLORS);
+      
+      // Persist to localStorage
+      localStorage.setItem(RECENT_COLORS_STORAGE_KEY, JSON.stringify(newRecentColors));
+      
+      return { recentColors: newRecentColors };
+    });
+  },
+
+  clearRecentColors: () => {
+    set(() => {
+      localStorage.removeItem(RECENT_COLORS_STORAGE_KEY);
+      return { recentColors: [] };
+    });
+  },
+
+  // Grid Actions
+  setGridEnabled: (enabled: boolean) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          enabled,
+        },
+      },
+    }));
+  },
+
+  setGridSize: (size: number) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          size: Math.max(GRID_CONFIG.MIN_SIZE, Math.min(GRID_CONFIG.MAX_SIZE, size)),
+        },
+      },
+    }));
+  },
+
+  setGridSnapEnabled: (snapToGrid: boolean) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          snapToGrid,
+        },
+      },
+    }));
+  },
+
+  setGridVisible: (showGrid: boolean) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          showGrid,
+        },
+      },
+    }));
+  },
+
+  setGridSnapDistance: (snapDistance: number) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          snapDistance: Math.max(1, Math.min(50, snapDistance)),
+        },
+      },
+    }));
+  },
+
+  toggleGrid: () => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          showGrid: !state.ui.grid.showGrid,
+        },
+      },
+    }));
+  },
+
+  snapToGrid: (point: Point) => {
+    const { ui: { grid } } = get();
+    return grid.snapToGrid 
+      ? {
+          x: Math.round(point.x / grid.size) * grid.size,
+          y: Math.round(point.y / grid.size) * grid.size,
+        }
+      : point;
+  },
+
+  // Element Management Actions
+  duplicateElement: (id: string) => {
+    set((state) => {
+      const element = state.elements.find(el => el.id === id);
+      if (!element) return state;
+
+      const duplicated: Element = {
+        ...element,
+        id: generateId(),
+        x: element.x + 20,
+        y: element.y + 20,
+      };
+
+      const newElements = [...state.elements, duplicated];
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+
+      return {
+        elements: newElements,
+        selectedElementIds: [duplicated.id],
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  bringForward: (id: string) => {
+    set((state) => {
+      const elementIndex = state.elements.findIndex(el => el.id === id);
+      if (elementIndex === -1 || elementIndex === state.elements.length - 1) return state;
+
+      const newElements = [...state.elements];
+      [newElements[elementIndex], newElements[elementIndex + 1]] = 
+        [newElements[elementIndex + 1], newElements[elementIndex]];
+
+      return { elements: newElements };
+    });
+  },
+
+  sendBackward: (id: string) => {
+    set((state) => {
+      const elementIndex = state.elements.findIndex(el => el.id === id);
+      if (elementIndex === -1 || elementIndex === 0) return state;
+
+      const newElements = [...state.elements];
+      [newElements[elementIndex], newElements[elementIndex - 1]] = 
+        [newElements[elementIndex - 1], newElements[elementIndex]];
+
+      return { elements: newElements };
+    });
+  },
+
+  bringToFront: (id: string) => {
+    set((state) => {
+      const elementIndex = state.elements.findIndex(el => el.id === id);
+      if (elementIndex === -1) return state;
+
+      const newElements = [...state.elements];
+      const [element] = newElements.splice(elementIndex, 1);
+      newElements.push(element);
+
+      return { elements: newElements };
+    });
+  },
+
+  sendToBack: (id: string) => {
+    set((state) => {
+      const elementIndex = state.elements.findIndex(el => el.id === id);
+      if (elementIndex === -1) return state;
+
+      const newElements = [...state.elements];
+      const [element] = newElements.splice(elementIndex, 1);
+      newElements.unshift(element);
+
+      return { elements: newElements };
+    });
+  },
+
+  toggleElementLock: (id: string) => {
+    set((state) => {
+      const newElements = state.elements.map((el) =>
+        el.id === id ? { ...el, locked: !el.locked } : el
+      );
+      
+      return { elements: newElements };
+    });
   },
 }));

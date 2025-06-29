@@ -1,8 +1,8 @@
 // ABOUTME: Main canvas component for drawing and rendering elements
 // ABOUTME: Handles canvas setup, event management, and element rendering
 
-import React, { useRef, useEffect, useCallback } from 'react';
-import type { Point, Element, Viewport } from '../../types';
+import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import type { Point, Element, Viewport, GridSettings } from '../../types';
 import { CanvasRenderer } from './CanvasRenderer';
 import './Canvas.css';
 
@@ -11,24 +11,33 @@ interface CanvasProps {
   height: number;
   elements: Element[];
   viewport: Viewport;
+  gridSettings?: GridSettings;
+  selectedElementIds?: string[];
+  dragSelectionRect?: { start: Point; end: Point } | null;
   onMouseDown?: (point: Point, event: MouseEvent) => void;
   onMouseMove?: (point: Point, event: MouseEvent) => void;
   onMouseUp?: (point: Point, event: MouseEvent) => void;
   onWheel?: (event: WheelEvent) => void;
 }
 
-export const Canvas: React.FC<CanvasProps> = ({
+export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
   width,
   height,
   elements,
   viewport,
+  gridSettings,
+  selectedElementIds = [],
+  dragSelectionRect = null,
   onMouseDown,
   onMouseMove,
   onMouseUp,
   onWheel,
-}) => {
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
+
+  // Expose the canvas element to the parent
+  useImperativeHandle(ref, () => canvasRef.current!, []);
 
   const getCanvasPoint = useCallback((event: MouseEvent): Point => {
     const canvas = canvasRef.current;
@@ -77,8 +86,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!renderer) return;
 
     renderer.updateViewport(viewport);
-    renderer.renderElements(elements);
-  }, [elements, viewport]);
+    renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect);
+  }, [elements, viewport, gridSettings, selectedElementIds, dragSelectionRect]);
 
   // Event handlers
   useEffect(() => {
@@ -104,6 +113,9 @@ export const Canvas: React.FC<CanvasProps> = ({
       width={width}
       height={height}
       className="excalibox-canvas"
+      role="img"
+      aria-label={`Drawing canvas with ${elements.length} elements`}
+      tabIndex={0}
     />
   );
-};
+});
