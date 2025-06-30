@@ -134,7 +134,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         el.id === id ? { ...el, ...updates } : el
       );
       
-      return { elements: newElements };
+      // Save to history for proper state management and canvas re-rendering
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
     });
   },
 
@@ -564,7 +572,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       [newElements[elementIndex], newElements[elementIndex + 1]] = 
         [newElements[elementIndex + 1], newElements[elementIndex]];
 
-      return { elements: newElements };
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
     });
   },
 
@@ -577,7 +593,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       [newElements[elementIndex], newElements[elementIndex - 1]] = 
         [newElements[elementIndex - 1], newElements[elementIndex]];
 
-      return { elements: newElements };
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
     });
   },
 
@@ -590,7 +614,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const [element] = newElements.splice(elementIndex, 1);
       newElements.push(element);
 
-      return { elements: newElements };
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
     });
   },
 
@@ -603,7 +635,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const [element] = newElements.splice(elementIndex, 1);
       newElements.unshift(element);
 
-      return { elements: newElements };
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
     });
   },
 
@@ -613,7 +653,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         el.id === id ? { ...el, locked: !el.locked } : el
       );
       
-      return { elements: newElements };
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
     });
   },
 
