@@ -1,0 +1,131 @@
+/* ABOUTME: Styles for simple color palette component with single row layout */
+/* ABOUTME: 6 uniform elements per row - 5 predefined + 1 current with picker */
+
+.simple-color-palette {
+  margin-bottom: 20px;
+}
+
+.simple-color-palette__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.simple-color-palette__swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+}
+
+.simple-color-palette__swatch:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.simple-color-palette__swatch.active {
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.simple-color-palette__current-wrapper {
+  position: relative;
+}
+
+.simple-color-palette__current {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1.5px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+}
+
+.simple-color-palette__current:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: #8B5CF6;
+}
+
+.simple-color-palette__picker {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1100;
+  min-width: 160px;
+}
+
+.simple-color-palette__color-input {
+  width: 100%;
+  height: 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.simple-color-palette__hex-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  margin-bottom: 8px;
+}
+
+.simple-color-palette__hex-input:focus {
+  outline: none;
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.simple-color-palette__picker-buttons {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.simple-color-palette__picker-apply,
+.simple-color-palette__picker-cancel {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #f9fafb;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: all 0.15s ease;
+}
+
+.simple-color-palette__picker-apply:hover {
+  background: #e5f3ff;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.simple-color-palette__picker-cancel:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
+}

@@ -34,7 +34,8 @@ function App() {
     resetZoom,
     zoomToFit,
     setZoom,
-    setPan
+    setPan,
+    saveToHistory
   } = useAppStore();
   
   const [isPanning, setIsPanning] = useState(false);
@@ -65,6 +66,11 @@ function App() {
   const [isDragSelecting, setIsDragSelecting] = useState(false);
   const [dragSelectionStart, setDragSelectionStart] = useState<Point | null>(null);
   const [dragSelectionEnd, setDragSelectionEnd] = useState<Point | null>(null);
+  
+  // Element dragging state
+  const [isDraggingElements, setIsDraggingElements] = useState(false);
+  const [dragStart, setDragStart] = useState<Point | null>(null);
+  const [dragStartPositions, setDragStartPositions] = useState<Map<string, Point>>(new Map());
   
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
@@ -478,9 +484,26 @@ function App() {
       });
       
       if (clickedElement) {
-        // Single element selection
-        selectElement(clickedElement.id);
-        return;
+        // If clicking on a selected element, start dragging
+        if (selectedElementIds.includes(clickedElement.id)) {
+          setIsDraggingElements(true);
+          setDragStart(point);
+          
+          // Store initial positions of all selected elements for history
+          const initialPositions = new Map<string, Point>();
+          selectedElementIds.forEach(elementId => {
+            const element = elements.find(el => el.id === elementId);
+            if (element) {
+              initialPositions.set(elementId, { x: element.x, y: element.y });
+            }
+          });
+          setDragStartPositions(initialPositions);
+          return;
+        } else {
+          // Single element selection
+          selectElement(clickedElement.id);
+          return;
+        }
       } else {
         // Start drag selection on empty area
         const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
@@ -635,6 +658,30 @@ function App() {
       handleCircleDrawingCanvasMove(point);
     }
     
+    // Handle element dragging
+    if (isDraggingElements && dragStart && dragStartPositions.size > 0) {
+      const deltaX = point.x - dragStart.x;
+      const deltaY = point.y - dragStart.y;
+      
+      // Apply grid snapping to drag movement if grid is enabled
+      const finalDelta = ui.grid && ui.grid.snapToGrid ? {
+        x: Math.round(deltaX / ui.grid.size) * ui.grid.size,
+        y: Math.round(deltaY / ui.grid.size) * ui.grid.size
+      } : { x: deltaX, y: deltaY };
+      
+      // Update all selected elements based on their initial positions
+      const { updateElement } = useAppStore.getState();
+      selectedElementIds.forEach(elementId => {
+        const initialPosition = dragStartPositions.get(elementId);
+        if (initialPosition) {
+          updateElement(elementId, { 
+            x: initialPosition.x + finalDelta.x,
+            y: initialPosition.y + finalDelta.y
+          });
+        }
+      });
+    }
+    
     // Handle drag selection
     if (isDragSelecting && dragSelectionStart) {
       const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
@@ -664,6 +711,16 @@ function App() {
     // Handle circle drawing completion
     if (isDrawingCircle && circleStart && currentCircleId) {
       handleCircleDrawingCanvasUp(point);
+    }
+    
+    // Handle element dragging completion
+    if (isDraggingElements) {
+      // Save the moved elements to history
+      saveToHistory();
+      
+      setIsDraggingElements(false);
+      setDragStart(null);
+      setDragStartPositions(new Map());
     }
     
     // Handle drag selection completion
@@ -722,13 +779,14 @@ function App() {
         className="app-main"
         style={{
           marginTop: '64px', // Account for top toolbar
-          marginLeft: ui.propertiesPanel.visible ? `${ui.propertiesPanel.width}px` : '0',
-          transition: 'margin-left 0.2s ease-out'
+          // Remove marginLeft - properties panel is now absolute overlay
+          width: '100%',
+          height: `${windowSize.height - 64}px`
         }}
       >
         <Canvas
           ref={canvasRef}
-          width={windowSize.width - (ui.propertiesPanel.visible ? ui.propertiesPanel.width : 0)}
+          width={windowSize.width} // Full width - panel is overlay
           height={windowSize.height - 64}
           elements={elements}
           viewport={viewport}
