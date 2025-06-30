@@ -45,6 +45,12 @@ interface Point {
   y: number;
 }
 
+interface TextEditingState {
+  elementId: string | null;
+  position: Point | null;
+  cursorPosition: number;
+}
+
 interface Element {
   id: string;
   type: ElementType;
@@ -60,12 +66,20 @@ interface Element {
   fillStyle: 'solid' | 'hachure' | 'cross-hatch' | 'transparent';
   roughness: number;
   opacity: number;
-  points?: Point[]; // For freehand/pen tool
+  cornerStyle?: 'sharp' | 'rounded'; // For rectangles/polygons
+  points?: Point[]; // For freehand/pen tool and arrows
   text?: string; // For text elements
-  fontFamily?: string;
-  fontSize?: number;
-  fontWeight?: string;
-  fontStyle?: string;
+  fontFamily?: string; // For text elements
+  fontSize?: number; // For text elements
+  fontWeight?: 'normal' | 'bold'; // For text elements
+  fontStyle?: 'normal' | 'italic'; // For text elements
+  textAlign?: 'left' | 'center' | 'right'; // For text elements
+  textDecoration?: 'none' | 'underline'; // For text elements
+  imageUrl?: string; // For image elements
+  locked?: boolean; // For element locking
+  zIndex?: number; // For layering
+  startArrowHead?: ArrowheadType; // For arrow start
+  endArrowHead?: ArrowheadType; // For arrow end
 }
 
 interface Viewport {
@@ -114,9 +128,13 @@ interface UIState {
 
 #### Canvas System
 - **Infinite Canvas**: Dynamically expanding drawing surface
-- **Viewport Management**: Smooth pan and zoom (10% to 250%)
+- **Viewport Management**: Smooth pan and zoom (10% to 500%) with cursor-centered zooming
 - **Grid System**: Configurable grid with snap-to-grid functionality
 - **Visual Feedback**: Real-time guides during drawing operations
+- **Selection Indicators**: Visual selection feedback with proper zoom scaling
+- **Coordinate Transformation**: Consistent world-to-screen coordinate conversion for all interactions
+- **Zoom-aware Selection**: Selection rectangles and indicators scale properly with viewport zoom
+- **Drag Operations**: Element dragging works consistently across all zoom levels
 
 #### Drawing Tools
 - **Lock Tool** (1): Toggle canvas locking to prevent accidental edits
@@ -127,8 +145,8 @@ interface UIState {
 - **Circle Tool** (C): Draw circles and ellipses by click+drag to size, constraint with Shift for circles
 - **Arrow Tool** (A): Draw arrows with customizable heads by click+drag
 - **Line Tool** (L): Draw straight lines with angle snapping by click+drag
-- **Pen Tool** (P): Freehand drawing with pressure sensitivity
-- **Text Tool** (T): Add and edit text annotations
+- **Pen Tool** (P): Freehand drawing with smooth stroke rendering
+- **Text Tool** (T): Add and edit text directly on canvas with real-time editing
 - **Image Tool** (I): Insert and manage images
 - **Eraser Tool** (E): Remove elements from canvas
 
@@ -142,6 +160,19 @@ interface UIState {
 - **Shift**: Constrain proportions (squares, circles, 45° angles)
 - **Alt**: Draw from center point
 - **Double-click**: Enter text editing mode for any shape
+
+#### Text Tool Behavior
+- **Click to Create**: Click on canvas to create new text element and enter editing mode
+- **Direct Canvas Editing**: Text editing happens directly on the canvas with visible cursor
+- **Keyboard Input**: Type directly to add text, use arrow keys for cursor movement
+- **Real-time Rendering**: Text appears immediately as typed with current font settings
+- **Cursor Blinking**: Visual cursor indicator showing current editing position
+- **Auto-sizing**: Text elements automatically adjust width and height based on content
+- **Font Controls**: Full typography control via properties panel (family, size, weight, style, decoration, alignment)
+- **Escape to Finish**: Press Escape or click outside to complete text editing
+- **Empty Text Removal**: Empty text elements are automatically removed
+- **Moveable Text**: Text elements can be selected and dragged like other elements
+- **Selection Support**: Text elements show selection indicators and can be styled via properties panel
 
 #### Styling System
 - **Color Palette**: Excalidraw-compatible predefined colors
@@ -301,23 +332,30 @@ interface UIState {
   - Rounded corners (rounded square icon)
 - **Context**: Visible for rectangle/polygon shapes only
 
-##### **8. Police (Typography - Text Elements Only)**
-- **Layout**: Horizontal row of 4 text formatting options
+##### **8. Famille de police (Font Family - Text Elements Only)**
+- **Layout**: Dropdown select element for font family selection
+- **Options**: Inter, Arial, Helvetica, Times New Roman, Courier New, Georgia
+- **Interaction**: Select dropdown shows font names styled in their respective fonts
+- **Visual**: Clean dropdown styling matching button aesthetics
+
+##### **8b. Style de police (Font Style - Text Elements Only)**
+- **Layout**: Horizontal row of 3 toggle buttons for text formatting
 - **Options**:
-  - Edit text (pencil icon)
-  - Lock text (lock icon) 
-  - Link text (chain icon)
-  - Text properties (A icon)
+  - Bold (B) - toggles fontWeight between 'normal' and 'bold'
+  - Italic (I) - toggles fontStyle between 'normal' and 'italic'  
+  - Underline (U) - toggles textDecoration between 'none' and 'underline'
+- **Visual**: Toggle buttons with active state highlighting
+- **Interaction**: Single click toggles each style independently
 
 ##### **9. Taille de la police (Font Size - Text Elements Only)**
 - **Layout**: Horizontal row of 4 size options
-- **Sizes**: S, M, L, XL with purple highlight for current
+- **Sizes**: S (12px), M (16px), L (24px), XL (32px) with purple highlight for current
 - **Visual**: Letter size indicators with background highlight
 
 ##### **10. Alignement du texte (Text Alignment - Text Elements Only)**
-- **Top Row**: 3 horizontal alignment options (left, center, right)
-- **Bottom Row**: 3 text formatting options (underline, superscript, subscript)
-- **Visual**: Standard text alignment icons
+- **Layout**: Single horizontal row of 3 alignment options
+- **Options**: Left (⟵), Center (↔), Right (⟶) alignment
+- **Visual**: Arrow icons indicating text alignment direction
 
 ##### **11. Transparence (Opacity)**
 - **Layout**: Horizontal slider with 0-100 range indicators
@@ -328,21 +366,22 @@ interface UIState {
 ##### **12. Disposition (Layer Management)**
 - **Layout**: Horizontal row of 4 layer control options
 - **Actions**:
-  - Send to back (down arrow to bottom line)
-  - Send backward (down arrow)
-  - Bring forward (up arrow)
-  - Bring to front (up arrow to top line)
-- **Visual**: Directional arrows with line indicators showing layer depth
+  - Send to back (⬇) - moves element to bottom of layer stack
+  - Send backward (↓) - moves element one layer down
+  - Bring forward (↑) - moves element one layer up
+  - Bring to front (⬆) - moves element to top of layer stack
+- **Visual**: Directional arrows with proper Unicode symbols
+- **Interaction**: Single click for immediate layer reordering
 
 ##### **13. Actions (Element Operations)**
 - **Layout**: Horizontal row of 4 action buttons
 - **Actions**:
-  - Duplicate element (copy icon)
-  - Delete element (trash icon)
-  - Lock/unlock element (lock icon with toggle state)
-  - Link/chain elements (chain icon)
-- **Visual**: Clear iconography with consistent sizing
-- **Interaction**: Single click for immediate action
+  - Duplicate element (📋) - creates copy with 20px offset
+  - Delete element (🗑️) - removes element from canvas
+  - Lock/unlock element (🔒/🔓) - toggles element editing protection
+  - Link element (🔗) - linking functionality placeholder
+- **Visual**: Emoji icons for clear visual recognition
+- **Interaction**: Single click for immediate action with visual state feedback
 
 #### **Design Principles**
 - **Consistent Spacing**: Uniform gaps between sections and elements
