@@ -2,7 +2,7 @@
 // ABOUTME: Handles canvas setup, event management, and element rendering
 
 import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
-import type { Point, Element, Viewport, GridSettings } from '../../types';
+import type { Point, Element, Viewport, GridSettings, TextEditingState } from '../../types';
 import { CanvasRenderer } from './CanvasRenderer';
 import './Canvas.css';
 
@@ -14,6 +14,7 @@ interface CanvasProps {
   gridSettings?: GridSettings;
   selectedElementIds?: string[];
   dragSelectionRect?: { start: Point; end: Point } | null;
+  textEditing?: TextEditingState | null;
   onMouseDown?: (point: Point, event: MouseEvent) => void;
   onMouseMove?: (point: Point, event: MouseEvent) => void;
   onMouseUp?: (point: Point, event: MouseEvent) => void;
@@ -28,6 +29,7 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
   gridSettings,
   selectedElementIds = [],
   dragSelectionRect = null,
+  textEditing = null,
   onMouseDown,
   onMouseMove,
   onMouseUp,
@@ -86,8 +88,8 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     if (!renderer) return;
 
     renderer.updateViewport(viewport);
-    renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect);
-  }, [elements, viewport, gridSettings, selectedElementIds, dragSelectionRect]);
+    renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing);
+  }, [elements, viewport, gridSettings, selectedElementIds, dragSelectionRect, textEditing]);
 
   // Event handlers
   useEffect(() => {

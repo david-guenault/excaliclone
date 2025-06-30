@@ -22,6 +22,7 @@ export const DEFAULT_TOOL_OPTIONS = {
   fontWeight: 'normal' as const,
   fontStyle: 'normal' as const,
   textAlign: 'left' as const,
+  textDecoration: 'none' as const,
 } as const;
 
 export const COLORS = {
@@ -175,6 +176,30 @@ export const FONT_SIZE_PRESETS = [
   { size: 'M', value: 16 },
   { size: 'L', value: 24 },
   { size: 'XL', value: 32 },
+] as const;
+
+export const FONT_FAMILY_PRESETS = [
+  { name: 'Inter', value: 'Inter' },
+  { name: 'Arial', value: 'Arial' },
+  { name: 'Helvetica', value: 'Helvetica' },
+  { name: 'Times', value: 'Times New Roman' },
+  { name: 'Courier', value: 'Courier New' },
+  { name: 'Georgia', value: 'Georgia' },
+] as const;
+
+export const FONT_WEIGHT_PRESETS = [
+  { name: 'Normal', value: 'normal' as const },
+  { name: 'Bold', value: 'bold' as const },
+] as const;
+
+export const FONT_STYLE_PRESETS = [
+  { name: 'Normal', value: 'normal' as const },
+  { name: 'Italic', value: 'italic' as const },
+] as const;
+
+export const TEXT_DECORATION_PRESETS = [
+  { name: 'None', value: 'none' as const },
+  { name: 'Underline', value: 'underline' as const },
 ] as const;
 
 // Recent Colors Storage

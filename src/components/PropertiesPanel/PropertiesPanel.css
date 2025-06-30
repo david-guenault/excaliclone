@@ -175,6 +175,34 @@
   border-color: #7C3AED;
 }
 
+/* Select dropdown styling */
+.properties-panel__select {
+  width: 100%;
+  height: 32px;
+  padding: 4px 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.properties-panel__select:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.properties-panel__select:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+}
+
 /* Stroke Width Preview */
 .properties-panel__stroke-width-button {
   display: flex;

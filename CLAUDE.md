@@ -100,3 +100,7 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
 ## Version Control
 
 - I have connected the repository to GitHub. From now on, I want you to commit when necessary
+
+## Prompting Best Practices
+
+- Pense a mettre a jour le prompt plan après chaque prompt réalisé

@@ -1,0 +1,36 @@
+.text-editor-overlay {
+  pointer-events: none;
+}
+
+.text-editor-input {
+  border: 2px solid #007acc;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  pointer-events: all;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  z-index: 9999; /* Force it to be on top */
+  
+  /* Auto-resize to content */
+  min-height: auto;
+  height: auto;
+  
+  /* Remove default styling */
+  margin: 0;
+  font-family: inherit;
+  line-height: 1.2;
+}
+
+.text-editor-input:focus {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.text-editor-input::placeholder {
+  color: #999;
+  opacity: 0.7;
+}

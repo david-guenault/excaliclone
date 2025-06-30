@@ -2,7 +2,7 @@
 // ABOUTME: Handles the actual drawing operations for all element types using Rough.js
 
 import rough from 'roughjs';
-import type { Element, Viewport, GridSettings, ArrowheadType, Point } from '../../types';
+import type { Element, Viewport, GridSettings, ArrowheadType, Point, TextEditingState } from '../../types';
 import { renderGrid } from '../../utils/grid';
 import { ARROW_CONFIG } from '../../constants';
 
@@ -113,7 +113,7 @@ export class CanvasRenderer {
     this.ctx.restore();
   }
 
-  renderElements(elements: Element[], gridSettings?: GridSettings, selectedElementIds: string[] = [], dragSelectionRect?: { start: Point; end: Point } | null) {
+  renderElements(elements: Element[], gridSettings?: GridSettings, selectedElementIds: string[] = [], dragSelectionRect?: { start: Point; end: Point } | null, textEditing?: TextEditingState | null) {
     this.clear();
     
     // Render grid first (background layer)
@@ -134,6 +134,11 @@ export class CanvasRenderer {
     // Render drag selection rectangle on top
     if (dragSelectionRect) {
       this.renderDragSelectionRect(dragSelectionRect);
+    }
+    
+    // Render text editing cursor on top
+    if (textEditing && textEditing.elementId && textEditing.position) {
+      this.renderTextCursor(elements, textEditing);
     }
   }
 
@@ -394,18 +399,75 @@ export class CanvasRenderer {
   private drawText(element: Element) {
     if (!element.text) return;
     
-    // Text rendering still uses regular canvas context as Rough.js doesn't have text support
-    this.ctx.font = `${element.strokeWidth * 8}px Arial`;
+    this.ctx.save();
+    
+    // Set font properties
+    const fontSize = element.fontSize || 16;
+    const fontFamily = element.fontFamily || 'Inter';
+    const fontWeight = element.fontWeight || 'normal';
+    const fontStyle = element.fontStyle || 'normal';
+    const textAlign = element.textAlign || 'left';
+    const textDecoration = element.textDecoration || 'none';
+    
+    this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
     this.ctx.textBaseline = 'top';
     this.ctx.fillStyle = element.strokeColor;
     this.ctx.globalAlpha = element.opacity;
     
+    // Calculate text dimensions for background and alignment
+    const lines = element.text.split('\n');
+    const lineHeight = fontSize * 1.2;
+    const maxLineWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
+    const padding = 4;
+    
+    // Draw background if specified
     if (element.backgroundColor !== 'transparent') {
       this.ctx.fillStyle = element.backgroundColor;
-      this.ctx.fillText(element.text, 5, 5);
-      this.ctx.fillStyle = element.strokeColor; // Reset to stroke color
+      this.ctx.fillRect(0, 0, maxLineWidth + (padding * 2), lines.length * lineHeight + (padding * 2));
     }
-    this.ctx.fillText(element.text, 5, 5);
+    
+    // Set text color
+    this.ctx.fillStyle = element.strokeColor;
+    
+    // Draw each line with proper alignment
+    lines.forEach((line, index) => {
+      if (!line && index < lines.length - 1) {
+        // Allow empty lines except for the last one
+        return;
+      }
+      
+      const y = padding + (index * lineHeight);
+      let x = padding; // Default for left alignment
+      
+      // Calculate X position based on alignment
+      const lineWidth = this.ctx.measureText(line).width;
+      
+      if (textAlign === 'center') {
+        x = padding + (maxLineWidth / 2) - (lineWidth / 2);
+      } else if (textAlign === 'right') {
+        x = padding + maxLineWidth - lineWidth;
+      }
+      
+      // Draw the text
+      this.ctx.fillText(line, x, y);
+      
+      // Draw underline if specified
+      if (textDecoration === 'underline') {
+        const underlineY = y + fontSize * 0.9; // Position underline below text
+        const underlineThickness = Math.max(1, fontSize * 0.05);
+        
+        this.ctx.save();
+        this.ctx.strokeStyle = element.strokeColor;
+        this.ctx.lineWidth = underlineThickness;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, underlineY);
+        this.ctx.lineTo(x + lineWidth, underlineY);
+        this.ctx.stroke();
+        this.ctx.restore();
+      }
+    });
+    
+    this.ctx.restore();
   }
 
   private drawPen(element: Element) {
@@ -467,6 +529,10 @@ export class CanvasRenderer {
     // Save current context state
     this.ctx.save();
     
+    // Apply viewport transformations for proper scaling and positioning
+    this.ctx.scale(this.viewport.zoom, this.viewport.zoom);
+    this.ctx.translate(-this.viewport.pan.x, -this.viewport.pan.y);
+    
     // Selection indicator styles
     const SELECTION_COLOR = '#007acc'; // Blue color for selection
     const SELECTION_STROKE_WIDTH = 2;
@@ -478,10 +544,9 @@ export class CanvasRenderer {
       
       // Transform to element's coordinate system
       this.ctx.save();
-      this.ctx.translate(element.x, element.y);
-      if (element.angle) {
-        this.ctx.rotate(element.angle);
-      }
+      this.ctx.translate(element.x + element.width / 2, element.y + element.height / 2);
+      this.ctx.rotate(element.angle);
+      this.ctx.translate(-element.width / 2, -element.height / 2);
       
       // Draw selection outline
       this.ctx.strokeStyle = SELECTION_COLOR;
@@ -502,6 +567,23 @@ export class CanvasRenderer {
       } else if (element.type === 'pen') {
         // For pen strokes, draw a box around the stroke bounds
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
+      } else if (element.type === 'text') {
+        // For text elements, calculate actual text bounds (same as drawText)
+        const fontSize = element.fontSize || 16;
+        const fontFamily = element.fontFamily || 'Inter';
+        const fontWeight = element.fontWeight || 'normal';
+        const fontStyle = element.fontStyle || 'normal';
+        
+        this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+        
+        const lines = (element.text || '').split('\n');
+        const lineHeight = fontSize * 1.2;
+        const maxLineWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
+        const textHeight = lines.length * lineHeight;
+        const padding = 4;
+        
+        // Draw selection box around actual text bounds with consistent padding
+        this.ctx.strokeRect(-2, -2, maxLineWidth + (padding * 2) + 4, textHeight + (padding * 2) + 4);
       }
       
       // Draw resize handles (small squares at corners)
@@ -544,6 +626,35 @@ export class CanvasRenderer {
           this.ctx.fillRect(x, y, handleSize, handleSize);
           this.ctx.strokeRect(x, y, handleSize, handleSize);
         });
+      } else if (element.type === 'text') {
+        // Corner handles for text elements based on actual text bounds (consistent with selection box)
+        const fontSize = element.fontSize || 16;
+        const fontFamily = element.fontFamily || 'Inter';
+        const fontWeight = element.fontWeight || 'normal';
+        const fontStyle = element.fontStyle || 'normal';
+        
+        this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+        
+        const lines = (element.text || '').split('\n');
+        const lineHeight = fontSize * 1.2;
+        const maxLineWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
+        const textHeight = lines.length * lineHeight;
+        const padding = 4;
+        
+        const textBoxWidth = maxLineWidth + (padding * 2);
+        const textBoxHeight = textHeight + (padding * 2);
+        
+        const positions = [
+          [-halfHandle, -halfHandle], // Top-left
+          [textBoxWidth - halfHandle, -halfHandle], // Top-right
+          [textBoxWidth - halfHandle, textBoxHeight - halfHandle], // Bottom-right
+          [-halfHandle, textBoxHeight - halfHandle], // Bottom-left
+        ];
+        
+        positions.forEach(([x, y]) => {
+          this.ctx.fillRect(x, y, handleSize, handleSize);
+          this.ctx.strokeRect(x, y, handleSize, handleSize);
+        });
       }
       
       this.ctx.restore();
@@ -575,6 +686,90 @@ export class CanvasRenderer {
     
     // Stroke the rectangle border
     this.ctx.strokeRect(x, y, width, height);
+    
+    // Restore context state
+    this.ctx.restore();
+  }
+
+  private renderTextCursor(elements: Element[], textEditing: TextEditingState) {
+    const element = elements.find(el => el.id === textEditing.elementId);
+    if (!element || element.type !== 'text') return;
+
+    // Save current context state
+    this.ctx.save();
+    
+    // Apply viewport transformations
+    this.ctx.scale(this.viewport.zoom, this.viewport.zoom);
+    this.ctx.translate(-this.viewport.pan.x, -this.viewport.pan.y);
+    
+    // Apply element transformations
+    this.ctx.translate(element.x + element.width / 2, element.y + element.height / 2);
+    this.ctx.rotate(element.angle);
+    this.ctx.translate(-element.width / 2, -element.height / 2);
+    
+    // Set font properties to calculate cursor position
+    const fontSize = element.fontSize || 16;
+    const fontFamily = element.fontFamily || 'Inter';
+    const fontWeight = element.fontWeight || 'normal';
+    const fontStyle = element.fontStyle || 'normal';
+    
+    this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+    this.ctx.textBaseline = 'top';
+    
+    // Calculate cursor position
+    const text = element.text || '';
+    const lines = text.split('\n');
+    const lineHeight = fontSize * 1.2;
+    
+    // Find which line the cursor is on
+    let currentLine = 0;
+    let charCount = 0;
+    const padding = 4;
+    let cursorX = padding;
+    let cursorY = padding;
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (charCount + lines[i].length >= textEditing.cursorPosition) {
+        currentLine = i;
+        const charIndexInLine = textEditing.cursorPosition - charCount;
+        const textBeforeCursor = lines[i].substring(0, charIndexInLine);
+        
+        // Calculate X position based on text alignment (same logic as drawText)
+        const textAlign = element.textAlign || 'left';
+        const maxLineWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
+        const lineWidth = this.ctx.measureText(lines[i]).width;
+        const textBeforeCursorWidth = this.ctx.measureText(textBeforeCursor).width;
+        
+        if (textAlign === 'center') {
+          const lineStartX = padding + (maxLineWidth / 2) - (lineWidth / 2);
+          cursorX = lineStartX + textBeforeCursorWidth;
+        } else if (textAlign === 'right') {
+          const lineStartX = padding + maxLineWidth - lineWidth;
+          cursorX = lineStartX + textBeforeCursorWidth;
+        } else {
+          cursorX = padding + textBeforeCursorWidth;
+        }
+        
+        cursorY = padding + (currentLine * lineHeight);
+        break;
+      }
+      charCount += lines[i].length + 1; // +1 for newline character
+    }
+    
+    // Draw blinking cursor
+    const time = Date.now();
+    const blink = Math.floor(time / 500) % 2; // Blink every 500ms
+    
+    if (blink === 0) {
+      this.ctx.strokeStyle = element.strokeColor || '#000000';
+      this.ctx.lineWidth = 1 / this.viewport.zoom;
+      this.ctx.setLineDash([]);
+      
+      this.ctx.beginPath();
+      this.ctx.moveTo(cursorX, cursorY);
+      this.ctx.lineTo(cursorX, cursorY + lineHeight);
+      this.ctx.stroke();
+    }
     
     // Restore context state
     this.ctx.restore();

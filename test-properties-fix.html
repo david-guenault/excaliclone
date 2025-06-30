@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Properties Panel Update Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-instructions { background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Properties Panel Update Fix Test</h1>
+    
+    <div class="test-instructions">
+        <h2>Test Instructions:</h2>
+        <ol>
+            <li>Open the application at <a href="http://localhost:5174" target="_blank">http://localhost:5174</a></li>
+            <li>Draw a rectangle using the Rectangle tool (R key)</li>
+            <li>Select the rectangle to open the properties panel</li>
+            <li>Test the following property updates:
+                <ul>
+                    <li><strong>Remplissage (Fill Pattern):</strong> Click different fill patterns (hachure, cross-hatch, solid)</li>
+                    <li><strong>Stroke Color:</strong> Click different stroke colors</li>
+                    <li><strong>Background Color:</strong> Click different background colors</li>
+                    <li><strong>Stroke Width:</strong> Click different thickness options</li>
+                    <li><strong>Layer Management:</strong> Try bring forward/backward buttons</li>
+                    <li><strong>Lock/Unlock:</strong> Try the lock/unlock button</li>
+                </ul>
+            </li>
+            <li>Verify that each change is immediately visible on the canvas</li>
+            <li>Try undo (Ctrl+Z) after making changes to verify history is working</li>
+        </ol>
+    </div>
+
+    <div class="success">
+        ✅ <strong>Expected Result:</strong> All property changes should be immediately visible on the canvas and undoable
+    </div>
+    
+    <div class="error">
+        ❌ <strong>Previous Issue:</strong> Remplissage and other property changes were not being applied consistently
+    </div>
+
+    <h2>Technical Fix Summary:</h2>
+    <p>The issue was that the following store functions were not saving changes to history:</p>
+    <ul>
+        <li><code>updateElement</code> - Used by all property panel controls</li>
+        <li><code>bringForward</code>, <code>sendBackward</code>, <code>bringToFront</code>, <code>sendToBack</code> - Layer management</li>
+        <li><code>toggleElementLock</code> - Lock/unlock functionality</li>
+    </ul>
+    <p>Without history management, canvas re-renders weren't being triggered consistently, causing property updates to appear to fail.</p>
+</body>
+</html>

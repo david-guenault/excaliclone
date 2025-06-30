@@ -12,9 +12,13 @@ import {
   STROKE_STYLE_PRESETS,
   ROUGHNESS_SIMPLE_PRESETS,
   CORNER_STYLE_PRESETS,
-  FONT_SIZE_PRESETS
+  FONT_SIZE_PRESETS,
+  FONT_FAMILY_PRESETS,
+  FONT_WEIGHT_PRESETS,
+  FONT_STYLE_PRESETS,
+  TEXT_DECORATION_PRESETS
 } from '../../constants';
-import type { StrokeStyle, FillStyle, CornerStyle, TextAlign, FontWeight, FontStyle } from '../../types';
+import type { StrokeStyle, FillStyle, CornerStyle, TextAlign, FontWeight, FontStyle, TextDecoration } from '../../types';
 import { SimpleColorPalette } from './SimpleColorPalette';
 import './PropertiesPanel.css';
 import './SimpleColorPalette.css';
@@ -211,21 +215,62 @@ export const PropertiesPanel: React.FC = () => {
         {/* 8-10. Typography sections - Contextual for text elements */}
         {(singleElement?.type === 'text' || (isMultipleSelection && selectedElements.some(el => el.type === 'text'))) && (
           <>
-            {/* 8. Police (Font Tools) */}
+            {/* 8. Famille de police */}
             <div className="properties-panel__section">
-              <h4 className="properties-panel__section-title">Police</h4>
+              <h4 className="properties-panel__section-title">Famille de police</h4>
+              <select 
+                className="properties-panel__select"
+                value={getCurrentValue('fontFamily')}
+                onChange={(e) => updateElementProperty('fontFamily', e.target.value)}
+              >
+                {FONT_FAMILY_PRESETS.map((font) => (
+                  <option
+                    key={font.name}
+                    value={font.value}
+                    style={{ fontFamily: font.value }}
+                  >
+                    {font.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 8b. Style de police */}
+            <div className="properties-panel__section">
+              <h4 className="properties-panel__section-title">Style de police</h4>
               <div className="properties-panel__preset-row">
-                <button className="properties-panel__icon-button" title="Edit text">
-                  ✏️
+                <button 
+                  className={`properties-panel__preset-button ${
+                    getCurrentValue('fontWeight') === 'bold' ? 'active' : ''
+                  }`}
+                  onClick={() => updateElementProperty('fontWeight', 
+                    getCurrentValue('fontWeight') === 'bold' ? 'normal' : 'bold'
+                  )}
+                  title="Gras"
+                >
+                  <strong>B</strong>
                 </button>
-                <button className="properties-panel__icon-button" title="Lock text">
-                  🔒
+                <button 
+                  className={`properties-panel__preset-button ${
+                    getCurrentValue('fontStyle') === 'italic' ? 'active' : ''
+                  }`}
+                  onClick={() => updateElementProperty('fontStyle', 
+                    getCurrentValue('fontStyle') === 'italic' ? 'normal' : 'italic'
+                  )}
+                  title="Italique"
+                >
+                  <em>I</em>
                 </button>
-                <button className="properties-panel__icon-button" title="Link text">
-                  🔗
-                </button>
-                <button className="properties-panel__icon-button" title="Text properties">
-                  A
+                <button 
+                  className={`properties-panel__preset-button ${
+                    getCurrentValue('textDecoration') === 'underline' ? 'active' : ''
+                  }`}
+                  onClick={() => updateElementProperty('textDecoration', 
+                    getCurrentValue('textDecoration') === 'underline' ? 'none' : 'underline'
+                  )}
+                  title="Souligné"
+                >
+                  <u>U</u>
                 </button>
               </div>
             </div>
@@ -251,47 +296,21 @@ export const PropertiesPanel: React.FC = () => {
             {/* 10. Alignement du texte (Text Alignment) */}
             <div className="properties-panel__section">
               <h4 className="properties-panel__section-title">Alignement du texte</h4>
-              <div className="properties-panel__text-align">
-                <div className="properties-panel__preset-row">
-                  {(['left', 'center', 'right'] as TextAlign[]).map((align) => (
-                    <button
-                      key={align}
-                      className={`properties-panel__preset-button ${
-                        getCurrentValue('textAlign') === align ? 'active' : ''
-                      }`}
-                      onClick={() => updateElementProperty('textAlign', align)}
-                    >
-                      {align === 'left' && '⟵'}
-                      {align === 'center' && '↔'}
-                      {align === 'right' && '⟶'}
-                    </button>
-                  ))}
-                </div>
-                <div className="properties-panel__preset-row">
-                  <button 
+              <div className="properties-panel__preset-row">
+                {(['left', 'center', 'right'] as TextAlign[]).map((align) => (
+                  <button
+                    key={align}
                     className={`properties-panel__preset-button ${
-                      getCurrentValue('fontWeight') === 'bold' ? 'active' : ''
+                      getCurrentValue('textAlign') === align ? 'active' : ''
                     }`}
-                    onClick={() => updateElementProperty('fontWeight', 
-                      getCurrentValue('fontWeight') === 'bold' ? 'normal' : 'bold'
-                    )}
+                    onClick={() => updateElementProperty('textAlign', align)}
+                    title={`Aligner à ${align === 'left' ? 'gauche' : align === 'center' ? 'centre' : 'droite'}`}
                   >
-                    <strong>B</strong>
+                    {align === 'left' && '⟵'}
+                    {align === 'center' && '↔'}
+                    {align === 'right' && '⟶'}
                   </button>
-                  <button 
-                    className={`properties-panel__preset-button ${
-                      getCurrentValue('fontStyle') === 'italic' ? 'active' : ''
-                    }`}
-                    onClick={() => updateElementProperty('fontStyle', 
-                      getCurrentValue('fontStyle') === 'italic' ? 'normal' : 'italic'
-                    )}
-                  >
-                    <em>I</em>
-                  </button>
-                  <button className="properties-panel__preset-button">
-                    <u>U</u>
-                  </button>
-                </div>
+                ))}
               </div>
             </div>
           </>

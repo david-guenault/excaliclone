@@ -6,6 +6,12 @@ export interface Point {
   y: number;
 }
 
+export interface TextEditingState {
+  elementId: string | null;
+  position: Point | null;
+  cursorPosition: number;
+}
+
 export interface Rect {
   x: number;
   y: number;
@@ -21,6 +27,7 @@ export type CornerStyle = 'sharp' | 'rounded';
 export type TextAlign = 'left' | 'center' | 'right';
 export type FontWeight = 'normal' | 'bold';
 export type FontStyle = 'normal' | 'italic';
+export type TextDecoration = 'none' | 'underline';
 
 export type ArrowheadType = 'triangle' | 'line' | 'dot' | 'none';
 
@@ -47,6 +54,7 @@ export interface Element {
   fontWeight?: FontWeight; // For text elements
   fontStyle?: FontStyle; // For text elements
   textAlign?: TextAlign; // For text elements
+  textDecoration?: TextDecoration; // For text elements
   imageUrl?: string; // For image elements
   locked?: boolean; // For element locking
   zIndex?: number; // For layering
@@ -70,6 +78,7 @@ export interface ToolOptions {
   fontWeight: FontWeight;
   fontStyle: FontStyle;
   textAlign: TextAlign;
+  textDecoration: TextDecoration;
 }
 
 export interface Viewport {
