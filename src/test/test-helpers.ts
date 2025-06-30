@@ -102,6 +102,21 @@ export const createDOMEventHelpers = () => {
         });
         document.dispatchEvent(event);
       });
+    },
+    
+    async clickCanvas(element: Element, point: { x: number; y: number }) {
+      await act(async () => {
+        element.dispatchEvent(new MouseEvent('mousedown', {
+          clientX: point.x,
+          clientY: point.y,
+          bubbles: true
+        }));
+        element.dispatchEvent(new MouseEvent('mouseup', {
+          clientX: point.x,
+          clientY: point.y,
+          bubbles: true
+        }));
+      });
     }
   };
 };
@@ -175,5 +190,15 @@ export const setupCanvasMocks = () => {
     strokeText: vi.fn(),
     fillText: vi.fn(),
     measureText: vi.fn(() => ({ width: 100 })),
+    setLineDash: vi.fn(),
+    getLineDash: vi.fn(() => []),
+    canvas: { width: 800, height: 600 },
+    strokeStyle: '',
+    fillStyle: '',
+    lineWidth: 1,
+    globalAlpha: 1,
+    font: '',
+    textAlign: 'start',
+    textBaseline: 'alphabetic',
   } as any));
 };

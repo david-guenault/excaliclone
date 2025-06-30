@@ -38,13 +38,17 @@ const mockContext = {
   rotate: vi.fn(),
   fillText: vi.fn(),
   strokeText: vi.fn(),
+  measureText: vi.fn(() => ({ width: 100 })),
+  setLineDash: vi.fn(),
+  getLineDash: vi.fn(() => []),
   canvas: { width: 800, height: 600 },
   strokeStyle: '',
   fillStyle: '',
   lineWidth: 1,
   globalAlpha: 1,
   font: '',
-  textBaseline: 'top',
+  textAlign: 'start',
+  textBaseline: 'alphabetic',
 };
 
 HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(mockContext) as any;

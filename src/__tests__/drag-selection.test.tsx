@@ -61,6 +61,22 @@ vi.mock('../components/Canvas', () => ({
   },
 }));
 
+// Helper function for clicking canvas with proper coordinates
+const clickCanvas = async (canvas: Element, x: number, y: number) => {
+  await act(async () => {
+    canvas.dispatchEvent(new MouseEvent('mousedown', {
+      clientX: x,
+      clientY: y,
+      bubbles: true
+    }));
+    canvas.dispatchEvent(new MouseEvent('mouseup', {
+      clientX: x,
+      clientY: y,
+      bubbles: true
+    }));
+  });
+};
+
 describe('Drag Selection Tests', () => {
   beforeEach(() => {
     // Reset store state before each test
@@ -124,7 +140,19 @@ describe('Drag Selection Tests', () => {
       await user.click(screen.getByRole('button', { name: 'Selection Tool tool' }));
       
       // Click on the element to select it (click at center: 125, 125)
-      await user.click(canvas, { clientX: 125, clientY: 125 });
+      // Using direct event dispatch instead of userEvent due to coordinate issues
+      await act(async () => {
+        canvas.dispatchEvent(new MouseEvent('mousedown', { 
+          clientX: 125, 
+          clientY: 125, 
+          bubbles: true 
+        }));
+        canvas.dispatchEvent(new MouseEvent('mouseup', { 
+          clientX: 125, 
+          clientY: 125, 
+          bubbles: true 
+        }));
+      });
 
       const state = useAppStore.getState();
       expect(state.selectedElementIds).toHaveLength(1);
@@ -147,7 +175,7 @@ describe('Drag Selection Tests', () => {
       });
 
       await user.click(screen.getByRole('button', { name: 'Selection Tool tool' }));
-      await user.click(canvas, { clientX: 125, clientY: 125 });
+      await clickCanvas(canvas, 125, 125);
 
       const state = useAppStore.getState();
       expect(state.ui.propertiesPanel.visible).toBe(true);
@@ -168,13 +196,13 @@ describe('Drag Selection Tests', () => {
       });
 
       await user.click(screen.getByRole('button', { name: 'Selection Tool tool' }));
-      await user.click(canvas, { clientX: 125, clientY: 125 });
+      await clickCanvas(canvas, 125, 125);
 
       // Verify element is selected
       expect(useAppStore.getState().selectedElementIds).toHaveLength(1);
 
       // Click on empty area
-      await user.click(canvas, { clientX: 300, clientY: 300 });
+      await clickCanvas(canvas, 300, 300);
 
       const state = useAppStore.getState();
       expect(state.selectedElementIds).toHaveLength(0);
@@ -288,7 +316,7 @@ describe('Drag Selection Tests', () => {
       });
 
       await user.click(screen.getByRole('button', { name: 'Selection Tool tool' }));
-      await user.click(canvas, { clientX: 125, clientY: 125 }); // Select the element
+      await clickCanvas(canvas, 125, 125); // Select the element
 
       expect(useAppStore.getState().selectedElementIds).toHaveLength(1);
 
@@ -328,7 +356,7 @@ describe('Drag Selection Tests', () => {
       await user.click(screen.getByRole('button', { name: 'Selection Tool tool' }));
 
       // Start with single selection
-      await user.click(canvas, { clientX: 125, clientY: 125 });
+      await clickCanvas(canvas, 125, 125);
       expect(useAppStore.getState().selectedElementIds).toHaveLength(1);
 
       // Switch to multi-selection
@@ -340,7 +368,7 @@ describe('Drag Selection Tests', () => {
       expect(useAppStore.getState().selectedElementIds).toHaveLength(2);
 
       // Back to single selection
-      await user.click(canvas, { clientX: 125, clientY: 125 });
+      await clickCanvas(canvas, 125, 125);
       expect(useAppStore.getState().selectedElementIds).toHaveLength(1);
     });
   });
