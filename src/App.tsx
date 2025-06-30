@@ -17,6 +17,7 @@ function App() {
     viewport, 
     elements, 
     addElement, 
+    updateElement,
     activeTool, 
     toolOptions,
     ui,
@@ -71,6 +72,11 @@ function App() {
   const [isDraggingElements, setIsDraggingElements] = useState(false);
   const [dragStart, setDragStart] = useState<Point | null>(null);
   const [dragStartPositions, setDragStartPositions] = useState<Map<string, Point>>(new Map());
+  
+  // Pen drawing state
+  const [isDrawingPen, setIsDrawingPen] = useState(false);
+  const [currentPenId, setCurrentPenId] = useState<string | null>(null);
+  const [penPoints, setPenPoints] = useState<Point[]>([]);
   
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
@@ -477,6 +483,45 @@ function App() {
     // Check if we're clicking on an existing element (for selection)
     if (activeTool === 'select') {
       const clickedElement = elements.find(element => {
+        // Special hit testing for pen strokes
+        if (element.type === 'pen' && element.points && element.points.length > 1) {
+          // Check if click is near any segment of the pen stroke
+          const tolerance = Math.max(element.strokeWidth * 2, 8); // Minimum 8px tolerance
+          
+          for (let i = 0; i < element.points.length - 1; i++) {
+            const p1 = element.points[i];
+            const p2 = element.points[i + 1];
+            
+            // Calculate distance from point to line segment
+            const A = point.x - p1.x;
+            const B = point.y - p1.y;
+            const C = p2.x - p1.x;
+            const D = p2.y - p1.y;
+            
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            
+            if (lenSq === 0) continue; // p1 and p2 are the same point
+            
+            let param = dot / lenSq;
+            param = Math.max(0, Math.min(1, param)); // Clamp to segment
+            
+            const closestX = p1.x + param * C;
+            const closestY = p1.y + param * D;
+            
+            const distance = Math.sqrt(
+              (point.x - closestX) * (point.x - closestX) + 
+              (point.y - closestY) * (point.y - closestY)
+            );
+            
+            if (distance <= tolerance) {
+              return true;
+            }
+          }
+          return false;
+        }
+        
+        // Standard bounding box hit testing for other elements
         return point.x >= element.x && 
                point.x <= element.x + element.width &&
                point.y >= element.y && 
@@ -633,6 +678,29 @@ function App() {
       // Add global event listeners for arrow drawing
       document.addEventListener('mousemove', handleGlobalMouseMove);
       document.addEventListener('mouseup', handleGlobalMouseUp);
+    } else if (activeTool === 'pen') {
+      const snappedPoint = snapPointToGridWithDistance(point, ui.grid);
+      setIsDrawingPen(true);
+      setPenPoints([snappedPoint]);
+      
+      const createdElement = addElement({
+        type: 'pen',
+        x: snappedPoint.x,
+        y: snappedPoint.y,
+        width: 1,
+        height: 1,
+        angle: 0,
+        strokeColor: toolOptions.strokeColor,
+        backgroundColor: toolOptions.backgroundColor,
+        strokeWidth: toolOptions.strokeWidth,
+        strokeStyle: toolOptions.strokeStyle,
+        fillStyle: 'transparent', // Pen strokes don't have fill
+        roughness: toolOptions.roughness,
+        opacity: toolOptions.opacity,
+        points: [snappedPoint],
+      });
+      
+      setCurrentPenId(createdElement.id);
     }
   };
 
@@ -656,6 +724,28 @@ function App() {
     // Handle circle drawing directly with Canvas coordinates
     if (isDrawingCircle && circleStart && currentCircleId) {
       handleCircleDrawingCanvasMove(point);
+    }
+    
+    // Handle pen drawing
+    if (isDrawingPen && currentPenId) {
+      const snappedPoint = snapPointToGridWithDistance(point, ui.grid);
+      const newPoints = [...penPoints, snappedPoint];
+      setPenPoints(newPoints);
+      
+      // Calculate bounding box for pen stroke
+      const minX = Math.min(...newPoints.map(p => p.x));
+      const minY = Math.min(...newPoints.map(p => p.y));
+      const maxX = Math.max(...newPoints.map(p => p.x));
+      const maxY = Math.max(...newPoints.map(p => p.y));
+      
+      // Update the pen element with new points and bounding box
+      updateElement(currentPenId, { 
+        x: minX,
+        y: minY,
+        width: Math.max(maxX - minX, 1),
+        height: Math.max(maxY - minY, 1),
+        points: newPoints,
+      });
     }
     
     // Handle element dragging
@@ -711,6 +801,13 @@ function App() {
     // Handle circle drawing completion
     if (isDrawingCircle && circleStart && currentCircleId) {
       handleCircleDrawingCanvasUp(point);
+    }
+    
+    // Handle pen drawing completion
+    if (isDrawingPen && currentPenId) {
+      setIsDrawingPen(false);
+      setCurrentPenId(null);
+      setPenPoints([]);
     }
     
     // Handle element dragging completion

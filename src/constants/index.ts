@@ -10,10 +10,10 @@ export const CANVAS_CONFIG = {
 
 export const DEFAULT_TOOL_OPTIONS = {
   strokeColor: '#000000',
-  backgroundColor: 'transparent',
+  backgroundColor: '#ffffff',
   strokeWidth: 2,
   strokeStyle: 'solid' as const,
-  fillStyle: 'transparent' as const,
+  fillStyle: 'solid' as const,
   roughness: 1,
   opacity: 1,
   cornerStyle: 'sharp' as const,

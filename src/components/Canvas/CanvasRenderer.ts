@@ -27,11 +27,16 @@ export class CanvasRenderer {
   private getShapeCacheKey(element: Element): string {
     // Create a unique key based on element properties that affect shape generation
     // Include element ID to ensure each element has its own cache entry
-    let key = `${element.id}-${element.type}-${element.width}-${element.height}-${element.roughness || 1}-${element.strokeWidth}-${element.strokeStyle || 'solid'}`;
+    let key = `${element.id}-${element.type}-${element.width}-${element.height}-${element.roughness || 1}-${element.strokeWidth}-${element.strokeColor || '#000000'}-${element.strokeStyle || 'solid'}-${element.fillStyle || 'transparent'}-${element.backgroundColor || 'transparent'}`;
     
     // Include arrow-specific properties
     if (element.type === 'arrow') {
       key += `-${element.startArrowHead || 'none'}-${element.endArrowHead || 'none'}`;
+    }
+    
+    // Include pen points for proper caching
+    if (element.type === 'pen' && element.points) {
+      key += `-points:${element.points.length}`;
     }
     
     return key;
@@ -135,17 +140,42 @@ export class CanvasRenderer {
   private drawRectangle(element: Element) {
     if (!this.rough || !this.rough.generator) return;
     
-    const shape = this.getCachedShape(element, () => 
-      this.rough.generator.rectangle(0, 0, element.width, element.height, {
-        stroke: element.strokeColor,
-        fill: element.backgroundColor !== 'transparent' ? element.backgroundColor : undefined,
-        strokeWidth: element.strokeWidth,
-        roughness: element.roughness || 1,
-        fillStyle: 'hachure',
-      })
-    );
+    // Only draw fill with Rough.js if there's actually a fill
+    if (element.backgroundColor !== 'transparent' && element.fillStyle !== 'transparent') {
+      const shape = this.getCachedShape(element, () => 
+        this.rough.generator.rectangle(0, 0, element.width, element.height, {
+          stroke: 'none', // No stroke from Rough.js
+          fill: element.backgroundColor,
+          strokeWidth: 0,
+          roughness: element.roughness || 1,
+          fillStyle: element.fillStyle,
+        })
+      );
+      
+      this.rough.draw(shape);
+    }
     
-    this.rough.draw(shape);
+    // Then draw stroke with native Canvas for style support
+    if (element.strokeColor && element.strokeColor !== 'transparent') {
+      this.ctx.save();
+      
+      this.ctx.strokeStyle = element.strokeColor;
+      this.ctx.lineWidth = element.strokeWidth;
+      this.ctx.lineCap = 'round';
+      this.ctx.lineJoin = 'round';
+      
+      // Apply stroke style
+      if (element.strokeStyle === 'dashed') {
+        this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+      } else if (element.strokeStyle === 'dotted') {
+        this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
+      } else {
+        this.ctx.setLineDash([]);
+      }
+      
+      this.ctx.strokeRect(0, 0, element.width, element.height);
+      this.ctx.restore();
+    }
   }
 
   private drawCircle(element: Element) {
@@ -153,27 +183,62 @@ export class CanvasRenderer {
     const centerX = element.width / 2;
     const centerY = element.height / 2;
     
-    const shape = this.getCachedShape(element, () => {
-      const options = {
-        stroke: element.strokeColor,
-        fill: element.backgroundColor !== 'transparent' ? element.backgroundColor : undefined,
-        strokeWidth: element.strokeWidth,
-        roughness: element.roughness || 1,
-        fillStyle: 'hachure',
-      };
+    // Only draw fill with Rough.js if there's actually a fill
+    if (element.backgroundColor !== 'transparent' && element.fillStyle !== 'transparent') {
+      const shape = this.getCachedShape(element, () => {
+        const options = {
+          stroke: 'none', // No stroke from Rough.js
+          fill: element.backgroundColor,
+          strokeWidth: 0,
+          roughness: element.roughness || 1,
+          fillStyle: element.fillStyle,
+        };
+        
+        // For circles/ellipses, use ellipse if width != height, otherwise circle
+        if (Math.abs(element.width - element.height) < 1) {
+          // Draw as circle
+          const radius = element.width / 2;
+          return this.rough.generator.circle(centerX, centerY, radius * 2, options);
+        } else {
+          // Draw as ellipse
+          return this.rough.generator.ellipse(centerX, centerY, element.width, element.height, options);
+        }
+      });
       
-      // For circles/ellipses, use ellipse if width != height, otherwise circle
-      if (Math.abs(element.width - element.height) < 1) {
-        // Draw as circle
-        const radius = element.width / 2;
-        return this.rough.generator.circle(centerX, centerY, radius * 2, options);
-      } else {
-        // Draw as ellipse
-        return this.rough.generator.ellipse(centerX, centerY, element.width, element.height, options);
-      }
-    });
+      this.rough.draw(shape);
+    }
     
-    this.rough.draw(shape);
+    // Then draw stroke with native Canvas for style support
+    if (element.strokeColor && element.strokeColor !== 'transparent') {
+      this.ctx.save();
+      
+      this.ctx.strokeStyle = element.strokeColor;
+      this.ctx.lineWidth = element.strokeWidth;
+      this.ctx.lineCap = 'round';
+      this.ctx.lineJoin = 'round';
+      
+      // Apply stroke style
+      if (element.strokeStyle === 'dashed') {
+        this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+      } else if (element.strokeStyle === 'dotted') {
+        this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
+      } else {
+        this.ctx.setLineDash([]);
+      }
+      
+      // Draw circle or ellipse stroke
+      this.ctx.beginPath();
+      if (Math.abs(element.width - element.height) < 1) {
+        // Circle
+        const radius = element.width / 2;
+        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      } else {
+        // Ellipse
+        this.ctx.ellipse(centerX, centerY, element.width / 2, element.height / 2, 0, 0, 2 * Math.PI);
+      }
+      this.ctx.stroke();
+      this.ctx.restore();
+    }
   }
 
   private drawLine(element: Element) {
@@ -346,7 +411,6 @@ export class CanvasRenderer {
   private drawPen(element: Element) {
     if (!element.points || element.points.length < 2) return;
     
-    // For pen strokes, we'll create a path using Rough.js linearPath
     // Filter out invalid points and ensure we have valid coordinates
     const validPoints = element.points.filter(point => 
       point && 
@@ -360,16 +424,43 @@ export class CanvasRenderer {
     
     if (validPoints.length < 2) return;
     
-    const pathPoints = validPoints.map(point => [
-      point.x - element.x, 
-      point.y - element.y
-    ] as [number, number]);
+    // Use native Canvas for better stroke style control
+    this.ctx.save();
     
-    this.rough.linearPath(pathPoints, {
-      stroke: element.strokeColor,
-      strokeWidth: element.strokeWidth,
-      roughness: element.roughness || 0.5, // Lower roughness for pen strokes
-    });
+    // Set stroke properties
+    this.ctx.strokeStyle = element.strokeColor;
+    this.ctx.lineWidth = element.strokeWidth;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    
+    // Apply stroke style
+    if (element.strokeStyle === 'dashed') {
+      this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+    } else if (element.strokeStyle === 'dotted') {
+      this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
+    } else {
+      this.ctx.setLineDash([]);
+    }
+    
+    // Calculate bounding box for coordinate transformation
+    const minX = Math.min(...validPoints.map(p => p.x));
+    const minY = Math.min(...validPoints.map(p => p.y));
+    
+    // Draw the path
+    this.ctx.beginPath();
+    
+    // Move to first point (relative to element position)
+    const firstPoint = validPoints[0];
+    this.ctx.moveTo(firstPoint.x - minX, firstPoint.y - minY);
+    
+    // Draw lines to subsequent points
+    for (let i = 1; i < validPoints.length; i++) {
+      const point = validPoints[i];
+      this.ctx.lineTo(point.x - minX, point.y - minY);
+    }
+    
+    this.ctx.stroke();
+    this.ctx.restore();
   }
 
   private renderSelectionIndicators(elements: Element[], selectedElementIds: string[]) {
@@ -408,6 +499,9 @@ export class CanvasRenderer {
         const maxX = Math.max(0, element.width) + 2;
         const maxY = Math.max(0, element.height) + 2;
         this.ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+      } else if (element.type === 'pen') {
+        // For pen strokes, draw a box around the stroke bounds
+        this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
       }
       
       // Draw resize handles (small squares at corners)
@@ -437,6 +531,19 @@ export class CanvasRenderer {
         this.ctx.strokeRect(-halfHandle, -halfHandle, handleSize, handleSize);
         this.ctx.fillRect(element.width - halfHandle, element.height - halfHandle, handleSize, handleSize);
         this.ctx.strokeRect(element.width - halfHandle, element.height - halfHandle, handleSize, handleSize);
+      } else if (element.type === 'pen') {
+        // Corner handles for pen strokes (similar to rectangles)
+        const positions = [
+          [-halfHandle, -halfHandle], // Top-left
+          [element.width - halfHandle, -halfHandle], // Top-right
+          [element.width - halfHandle, element.height - halfHandle], // Bottom-right
+          [-halfHandle, element.height - halfHandle], // Bottom-left
+        ];
+        
+        positions.forEach(([x, y]) => {
+          this.ctx.fillRect(x, y, handleSize, handleSize);
+          this.ctx.strokeRect(x, y, handleSize, handleSize);
+        });
       }
       
       this.ctx.restore();
