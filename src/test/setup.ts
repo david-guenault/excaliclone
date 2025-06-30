@@ -1,20 +1,27 @@
 // ABOUTME: Test setup file for Vitest and React Testing Library
 // ABOUTME: Configures global test environment and polyfills
 
-import { expect, afterEach } from 'vitest';
+import { expect, afterEach, vi, beforeEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { setupCanvasMocks } from './test-helpers';
 
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
+// Setup before each test
+beforeEach(() => {
+  setupCanvasMocks();
+});
+
 // Clean up after each test case
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
 });
 
-// Mock Canvas API for tests
-HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+// Mock Canvas API for tests with proper RoughJS compatibility
+const mockContext = {
   clearRect: vi.fn(),
   fillRect: vi.fn(),
   strokeRect: vi.fn(),
@@ -38,7 +45,9 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
   globalAlpha: 1,
   font: '',
   textBaseline: 'top',
-}));
+};
+
+HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(mockContext) as any;
 
 // Mock getBoundingClientRect for Canvas
 HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(() => ({
@@ -52,3 +61,47 @@ HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(() => ({
   y: 0,
   toJSON: vi.fn(),
 }));
+
+// Mock RoughJS library
+vi.mock('roughjs', () => {
+  const mockDrawable = {
+    type: 'path',
+    ops: [],
+    sets: [{ type: 'path', ops: [] }],
+  };
+
+  const mockGenerator = {
+    rectangle: vi.fn(() => mockDrawable),
+    circle: vi.fn(() => mockDrawable),
+    ellipse: vi.fn(() => mockDrawable),
+    line: vi.fn(() => mockDrawable),
+    curve: vi.fn(() => mockDrawable),
+    polygon: vi.fn(() => mockDrawable),
+    path: vi.fn(() => mockDrawable),
+    arc: vi.fn(() => mockDrawable),
+    linearPath: vi.fn(() => mockDrawable),
+  };
+
+  const mockRoughCanvas = {
+    generator: mockGenerator,
+    draw: vi.fn(),
+    rectangle: vi.fn(),
+    circle: vi.fn(),
+    line: vi.fn(),
+    curve: vi.fn(),
+    polygon: vi.fn(),
+    path: vi.fn(),
+    ellipse: vi.fn(),
+    arc: vi.fn(),
+    linearPath: vi.fn(),
+  };
+
+  return {
+    default: {
+      canvas: vi.fn(() => mockRoughCanvas),
+      generator: vi.fn(() => mockGenerator),
+    },
+    canvas: vi.fn(() => mockRoughCanvas),
+    generator: vi.fn(() => mockGenerator),
+  };
+});

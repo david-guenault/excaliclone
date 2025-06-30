@@ -1,0 +1,285 @@
+/* ABOUTME: Color palette component styling */
+/* ABOUTME: Excalidraw-style color picker with tabs, grid, and custom input */
+
+.color-palette {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 240px;
+  user-select: none;
+}
+
+/* Tabs for stroke/background selection */
+.color-palette__tabs {
+  display: flex;
+  margin-bottom: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.color-palette__tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.color-palette__tab--active {
+  background: #ffffff;
+  color: #374151;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.color-palette__tab:hover:not(.color-palette__tab--active) {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Tab icons */
+.color-palette__tab-icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1.5px solid currentColor;
+}
+
+.color-palette__tab-icon--stroke {
+  background: transparent;
+}
+
+.color-palette__tab-icon--background {
+  background: currentColor;
+}
+
+/* Current color preview */
+.color-palette__current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.color-palette__current-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Section titles */
+.color-palette__section-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+/* Color grid */
+.color-palette__grid {
+  margin-bottom: 12px;
+}
+
+.color-palette__colors {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.color-palette__colors--recent {
+  grid-template-columns: repeat(8, 1fr);
+}
+
+/* Color buttons */
+.color-button {
+  position: relative;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.color-button--small {
+  width: 20px;
+  height: 20px;
+}
+
+.color-button--medium {
+  width: 28px;
+  height: 28px;
+}
+
+.color-button--large {
+  width: 36px;
+  height: 36px;
+}
+
+.color-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-button--selected {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px #3b82f6, 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Checkmark for selected color */
+.color-button__check {
+  position: absolute;
+  font-size: 10px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+/* Transparent pattern for transparent colors */
+.color-button__transparent-pattern {
+  position: absolute;
+  inset: 0;
+  background: 
+    repeating-conic-gradient(#f3f4f6 0% 25%, transparent 0% 50%) 
+    50% / 8px 8px;
+  pointer-events: none;
+}
+
+.color-button__transparent-pattern::after {
+  content: '∅';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* Recent colors section */
+.color-palette__recent {
+  margin-bottom: 12px;
+}
+
+/* Custom color input */
+.color-palette__custom {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+}
+
+.color-palette__custom-button {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px dashed #d1d5db;
+  background: transparent;
+  border-radius: 4px;
+  color: #6b7280;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.color-palette__custom-button:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+  color: #374151;
+}
+
+/* Custom input form */
+.color-palette__custom-input {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.color-palette__hex-input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.color-palette__hex-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.color-palette__hex-input::placeholder {
+  color: #9ca3af;
+}
+
+.color-palette__custom-submit,
+.color-palette__custom-cancel {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.color-palette__custom-submit {
+  background: #22c55e;
+  color: white;
+}
+
+.color-palette__custom-submit:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.color-palette__custom-submit:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.color-palette__custom-cancel {
+  background: #ef4444;
+  color: white;
+}
+
+.color-palette__custom-cancel:hover {
+  background: #dc2626;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .color-palette {
+    width: 200px;
+    padding: 10px;
+  }
+  
+  .color-palette__colors {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .color-palette__colors--recent {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}

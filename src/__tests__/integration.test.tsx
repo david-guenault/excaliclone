@@ -194,7 +194,13 @@ describe('Integration Tests - Drawing Workflow', () => {
       expect(canvas).toHaveTextContent('Elements: 0');
 
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(canvas);
+      
+      // Simulate drag to create properly sized rectangle
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
 
       expect(canvas).toHaveTextContent('Elements: 1');
     });
@@ -208,7 +214,14 @@ describe('Integration Tests - Drawing Workflow', () => {
       expect(initialState.historyIndex).toBe(0);
 
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(screen.getByTestId('integration-canvas'));
+      const canvas = screen.getByTestId('integration-canvas');
+      
+      // Create properly sized rectangle to avoid deletion
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
 
       const finalState = useAppStore.getState();
       expect(finalState.history).toHaveLength(2);
@@ -218,7 +231,7 @@ describe('Integration Tests - Drawing Workflow', () => {
   });
 
   describe('Circle Drawing Workflow', () => {
-    it('complete circle drawing workflow: select tool → click canvas → circle appears', async () => {
+    it('complete circle drawing workflow: select tool → drag on canvas → circle appears', async () => {
       const user = userEvent.setup();
       render(<App />);
 
@@ -230,11 +243,33 @@ describe('Integration Tests - Drawing Workflow', () => {
       expect(circleButton).toHaveClass('top-toolbar__tool--active');
       expect(useAppStore.getState().activeTool).toBe('circle');
 
-      // Step 2: Click on canvas
+      // Step 2: Simulate drag on canvas to create a properly sized circle
       const canvas = screen.getByTestId('integration-canvas');
       expect(canvas).toHaveAttribute('data-elements-count', '0');
 
-      await user.click(canvas);
+      // Simulate mousedown, mousemove, and mouseup to create a drag
+      await act(async () => {
+        // Mouse down at (100, 100)
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { 
+          clientX: 100, 
+          clientY: 100, 
+          bubbles: true 
+        }));
+        
+        // Mouse move to (150, 150) to create 50x50 circle
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { 
+          clientX: 150, 
+          clientY: 150, 
+          bubbles: true 
+        }));
+        
+        // Mouse up to finish drawing
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { 
+          clientX: 150, 
+          clientY: 150, 
+          bubbles: true 
+        }));
+      });
 
       // Step 3: Circle appears
       const state = useAppStore.getState();
@@ -282,7 +317,14 @@ describe('Integration Tests - Drawing Workflow', () => {
       render(<App />);
 
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
-      await user.click(screen.getByTestId('integration-canvas'));
+      const canvas = screen.getByTestId('integration-canvas');
+
+      // Simulate drag to create properly sized circle
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
 
       const state = useAppStore.getState();
       expect(state.elements).toHaveLength(1);
@@ -297,7 +339,13 @@ describe('Integration Tests - Drawing Workflow', () => {
       expect(canvas).toHaveTextContent('Elements: 0');
 
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
-      await user.click(canvas);
+      
+      // Simulate drag to create properly sized circle
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
 
       expect(canvas).toHaveTextContent('Elements: 1');
     });
@@ -311,7 +359,14 @@ describe('Integration Tests - Drawing Workflow', () => {
       expect(initialState.historyIndex).toBe(0);
 
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
-      await user.click(screen.getByTestId('integration-canvas'));
+      const canvas = screen.getByTestId('integration-canvas');
+      
+      // Create properly sized circle to avoid deletion
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
 
       const finalState = useAppStore.getState();
       expect(finalState.history).toHaveLength(2);
@@ -328,10 +383,16 @@ describe('Integration Tests - Drawing Workflow', () => {
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
       const canvas = screen.getByTestId('integration-canvas');
 
-      // Create 3 rectangles
-      await user.click(canvas);
-      await user.click(canvas);
-      await user.click(canvas);
+      // Create 3 rectangles with proper drag operations
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          const startX = 100 + i * 60;
+          const startY = 100 + i * 60;
+          await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: startX, clientY: startY, bubbles: true }));
+          await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: startX + 50, clientY: startY + 50, bubbles: true }));
+          await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: startX + 50, clientY: startY + 50, bubbles: true }));
+        });
+      }
 
       const state = useAppStore.getState();
       expect(state.elements).toHaveLength(3);
@@ -346,10 +407,16 @@ describe('Integration Tests - Drawing Workflow', () => {
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
       const canvas = screen.getByTestId('integration-canvas');
 
-      // Create 3 circles
-      await user.click(canvas);
-      await user.click(canvas);
-      await user.click(canvas);
+      // Create 3 circles with proper drag operations
+      for (let i = 0; i < 3; i++) {
+        await act(async () => {
+          const startX = 100 + i * 60;
+          const startY = 100 + i * 60;
+          await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: startX, clientY: startY, bubbles: true }));
+          await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: startX + 50, clientY: startY + 50, bubbles: true }));
+          await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: startX + 50, clientY: startY + 50, bubbles: true }));
+        });
+      }
 
       const state = useAppStore.getState();
       expect(state.elements).toHaveLength(3);
@@ -365,15 +432,27 @@ describe('Integration Tests - Drawing Workflow', () => {
 
       // Create rectangle
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
 
       // Create circle
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 200, clientY: 200, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true }));
+      });
 
       // Create another rectangle
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 300, clientY: 300, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 350, clientY: 350, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 350, clientY: 350, bubbles: true }));
+      });
 
       const state = useAppStore.getState();
       expect(state.elements).toHaveLength(3);
@@ -389,11 +468,20 @@ describe('Integration Tests - Drawing Workflow', () => {
 
       const canvas = screen.getByTestId('integration-canvas');
 
-      // Create mixed elements
+      // Create mixed elements with proper drag operations
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
+      
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 200, clientY: 200, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true }));
+      });
 
       // All elements should be rendered
       expect(canvas).toHaveAttribute('data-elements-count', '2');
@@ -406,12 +494,20 @@ describe('Integration Tests - Drawing Workflow', () => {
 
       const canvas = screen.getByTestId('integration-canvas');
 
-      // Create elements in specific order
+      // Create elements in specific order with proper drag operations
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
       
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 200, clientY: 200, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true }));
+      });
 
       const state = useAppStore.getState();
       
@@ -434,12 +530,20 @@ describe('Integration Tests - Drawing Workflow', () => {
       // Start with rectangle
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
       expect(useAppStore.getState().activeTool).toBe('rectangle');
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
 
       // Switch to circle
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
       expect(useAppStore.getState().activeTool).toBe('circle');
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 200, clientY: 200, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true }));
+      });
 
       // Switch to select (should not create elements)
       await user.click(screen.getByRole('button', { name: 'Selection Tool tool' }));
@@ -625,11 +729,19 @@ describe('Integration Tests - Drawing Workflow', () => {
 
       // Create rectangle
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
 
       // Create circle
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 200, clientY: 200, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true }));
+      });
 
       // Create line
       await user.click(screen.getByRole('button', { name: 'Line tool' }));
@@ -684,12 +796,24 @@ describe('Integration Tests - Drawing Workflow', () => {
       
       // Create 2 rectangles
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(canvas);
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 160, clientY: 160, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 210, clientY: 210, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 210, clientY: 210, bubbles: true }));
+      });
 
       // Switch to circle and create 1 circle
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 220, clientY: 220, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 270, clientY: 270, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 270, clientY: 270, bubbles: true }));
+      });
 
       // Create line
       await user.click(screen.getByRole('button', { name: 'Line tool' }));
@@ -701,7 +825,11 @@ describe('Integration Tests - Drawing Workflow', () => {
 
       // Switch back to rectangle and create 1 more
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 280, clientY: 280, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 330, clientY: 330, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 330, clientY: 330, bubbles: true }));
+      });
 
       // Switch to select mode
       await user.click(screen.getByRole('button', { name: 'Selection Tool tool' }));
@@ -733,7 +861,11 @@ describe('Integration Tests - Drawing Workflow', () => {
 
       // Create rectangle
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 100, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 150, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 150, bubbles: true }));
+      });
 
       state = useAppStore.getState();
       expect(state.history).toHaveLength(2);
@@ -741,7 +873,11 @@ describe('Integration Tests - Drawing Workflow', () => {
 
       // Create circle
       await user.click(screen.getByRole('button', { name: 'Circle tool' }));
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 200, clientY: 200, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true }));
+      });
 
       state = useAppStore.getState();
       expect(state.history).toHaveLength(3);
@@ -756,15 +892,21 @@ describe('Integration Tests - Drawing Workflow', () => {
       const canvas = screen.getByTestId('integration-canvas');
       await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
 
-      // Rapidly create elements
+      // Rapidly create elements with proper drag operations
       const startTime = performance.now();
       for (let i = 0; i < 10; i++) {
-        await user.click(canvas);
+        await act(async () => {
+          const startX = 100 + i * 5;
+          const startY = 100 + i * 5;
+          await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: startX, clientY: startY, bubbles: true }));
+          await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: startX + 50, clientY: startY + 50, bubbles: true }));
+          await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: startX + 50, clientY: startY + 50, bubbles: true }));
+        });
       }
       const endTime = performance.now();
 
-      // Should complete in reasonable time (less than 1.5 seconds)
-      expect(endTime - startTime).toBeLessThan(1500);
+      // Should complete in reasonable time (less than 3 seconds for drag operations)
+      expect(endTime - startTime).toBeLessThan(3000);
 
       // All elements should be created
       const state = useAppStore.getState();

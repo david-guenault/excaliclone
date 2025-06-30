@@ -51,6 +51,8 @@ interface AppStore extends AppState {
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   toggleElementLock: (id: string) => void;
+  // History Actions
+  saveToHistory: () => void;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -93,24 +95,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
   addElement: (elementData) => {
     let createdElement: Element;
     
+    // Create element first
+    createdElement = {
+      // Apply provided data first, then defaults for missing properties
+      ...elementData,
+      // Default properties for new elements (only if not provided)
+      strokeStyle: elementData.strokeStyle || 'solid',
+      fillStyle: elementData.fillStyle || 'transparent',
+      cornerStyle: elementData.cornerStyle || 'sharp',
+      fontFamily: elementData.fontFamily || 'Inter',
+      fontSize: elementData.fontSize || 16,
+      fontWeight: elementData.fontWeight || 'normal',
+      fontStyle: elementData.fontStyle || 'normal',
+      textAlign: elementData.textAlign || 'left',
+      locked: elementData.locked || false,
+      zIndex: elementData.zIndex || 0,
+      id: generateId(),
+    };
+    
     set((state) => {
-      createdElement = {
-        // Apply provided data first, then defaults for missing properties
-        ...elementData,
-        // Default properties for new elements (only if not provided)
-        strokeStyle: elementData.strokeStyle || 'solid',
-        fillStyle: elementData.fillStyle || 'transparent',
-        cornerStyle: elementData.cornerStyle || 'sharp',
-        fontFamily: elementData.fontFamily || 'Inter',
-        fontSize: elementData.fontSize || 16,
-        fontWeight: elementData.fontWeight || 'normal',
-        fontStyle: elementData.fontStyle || 'normal',
-        textAlign: elementData.textAlign || 'left',
-        locked: elementData.locked || false,
-        zIndex: elementData.zIndex || 0,
-        id: generateId(),
-      };
-      
       const newElements = [...state.elements, createdElement];
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
@@ -611,6 +614,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
       );
       
       return { elements: newElements };
+    });
+  },
+
+  saveToHistory: () => {
+    set((state) => {
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push([...state.elements]);
+      
+      return {
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
     });
   },
 }));

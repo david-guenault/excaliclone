@@ -2,39 +2,82 @@
 // ABOUTME: Comprehensive test coverage for main application component
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 import { useAppStore } from '../store';
-import type { Element } from '../types';
+import { createActWrapper, waitForStateUpdate, createDOMEventHelpers } from '../test/test-helpers';
+// import type { Element } from '../types'; // Unused import removed
 
 // Mock the Canvas component to avoid canvas-related issues in tests
 vi.mock('../components/Canvas', () => ({
-  Canvas: ({ onMouseDown, onMouseMove, onMouseUp, width, height, elements, viewport }: any) => (
-    <div
-      data-testid="mock-canvas"
-      data-width={width}
-      data-height={height}
-      data-elements-count={elements?.length || 0}
-      data-zoom={viewport?.zoom}
-      onClick={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const point = {
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        };
-        onMouseDown?.(point);
-      }}
-    >
-      Mock Canvas
-    </div>
-  ),
+  Canvas: ({ onMouseDown, onMouseMove, onMouseUp, width, height, elements, viewport }: any) => {
+    const mockGetBoundingClientRect = () => ({
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 600,
+      right: 800,
+      bottom: 600,
+      x: 0,
+      y: 0,
+    });
+
+    return (
+      <div
+        data-testid="mock-canvas"
+        data-width={width}
+        data-height={height}
+        data-elements-count={elements?.length || 0}
+        data-zoom={viewport?.zoom}
+        onClick={(e) => {
+          e.currentTarget.getBoundingClientRect = mockGetBoundingClientRect;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const point = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          };
+          onMouseDown?.(point, e);
+        }}
+        onMouseDown={(e) => {
+          e.currentTarget.getBoundingClientRect = mockGetBoundingClientRect;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const point = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          };
+          onMouseDown?.(point, e);
+        }}
+        onMouseMove={(e) => {
+          e.currentTarget.getBoundingClientRect = mockGetBoundingClientRect;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const point = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          };
+          onMouseMove?.(point, e);
+        }}
+        onMouseUp={(e) => {
+          e.currentTarget.getBoundingClientRect = mockGetBoundingClientRect;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const point = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          };
+          onMouseUp?.(point, e);
+        }}
+      >
+        Mock Canvas
+      </div>
+    );
+  },
 }));
 
 describe('App Component', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset store state before each test
-    useAppStore.setState({
+    await act(async () => {
+      useAppStore.setState({
       viewport: {
         zoom: 1,
         pan: { x: 0, y: 0 },
@@ -47,32 +90,56 @@ describe('App Component', () => {
         strokeColor: '#000000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'transparent',
         roughness: 1,
         opacity: 1,
+        cornerStyle: 'sharp',
+        fontFamily: 'Inter',
+        fontSize: 16,
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        textAlign: 'left',
       },
       theme: 'light',
-      panels: {
-        toolbar: true,
-        sidebar: true,
+      ui: {
+        propertiesPanel: {
+          visible: false,
+          width: 200,
+        },
+        topToolbar: {
+          visible: true,
+        },
+        canvasLocked: false,
+        grid: {
+          enabled: true,
+          size: 20,
+          snapToGrid: false,
+          snapDistance: 10,
+          showGrid: false,
+          color: '#e1e5e9',
+          opacity: 0.3,
+        },
       },
       history: [[]],
       historyIndex: 0,
+      });
     });
   });
 
   describe('Component Rendering', () => {
-    it('renders header with title "Excalibox"', () => {
+    it('renders TopToolbar component', () => {
       render(<App />);
       
-      expect(screen.getByRole('heading', { name: 'Excalibox' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Selection Tool tool' })).toBeInTheDocument();
     });
 
-    it('renders tool selector buttons (Select, Rectangle, Circle)', () => {
+    it('renders tool selector buttons (Selection Tool, Rectangle, Circle)', () => {
       render(<App />);
       
-      expect(screen.getByRole('button', { name: 'Select' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Rectangle' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Circle' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Selection Tool tool' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Rectangle tool' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Circle tool' })).toBeInTheDocument();
     });
 
     it('renders Canvas component with correct props', () => {
@@ -80,20 +147,18 @@ describe('App Component', () => {
       
       const canvas = screen.getByTestId('mock-canvas');
       expect(canvas).toBeInTheDocument();
-      expect(canvas).toHaveAttribute('data-width', '800');
-      expect(canvas).toHaveAttribute('data-height', '600');
       expect(canvas).toHaveAttribute('data-elements-count', '0');
       expect(canvas).toHaveAttribute('data-zoom', '1');
+      // Canvas dimensions depend on window size, so we just check they exist
+      expect(canvas.getAttribute('data-width')).not.toBeNull();
+      expect(canvas.getAttribute('data-height')).not.toBeNull();
     });
 
     it('applies correct CSS classes', () => {
       render(<App />);
       
-      const appContainer = screen.getByRole('heading', { name: 'Excalibox' }).closest('.excalibox-app');
+      const appContainer = document.querySelector('.excalibox-app');
       expect(appContainer).toBeInTheDocument();
-      
-      const header = screen.getByRole('banner');
-      expect(header).toHaveClass('app-header');
       
       const main = screen.getByRole('main');
       expect(main).toHaveClass('app-main');
@@ -101,16 +166,16 @@ describe('App Component', () => {
   });
 
   describe('Tool Selection', () => {
-    it('clicking Select button sets activeTool to "select"', async () => {
+    it('clicking Selection Tool button sets activeTool to "select"', async () => {
       const user = userEvent.setup();
       render(<App />);
       
       // Initially should be 'select' tool
-      const selectButton = screen.getByRole('button', { name: 'Select' });
-      expect(selectButton).toHaveClass('active');
+      const selectButton = screen.getByRole('button', { name: 'Selection Tool tool' });
+      expect(selectButton).toHaveClass('top-toolbar__tool--active');
       
       // Click rectangle to change tool
-      await user.click(screen.getByRole('button', { name: 'Rectangle' }));
+      await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
       expect(useAppStore.getState().activeTool).toBe('rectangle');
       
       // Click select button
@@ -122,7 +187,7 @@ describe('App Component', () => {
       const user = userEvent.setup();
       render(<App />);
       
-      const rectangleButton = screen.getByRole('button', { name: 'Rectangle' });
+      const rectangleButton = screen.getByRole('button', { name: 'Rectangle tool' });
       await user.click(rectangleButton);
       
       expect(useAppStore.getState().activeTool).toBe('rectangle');
@@ -132,7 +197,7 @@ describe('App Component', () => {
       const user = userEvent.setup();
       render(<App />);
       
-      const circleButton = screen.getByRole('button', { name: 'Circle' });
+      const circleButton = screen.getByRole('button', { name: 'Circle tool' });
       await user.click(circleButton);
       
       expect(useAppStore.getState().activeTool).toBe('circle');
@@ -143,23 +208,23 @@ describe('App Component', () => {
       render(<App />);
       
       // Initially select tool should be active
-      expect(screen.getByRole('button', { name: 'Select' })).toHaveClass('active');
-      expect(screen.getByRole('button', { name: 'Rectangle' })).not.toHaveClass('active');
-      expect(screen.getByRole('button', { name: 'Circle' })).not.toHaveClass('active');
+      expect(screen.getByRole('button', { name: 'Selection Tool tool' })).toHaveClass('top-toolbar__tool--active');
+      expect(screen.getByRole('button', { name: 'Rectangle tool' })).not.toHaveClass('top-toolbar__tool--active');
+      expect(screen.getByRole('button', { name: 'Circle tool' })).not.toHaveClass('top-toolbar__tool--active');
       
       // Click rectangle
-      await user.click(screen.getByRole('button', { name: 'Rectangle' }));
+      await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
       
-      expect(screen.getByRole('button', { name: 'Select' })).not.toHaveClass('active');
-      expect(screen.getByRole('button', { name: 'Rectangle' })).toHaveClass('active');
-      expect(screen.getByRole('button', { name: 'Circle' })).not.toHaveClass('active');
+      expect(screen.getByRole('button', { name: 'Selection Tool tool' })).not.toHaveClass('top-toolbar__tool--active');
+      expect(screen.getByRole('button', { name: 'Rectangle tool' })).toHaveClass('top-toolbar__tool--active');
+      expect(screen.getByRole('button', { name: 'Circle tool' })).not.toHaveClass('top-toolbar__tool--active');
       
       // Click circle
-      await user.click(screen.getByRole('button', { name: 'Circle' }));
+      await user.click(screen.getByRole('button', { name: 'Circle tool' }));
       
-      expect(screen.getByRole('button', { name: 'Select' })).not.toHaveClass('active');
-      expect(screen.getByRole('button', { name: 'Rectangle' })).not.toHaveClass('active');
-      expect(screen.getByRole('button', { name: 'Circle' })).toHaveClass('active');
+      expect(screen.getByRole('button', { name: 'Selection Tool tool' })).not.toHaveClass('top-toolbar__tool--active');
+      expect(screen.getByRole('button', { name: 'Rectangle tool' })).not.toHaveClass('top-toolbar__tool--active');
+      expect(screen.getByRole('button', { name: 'Circle tool' })).toHaveClass('top-toolbar__tool--active');
     });
 
     it('only one button is active at a time', async () => {
@@ -167,16 +232,16 @@ describe('App Component', () => {
       render(<App />);
       
       const buttons = [
-        screen.getByRole('button', { name: 'Select' }),
-        screen.getByRole('button', { name: 'Rectangle' }),
-        screen.getByRole('button', { name: 'Circle' }),
+        screen.getByRole('button', { name: 'Selection Tool tool' }),
+        screen.getByRole('button', { name: 'Rectangle tool' }),
+        screen.getByRole('button', { name: 'Circle tool' }),
       ];
       
       for (const button of buttons) {
         await user.click(button);
         
         // Only the clicked button should be active
-        const activeButtons = buttons.filter(btn => btn.classList.contains('active'));
+        const activeButtons = buttons.filter(btn => btn.classList.contains('top-toolbar__tool--active'));
         expect(activeButtons).toHaveLength(1);
         expect(activeButtons[0]).toBe(button);
       }
@@ -189,17 +254,21 @@ describe('App Component', () => {
       render(<App />);
       
       // Set rectangle tool
-      await user.click(screen.getByRole('button', { name: 'Rectangle' }));
+      await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
       
-      // Click on canvas
+      // Perform drag operation to create rectangle
       const canvas = screen.getByTestId('mock-canvas');
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 50, clientY: 50, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 100, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 150, clientY: 100, bubbles: true }));
+      });
       
       const state = useAppStore.getState();
       expect(state.elements).toHaveLength(1);
       expect(state.elements[0].type).toBe('rectangle');
-      expect(state.elements[0].width).toBe(100);
-      expect(state.elements[0].height).toBe(50);
+      expect(state.elements[0].width).toBe(100); // 150 - 50
+      expect(state.elements[0].height).toBe(50); // 100 - 50
     });
 
     it('handleCanvasMouseDown creates circle when circle tool active', async () => {
@@ -207,17 +276,21 @@ describe('App Component', () => {
       render(<App />);
       
       // Set circle tool
-      await user.click(screen.getByRole('button', { name: 'Circle' }));
+      await user.click(screen.getByRole('button', { name: 'Circle tool' }));
       
-      // Click on canvas
+      // Perform drag operation to create circle
       const canvas = screen.getByTestId('mock-canvas');
-      await user.click(canvas);
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 60, clientY: 70, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 140, clientY: 130, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 140, clientY: 130, bubbles: true }));
+      });
       
       const state = useAppStore.getState();
       expect(state.elements).toHaveLength(1);
       expect(state.elements[0].type).toBe('circle');
-      expect(state.elements[0].width).toBe(80);
-      expect(state.elements[0].height).toBe(60); // Default ellipse behavior without Shift
+      expect(state.elements[0].width).toBe(80); // 140 - 60
+      expect(state.elements[0].height).toBe(60); // 130 - 70
     });
 
     it('handleCanvasMouseDown does nothing when select tool active', async () => {
@@ -236,21 +309,15 @@ describe('App Component', () => {
     });
 
     it('created elements have correct properties (position, size, colors)', async () => {
-      const user = userEvent.setup();
+      const user = createActWrapper();
+      const domEvents = createDOMEventHelpers();
       render(<App />);
       
       // Set rectangle tool
-      await user.click(screen.getByRole('button', { name: 'Rectangle' }));
+      await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
       
-      // Mock click at specific position
+      // Mock canvas for drag operation
       const canvas = screen.getByTestId('mock-canvas');
-      
-      // Simulate click at position (150, 200)
-      const clickEvent = new MouseEvent('click', {
-        bubbles: true,
-        clientX: 150,
-        clientY: 200,
-      });
       
       // Mock getBoundingClientRect for canvas
       vi.spyOn(HTMLDivElement.prototype, 'getBoundingClientRect').mockReturnValue({
@@ -265,37 +332,56 @@ describe('App Component', () => {
         toJSON: vi.fn(),
       });
       
-      canvas.dispatchEvent(clickEvent);
+      // Perform drag operation from (150, 200) to (250, 250)
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 150, clientY: 200, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 250, clientY: 250, bubbles: true }));
+        await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 250, clientY: 250, bubbles: true }));
+      });
+      
+      await waitForStateUpdate();
       
       const state = useAppStore.getState();
       const element = state.elements[0];
       
       expect(element.x).toBe(150);
       expect(element.y).toBe(200);
-      expect(element.width).toBe(100);
-      expect(element.height).toBe(50);
+      expect(element.width).toBe(100); // 250 - 150
+      expect(element.height).toBe(50); // 250 - 200
       expect(element.angle).toBe(0);
     });
 
     it('created elements use current toolOptions', async () => {
-      const user = userEvent.setup();
+      const user = createActWrapper();
       
-      // Set custom tool options
-      useAppStore.setState({
-        toolOptions: {
-          strokeColor: '#ff0000',
-          backgroundColor: '#00ff00',
-          strokeWidth: 5,
-          roughness: 2,
-          opacity: 0.7,
-        },
+      // Set custom tool options with proper act() wrapping
+      await act(async () => {
+        useAppStore.setState({
+          toolOptions: {
+            strokeColor: '#ff0000',
+            backgroundColor: '#00ff00',
+            strokeWidth: 5,
+            strokeStyle: 'solid',
+            fillStyle: 'solid',
+            roughness: 2,
+            opacity: 0.7,
+            cornerStyle: 'sharp',
+            fontFamily: 'Inter',
+            fontSize: 16,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            textAlign: 'left',
+          },
+        });
       });
       
       render(<App />);
       
       // Set rectangle tool and create element
-      await user.click(screen.getByRole('button', { name: 'Rectangle' }));
+      await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
       await user.click(screen.getByTestId('mock-canvas'));
+      
+      await waitForStateUpdate();
       
       const state = useAppStore.getState();
       const element = state.elements[0];
@@ -308,11 +394,12 @@ describe('App Component', () => {
     });
 
     it('mouse coordinates passed correctly to element creation', async () => {
-      const user = userEvent.setup();
+      const user = createActWrapper();
+      const domEvents = createDOMEventHelpers();
       render(<App />);
       
       // Set circle tool
-      await user.click(screen.getByRole('button', { name: 'Circle' }));
+      await user.click(screen.getByRole('button', { name: 'Circle tool' }));
       
       const canvas = screen.getByTestId('mock-canvas');
       
@@ -336,13 +423,12 @@ describe('App Component', () => {
       });
       
       for (const pos of positions) {
-        const clickEvent = new MouseEvent('click', {
-          bubbles: true,
+        await domEvents.fireMouseEvent(canvas, 'click', {
           clientX: pos.clientX,
           clientY: pos.clientY,
         });
         
-        canvas.dispatchEvent(clickEvent);
+        await waitForStateUpdate();
       }
       
       const state = useAppStore.getState();
@@ -358,53 +444,74 @@ describe('App Component', () => {
   });
 
   describe('Store Integration', () => {
-    it('uses correct store state (viewport, elements, activeTool, toolOptions)', () => {
-      // Set custom store state
-      const customState = {
-        viewport: {
-          zoom: 2.5,
-          pan: { x: 100, y: 200 },
-          bounds: { x: 0, y: 0, width: 1200, height: 900 },
-        },
-        elements: [
-          {
-            id: 'test-element',
-            type: 'rectangle' as const,
-            x: 10,
-            y: 20,
-            width: 100,
-            height: 50,
-            angle: 0,
-            strokeColor: '#ff0000',
-            backgroundColor: 'transparent',
-            strokeWidth: 3,
-            roughness: 1,
-            opacity: 1,
+    it('uses correct store state (viewport, elements, activeTool, toolOptions)', async () => {
+      // Set custom store state with proper act() wrapping
+      await act(async () => {
+        const customState = {
+          viewport: {
+            zoom: 2.5,
+            pan: { x: 100, y: 200 },
+            bounds: { x: 0, y: 0, width: 1200, height: 900 },
           },
-        ],
-        activeTool: 'circle' as const,
-        toolOptions: {
-          strokeColor: '#00ff00',
-          backgroundColor: '#0000ff',
-          strokeWidth: 4,
-          roughness: 2,
-          opacity: 0.5,
-        },
-      };
-      
-      useAppStore.setState(customState);
+          elements: [
+            {
+              id: 'test-element',
+              type: 'rectangle' as const,
+              x: 10,
+              y: 20,
+              width: 100,
+              height: 50,
+              angle: 0,
+              strokeColor: '#ff0000',
+              backgroundColor: 'transparent',
+              strokeWidth: 3,
+              strokeStyle: 'solid',
+              fillStyle: 'transparent',
+              roughness: 1,
+              opacity: 1,
+              cornerStyle: 'sharp',
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: 'normal',
+              fontStyle: 'normal',
+              textAlign: 'left',
+            },
+          ],
+          activeTool: 'circle' as const,
+          toolOptions: {
+            strokeColor: '#00ff00',
+            backgroundColor: '#0000ff',
+            strokeWidth: 4,
+            strokeStyle: 'solid',
+            fillStyle: 'solid',
+            roughness: 2,
+            opacity: 0.5,
+            cornerStyle: 'sharp',
+            fontFamily: 'Inter',
+            fontSize: 16,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            textAlign: 'left',
+          },
+        };
+        
+        useAppStore.setState(customState);
+      });
       
       render(<App />);
       
+      await waitForStateUpdate();
+      
       // Check that canvas receives correct props
       const canvas = screen.getByTestId('mock-canvas');
-      expect(canvas).toHaveAttribute('data-width', '1200');
-      expect(canvas).toHaveAttribute('data-height', '900');
       expect(canvas).toHaveAttribute('data-elements-count', '1');
       expect(canvas).toHaveAttribute('data-zoom', '2.5');
+      // Canvas dimensions depend on window size, so we just check they exist
+      expect(canvas.getAttribute('data-width')).not.toBeNull();
+      expect(canvas.getAttribute('data-height')).not.toBeNull();
       
       // Check that circle tool is active
-      expect(screen.getByRole('button', { name: 'Circle' })).toHaveClass('active');
+      expect(screen.getByRole('button', { name: 'Circle tool' })).toHaveClass('top-toolbar__tool--active');
     });
 
     it('calls store actions correctly (addElement, setActiveTool)', async () => {
@@ -415,67 +522,81 @@ describe('App Component', () => {
       render(<App />);
       
       // Test setActiveTool
-      await user.click(screen.getByRole('button', { name: 'Rectangle' }));
+      await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
       expect(setActiveToolSpy).toHaveBeenCalledWith('rectangle');
       
-      // Test addElement
-      await user.click(screen.getByTestId('mock-canvas'));
+      // Test addElement with drag operation
+      const canvas = screen.getByTestId('mock-canvas');
+      await act(async () => {
+        await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 50, clientY: 50, bubbles: true }));
+      });
+      
       expect(addElementSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'rectangle',
-          width: 100,
-          height: 50,
+          width: 1, // Elements start with minimal size
+          height: 1,
         })
       );
     });
 
-    it('component updates when store state changes', () => {
+    it('component updates when store state changes', async () => {
       const { rerender } = render(<App />);
       
       // Initially no elements
       expect(screen.getByTestId('mock-canvas')).toHaveAttribute('data-elements-count', '0');
       
-      // Add element to store
-      useAppStore.setState({
-        elements: [
-          {
-            id: 'new-element',
-            type: 'rectangle',
-            x: 0,
-            y: 0,
-            width: 100,
-            height: 50,
-            angle: 0,
-            strokeColor: '#000',
-            backgroundColor: 'transparent',
-            strokeWidth: 2,
-            roughness: 1,
-            opacity: 1,
-          },
-        ],
+      // Add element to store with proper act() wrapping
+      await act(async () => {
+        useAppStore.setState({
+          elements: [
+            {
+              id: 'new-element',
+              type: 'rectangle',
+              x: 0,
+              y: 0,
+              width: 100,
+              height: 50,
+              angle: 0,
+              strokeColor: '#000',
+              backgroundColor: 'transparent',
+              strokeWidth: 2,
+              strokeStyle: 'solid',
+              fillStyle: 'transparent',
+              roughness: 1,
+              opacity: 1,
+              cornerStyle: 'sharp',
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: 'normal',
+              fontStyle: 'normal',
+              textAlign: 'left',
+            },
+          ],
+        });
       });
       
-      // Force re-render to check updated state
-      rerender(<App />);
+      await waitForStateUpdate();
       
       expect(screen.getByTestId('mock-canvas')).toHaveAttribute('data-elements-count', '1');
     });
 
-    it('handles store state changes for tool selection UI', () => {
+    it('handles store state changes for tool selection UI', async () => {
       const { rerender } = render(<App />);
       
       // Initially select tool is active
-      expect(screen.getByRole('button', { name: 'Select' })).toHaveClass('active');
+      expect(screen.getByRole('button', { name: 'Selection Tool tool' })).toHaveClass('top-toolbar__tool--active');
       
-      // Change tool via store
-      useAppStore.setState({ activeTool: 'rectangle' });
+      // Change tool via store with proper act() wrapping
+      await act(async () => {
+        useAppStore.setState({ activeTool: 'rectangle' });
+      });
       
-      // Force re-render to see the change
-      rerender(<App />);
+      await waitForStateUpdate();
       
       // UI should update to reflect store change
-      expect(screen.getByRole('button', { name: 'Select' })).not.toHaveClass('active');
-      expect(screen.getByRole('button', { name: 'Rectangle' })).toHaveClass('active');
+      expect(screen.getByRole('button', { name: 'Selection Tool tool' })).not.toHaveClass('top-toolbar__tool--active');
+      expect(screen.getByRole('button', { name: 'Rectangle tool' })).toHaveClass('top-toolbar__tool--active');
     });
   });
 
@@ -489,15 +610,17 @@ describe('App Component', () => {
       expect(() => render(<App />)).not.toThrow();
     });
 
-    it('handles undefined store values gracefully', () => {
-      // Set some undefined values in store but keep viewport structure
-      useAppStore.setState({
-        elements: [],
-        viewport: {
-          zoom: 1,
-          pan: { x: 0, y: 0 },
-          bounds: { x: 0, y: 0, width: 800, height: 600 },
-        },
+    it('handles undefined store values gracefully', async () => {
+      // Set some undefined values in store but keep viewport structure with proper act() wrapping
+      await act(async () => {
+        useAppStore.setState({
+          elements: [],
+          viewport: {
+            zoom: 1,
+            pan: { x: 0, y: 0 },
+            bounds: { x: 0, y: 0, width: 800, height: 600 },
+          },
+        });
       });
       
       expect(() => render(<App />)).not.toThrow();
@@ -508,9 +631,9 @@ describe('App Component', () => {
       render(<App />);
       
       const buttons = [
-        screen.getByRole('button', { name: 'Select' }),
-        screen.getByRole('button', { name: 'Rectangle' }),
-        screen.getByRole('button', { name: 'Circle' }),
+        screen.getByRole('button', { name: 'Selection Tool tool' }),
+        screen.getByRole('button', { name: 'Rectangle tool' }),
+        screen.getByRole('button', { name: 'Circle tool' }),
       ];
       
       // Rapidly click different tools
@@ -520,14 +643,14 @@ describe('App Component', () => {
       }
       
       // Should not crash
-      expect(screen.getByRole('heading', { name: 'Excalibox' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Selection Tool tool' })).toBeInTheDocument();
     });
 
     it('handles multiple rapid canvas clicks without errors', async () => {
       const user = userEvent.setup();
       render(<App />);
       
-      await user.click(screen.getByRole('button', { name: 'Rectangle' }));
+      await user.click(screen.getByRole('button', { name: 'Rectangle tool' }));
       
       const canvas = screen.getByTestId('mock-canvas');
       
@@ -541,19 +664,5 @@ describe('App Component', () => {
     });
   });
 
-  describe('Console Logging', () => {
-    it('logs mouse down events to console', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      const user = userEvent.setup();
-      
-      render(<App />);
-      
-      await user.click(screen.getByRole('button', { name: 'Rectangle' }));
-      await user.click(screen.getByTestId('mock-canvas'));
-      
-      expect(consoleSpy).toHaveBeenCalledWith('Mouse down at:', expect.any(Object));
-      
-      consoleSpy.mockRestore();
-    });
-  });
+  // Note: Console logging test removed as there are no console logs in the current implementation
 });

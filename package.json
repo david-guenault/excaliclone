@@ -10,6 +10,10 @@
     "preview": "vite preview",
     "start": "./start.sh",
     "start:win": "start.bat",
+    "stop": "./stop.sh",
+    "stop:win": "stop.bat",
+    "status": "./status.sh",
+    "status:win": "status.bat",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage"

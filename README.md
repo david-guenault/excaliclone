@@ -33,7 +33,7 @@ npm run dev
 - **Frontend**: React 19 + TypeScript
 - **Build**: Vite
 - **State**: Zustand
-- **Drawing**: HTML5 Canvas + Rough.js (en cours)
+- **Drawing**: HTML5 Canvas + Rough.js
 - **Styling**: CSS Modules
 
 ## 📁 Structure
@@ -55,18 +55,61 @@ src/
 3. Cliquez sur le canvas pour dessiner
 4. Utilisez le bouton Select pour la sélection
 
-## 🔄 Développement
+## 🔄 Scripts de gestion
 
+### Démarrage
 ```bash
-npm run dev      # Serveur de développement
-npm run build    # Build production
-npm run lint     # Vérification ESLint
+# Linux/Mac
+./start.sh
+npm run start
+
+# Windows  
+start.bat
+npm run start:win
+```
+
+### Arrêt
+```bash
+# Linux/Mac
+./stop.sh
+npm run stop
+
+# Windows
+stop.bat
+npm run stop:win
+```
+
+### Status
+```bash
+# Linux/Mac
+./status.sh
+npm run status
+
+# Windows
+status.bat
+npm run status:win
+```
+
+### Développement
+```bash
+npm run dev          # Serveur de développement
+npm run build        # Build production
+npm run lint         # Vérification ESLint
+npm run test         # Tests unitaires
+npm run test:watch   # Tests en mode watch
+npm run test:coverage # Couverture des tests
 ```
 
 ## 📋 Roadmap
 
-- [ ] Style dessiné à la main avec Rough.js
-- [ ] Outils de sélection et manipulation
+- [x] Style dessiné à la main avec Rough.js ✅
+- [x] Interface de propriétés avec contrôles de rugosité ✅
+- [x] Scripts de gestion (start/stop/status) ✅
+- [ ] Palette de couleurs complète
+- [ ] Outils ligne et flèche
+- [ ] Outil de dessin libre
+- [ ] Outil de texte
+- [ ] Outils de sélection et manipulation avancés
 - [ ] Export PNG/SVG
 - [ ] Collaboration temps réel
 - [ ] Plus d'outils de dessin

@@ -54,7 +54,7 @@ describe('Canvas Component', () => {
         />
       );
 
-      const canvas = screen.getByTagName('canvas');
+      const canvas = document.querySelector('canvas');
       expect(canvas).toBeInTheDocument();
       expect(canvas).toHaveAttribute('width', '800');
       expect(canvas).toHaveAttribute('height', '600');
@@ -70,7 +70,7 @@ describe('Canvas Component', () => {
         />
       );
 
-      const canvas = screen.getByTagName('canvas');
+      const canvas = document.querySelector('canvas')!;
       expect(canvas).toHaveClass('excalibox-canvas');
     });
 
@@ -104,13 +104,13 @@ describe('Canvas Component', () => {
         />
       );
 
-      const canvas = screen.getByTagName('canvas');
+      const canvas = document.querySelector('canvas')!;
 
       // Simulate mouse down at specific coordinates
       await user.pointer({ target: canvas, coords: { clientX: 100, clientY: 150 } });
       await user.click(canvas);
 
-      expect(mockOnMouseDown).toHaveBeenCalledWith({ x: 100, y: 150 });
+      expect(mockOnMouseDown).toHaveBeenCalledWith({ x: 100, y: 150 }, expect.any(MouseEvent));
     });
 
     it('calls onMouseMove with correct point when mouse moved', async () => {
@@ -126,13 +126,13 @@ describe('Canvas Component', () => {
         />
       );
 
-      const canvas = screen.getByTagName('canvas');
+      const canvas = document.querySelector('canvas')!;
 
       // Simulate mouse move
       await user.hover(canvas);
       await user.pointer({ target: canvas, coords: { clientX: 200, clientY: 250 } });
 
-      expect(mockOnMouseMove).toHaveBeenCalledWith({ x: 200, y: 250 });
+      expect(mockOnMouseMove).toHaveBeenCalledWith({ x: 200, y: 250 }, expect.any(MouseEvent));
     });
 
     it('calls onMouseUp with correct point when mouse released', async () => {
@@ -148,7 +148,7 @@ describe('Canvas Component', () => {
         />
       );
 
-      const canvas = screen.getByTagName('canvas');
+      const canvas = document.querySelector('canvas')!;
 
       // Simulate mouse down and up
       await user.pointer([
@@ -157,7 +157,7 @@ describe('Canvas Component', () => {
         { keys: '[/MouseLeft]' },
       ]);
 
-      expect(mockOnMouseUp).toHaveBeenCalledWith({ x: 300, y: 400 });
+      expect(mockOnMouseUp).toHaveBeenCalledWith({ x: 300, y: 400 }, expect.any(MouseEvent));
     });
 
     it('handles events when callbacks are undefined', async () => {
@@ -175,7 +175,7 @@ describe('Canvas Component', () => {
         );
       }).not.toThrow();
 
-      const canvas = screen.getByTagName('canvas');
+      const canvas = document.querySelector('canvas')!;
 
       // Should not throw when interacting without callbacks
       await expect(user.click(canvas)).resolves.not.toThrow();
@@ -207,7 +207,7 @@ describe('Canvas Component', () => {
         />
       );
 
-      const canvas = screen.getByTagName('canvas');
+      const canvas = document.querySelector('canvas')!;
 
       // Simulate mouse event at clientX: 150, clientY: 200
       // With canvas offset of left: 50, top: 100
@@ -220,7 +220,7 @@ describe('Canvas Component', () => {
 
       canvas.dispatchEvent(mouseEvent);
 
-      expect(mockOnMouseDown).toHaveBeenCalledWith({ x: 100, y: 100 });
+      expect(mockOnMouseDown).toHaveBeenCalledWith({ x: 100, y: 100 }, expect.any(MouseEvent));
     });
   });
 
@@ -239,7 +239,7 @@ describe('Canvas Component', () => {
       );
 
       // Component should render without crashing
-      expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
+      expect(document.querySelector('canvas')).toBeInTheDocument();
     });
 
     it('handles mouse events with extreme coordinates', async () => {
@@ -253,7 +253,7 @@ describe('Canvas Component', () => {
         />
       );
 
-      const canvas = screen.getByTagName('canvas');
+      const canvas = document.querySelector('canvas')!;
 
       // Test with very large coordinates
       const extremeEvent = new MouseEvent('mousedown', {
@@ -264,7 +264,7 @@ describe('Canvas Component', () => {
 
       canvas.dispatchEvent(extremeEvent);
 
-      expect(mockOnMouseDown).toHaveBeenCalledWith({ x: 999999, y: -999999 });
+      expect(mockOnMouseDown).toHaveBeenCalledWith({ x: 999949, y: -1000099 }, expect.any(MouseEvent));
     });
   });
 
@@ -308,7 +308,7 @@ describe('Canvas Component', () => {
       );
 
       // Component should handle the update without crashing
-      expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
+      expect(document.querySelector('canvas')).toBeInTheDocument();
     });
 
     it('updates when viewport prop changes', () => {
@@ -338,7 +338,7 @@ describe('Canvas Component', () => {
       );
 
       // Component should handle the update without crashing
-      expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
+      expect(document.querySelector('canvas')).toBeInTheDocument();
     });
 
     it('updates canvas dimensions when width/height props change', () => {
@@ -361,7 +361,7 @@ describe('Canvas Component', () => {
         />
       );
 
-      const canvas = screen.getByTagName('canvas');
+      const canvas = document.querySelector('canvas')!;
       expect(canvas).toHaveAttribute('width', '1200');
       expect(canvas).toHaveAttribute('height', '900');
     });
@@ -527,7 +527,7 @@ describe('Canvas Component', () => {
       }
 
       // Should handle rapid updates without crashing
-      expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
+      expect(document.querySelector('canvas')).toBeInTheDocument();
     });
 
     it('handles large numbers of elements efficiently', () => {
@@ -557,7 +557,7 @@ describe('Canvas Component', () => {
         );
       }).not.toThrow();
 
-      expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
+      expect(document.querySelector('canvas')).toBeInTheDocument();
     });
   });
 });

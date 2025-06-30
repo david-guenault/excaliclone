@@ -42,3 +42,6 @@ export const inverseTransformPoint = (point: Point, zoom: number, pan: Point): P
     y: point.y / zoom + pan.y,
   };
 };
+
+// Re-export grid utilities
+export * from './grid';

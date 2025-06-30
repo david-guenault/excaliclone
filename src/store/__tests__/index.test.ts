@@ -25,9 +25,15 @@ describe('Zustand Store', () => {
         opacity: 1,
       },
       theme: 'light',
-      panels: {
-        toolbar: true,
-        sidebar: true,
+      ui: {
+        propertiesPanel: {
+          visible: false,
+          width: 300,
+        },
+        topToolbar: {
+          visible: true,
+        },
+        canvasLocked: false,
       },
       history: [[]],
       historyIndex: 0,

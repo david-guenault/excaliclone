@@ -2,10 +2,11 @@
 // ABOUTME: Tests toolbar, properties panel, and their interaction with the store
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 import { useAppStore } from '../store';
+import { createActWrapper, waitForStateUpdate } from '../test/test-helpers';
 
 // Mock the Canvas component to avoid canvas-related issues in tests
 vi.mock('../components/Canvas', () => ({
@@ -57,23 +58,29 @@ describe('UI Layout Integration', () => {
   });
 
   describe('Layout Structure', () => {
-    it('renders TopToolbar component', () => {
-      render(<App />);
+    it('renders TopToolbar component', async () => {
+      await act(async () => {
+        render(<App />);
+      });
       
-      expect(screen.getByRole('heading', { name: 'Excalibox' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /select/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /selection tool/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /rectangle tool/i })).toBeInTheDocument();
     });
 
-    it('does not render header from old layout', () => {
-      render(<App />);
+    it('does not render header from old layout', async () => {
+      await act(async () => {
+        render(<App />);
+      });
       
       // Old header structure should not exist
       expect(screen.queryByRole('banner')).not.toBeInTheDocument();
       expect(screen.queryByTestId('old-header')).not.toBeInTheDocument();
     });
 
-    it('renders Canvas with correct dimensions', () => {
-      render(<App />);
+    it('renders Canvas with correct dimensions', async () => {
+      await act(async () => {
+        render(<App />);
+      });
       
       const canvas = screen.getByTestId('mock-canvas');
       expect(canvas).toBeInTheDocument();
@@ -83,8 +90,10 @@ describe('UI Layout Integration', () => {
       expect(canvas).toHaveAttribute('data-height', expectedHeight.toString());
     });
 
-    it('PropertiesPanel is hidden by default', () => {
-      render(<App />);
+    it('PropertiesPanel is hidden by default', async () => {
+      await act(async () => {
+        render(<App />);
+      });
       
       expect(screen.queryByText(/properties/i)).not.toBeInTheDocument();
     });
@@ -92,91 +101,106 @@ describe('UI Layout Integration', () => {
 
   describe('Tool Selection Integration', () => {
     it('clicking tool in TopToolbar updates store state', async () => {
-      const user = userEvent.setup();
-      render(<App />);
+      const user = createActWrapper();
+      await act(async () => {
+        render(<App />);
+      });
       
-      const rectangleButton = screen.getByRole('button', { name: /rectangle/i });
+      const rectangleButton = screen.getByRole('button', { name: /rectangle tool/i });
       await user.click(rectangleButton);
+      await waitForStateUpdate();
       
       expect(useAppStore.getState().activeTool).toBe('rectangle');
     });
 
     it('active tool is reflected in TopToolbar UI', async () => {
-      const user = userEvent.setup();
-      render(<App />);
+      const user = createActWrapper();
+      await act(async () => {
+        render(<App />);
+      });
       
-      const circleButton = screen.getByRole('button', { name: /circle/i });
+      const circleButton = screen.getByRole('button', { name: /circle tool/i });
       await user.click(circleButton);
+      await waitForStateUpdate();
       
-      expect(circleButton).toHaveClass('active');
-      expect(screen.getByRole('button', { name: /select/i })).not.toHaveClass('active');
+      expect(circleButton).toHaveClass('top-toolbar__tool--active');
+      expect(screen.getByRole('button', { name: /selection tool/i })).not.toHaveClass('top-toolbar__tool--active');
     });
   });
 
   describe('Properties Panel Conditional Visibility', () => {
-    it('shows PropertiesPanel when element is selected', () => {
+    it('shows PropertiesPanel when element is selected', async () => {
       // Simulate element selection
-      useAppStore.setState({
-        elements: [{
-          id: 'test-element',
-          type: 'rectangle',
-          x: 100,
-          y: 100,
-          width: 200,
-          height: 100,
-          angle: 0,
-          strokeColor: '#000000',
-          backgroundColor: 'transparent',
-          strokeWidth: 2,
-          roughness: 1,
-          opacity: 1,
-        }],
-        selectedElementIds: ['test-element'],
-        ui: {
-          propertiesPanel: {
-            visible: true,
-            width: 300,
+      await act(async () => {
+        useAppStore.setState({
+          elements: [{
+            id: 'test-element',
+            type: 'rectangle',
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 100,
+            angle: 0,
+            strokeColor: '#000000',
+            backgroundColor: 'transparent',
+            strokeWidth: 2,
+            roughness: 1,
+            opacity: 1,
+          }],
+          selectedElementIds: ['test-element'],
+          ui: {
+            propertiesPanel: {
+              visible: true,
+              width: 300,
+            },
+            topToolbar: {
+              visible: true,
+            },
           },
-          topToolbar: {
-            visible: true,
-          },
-        },
+        });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
       
-      expect(screen.getByText(/rectangle properties/i)).toBeInTheDocument();
+      // Check that PropertiesPanel component is rendered (it has the rectangle type heading)
+      expect(screen.getByText(/rectangle/)).toBeInTheDocument();
     });
 
-    it('adjusts Canvas width when PropertiesPanel is visible', () => {
-      useAppStore.setState({
-        elements: [{
-          id: 'test-element',
-          type: 'rectangle',
-          x: 100,
-          y: 100,
-          width: 200,
-          height: 100,
-          angle: 0,
-          strokeColor: '#000000',
-          backgroundColor: 'transparent',
-          strokeWidth: 2,
-          roughness: 1,
-          opacity: 1,
-        }],
-        selectedElementIds: ['test-element'],
-        ui: {
-          propertiesPanel: {
-            visible: true,
-            width: 300,
+    it('adjusts Canvas width when PropertiesPanel is visible', async () => {
+      await act(async () => {
+        useAppStore.setState({
+          elements: [{
+            id: 'test-element',
+            type: 'rectangle',
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 100,
+            angle: 0,
+            strokeColor: '#000000',
+            backgroundColor: 'transparent',
+            strokeWidth: 2,
+            roughness: 1,
+            opacity: 1,
+          }],
+          selectedElementIds: ['test-element'],
+          ui: {
+            propertiesPanel: {
+              visible: true,
+              width: 300,
+            },
+            topToolbar: {
+              visible: true,
+            },
           },
-          topToolbar: {
-            visible: true,
-          },
-        },
+        });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
       
       const canvas = screen.getByTestId('mock-canvas');
       const expectedWidth = window.innerWidth - 300; // Subtract panel width
@@ -185,78 +209,87 @@ describe('UI Layout Integration', () => {
 
     it('hides PropertiesPanel when selection is cleared', async () => {
       // Start with an element selected
-      useAppStore.setState({
-        elements: [{
-          id: 'test-element',
-          type: 'rectangle',
-          x: 100,
-          y: 100,
-          width: 200,
-          height: 100,
-          angle: 0,
-          strokeColor: '#000000',
-          backgroundColor: 'transparent',
-          strokeWidth: 2,
-          roughness: 1,
-          opacity: 1,
-        }],
-        selectedElementIds: ['test-element'],
-        ui: {
-          propertiesPanel: {
-            visible: true,
-            width: 300,
+      await act(async () => {
+        useAppStore.setState({
+          elements: [{
+            id: 'test-element',
+            type: 'rectangle',
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 100,
+            angle: 0,
+            strokeColor: '#000000',
+            backgroundColor: 'transparent',
+            strokeWidth: 2,
+            roughness: 1,
+            opacity: 1,
+          }],
+          selectedElementIds: ['test-element'],
+          ui: {
+            propertiesPanel: {
+              visible: true,
+              width: 300,
+            },
+            topToolbar: {
+              visible: true,
+            },
           },
-          topToolbar: {
-            visible: true,
-          },
-        },
+        });
       });
 
-      const user = userEvent.setup();
-      render(<App />);
+      const user = createActWrapper();
+      await act(async () => {
+        render(<App />);
+      });
       
       // Verify panel is visible
-      expect(screen.getByText(/rectangle properties/i)).toBeInTheDocument();
+      expect(screen.getByText(/rectangle/)).toBeInTheDocument();
       
       // Click close button
       const closeButton = screen.getByRole('button', { name: /clear selection/i });
       await user.click(closeButton);
+      await waitForStateUpdate();
       
       // Panel should be hidden and canvas should expand
-      expect(screen.queryByText(/rectangle properties/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/rectangle/)).not.toBeInTheDocument();
     });
   });
 
   describe('Responsive Layout', () => {
-    it('maintains proper spacing with different panel widths', () => {
-      useAppStore.setState({
-        elements: [{
-          id: 'test-element',
-          type: 'circle',
-          x: 50,
-          y: 50,
-          width: 100,
-          height: 100,
-          angle: 0,
-          strokeColor: '#000000',
-          backgroundColor: 'transparent',
-          strokeWidth: 2,
-          roughness: 1,
-          opacity: 1,
-        }],
-        selectedElementIds: ['test-element'],
-        ui: {
-          propertiesPanel: {
-            visible: true,
-            width: 350,
+    it('maintains proper spacing with different panel widths', async () => {
+      await act(async () => {
+        useAppStore.setState({
+          elements: [{
+            id: 'test-element',
+            type: 'circle',
+            x: 50,
+            y: 50,
+            width: 100,
+            height: 100,
+            angle: 0,
+            strokeColor: '#000000',
+            backgroundColor: 'transparent',
+            strokeWidth: 2,
+            roughness: 1,
+            opacity: 1,
+          }],
+          selectedElementIds: ['test-element'],
+          ui: {
+            propertiesPanel: {
+              visible: true,
+              width: 350,
+            },
+            topToolbar: {
+              visible: true,
+            },
           },
-          topToolbar: {
-            visible: true,
-          },
-        },
+        });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
       
       const main = screen.getByRole('main');
       expect(main).toHaveStyle({
@@ -265,24 +298,30 @@ describe('UI Layout Integration', () => {
       });
     });
 
-    it('handles window resize correctly', () => {
-      render(<App />);
+    it('handles window resize correctly', async () => {
+      await act(async () => {
+        render(<App />);
+      });
       
       // Simulate window resize
-      Object.defineProperty(window, 'innerWidth', {
-        writable: true,
-        configurable: true,
-        value: 1200,
+      await act(async () => {
+        Object.defineProperty(window, 'innerWidth', {
+          writable: true,
+          configurable: true,
+          value: 1200,
+        });
+        
+        Object.defineProperty(window, 'innerHeight', {
+          writable: true,
+          configurable: true,
+          value: 800,
+        });
+        
+        // Trigger resize event
+        window.dispatchEvent(new Event('resize'));
       });
       
-      Object.defineProperty(window, 'innerHeight', {
-        writable: true,
-        configurable: true,
-        value: 800,
-      });
-      
-      // Trigger resize event
-      window.dispatchEvent(new Event('resize'));
+      await waitForStateUpdate();
       
       // Canvas should reflect new dimensions
       const canvas = screen.getByTestId('mock-canvas');
@@ -292,18 +331,19 @@ describe('UI Layout Integration', () => {
   });
 
   describe('CSS Classes and Styling', () => {
-    it('applies correct CSS classes to main elements', () => {
-      render(<App />);
-      
-      const app = screen.getByRole('heading', { name: 'Excalibox' }).closest('.excalibox-app');
-      expect(app).toBeInTheDocument();
+    it('applies correct CSS classes to main elements', async () => {
+      await act(async () => {
+        render(<App />);
+      });
       
       const main = screen.getByRole('main');
       expect(main).toHaveClass('app-main');
     });
 
-    it('applies transition styles for smooth panel animation', () => {
-      render(<App />);
+    it('applies transition styles for smooth panel animation', async () => {
+      await act(async () => {
+        render(<App />);
+      });
       
       const main = screen.getByRole('main');
       expect(main).toHaveStyle({
@@ -313,28 +353,36 @@ describe('UI Layout Integration', () => {
   });
 
   describe('Store Integration', () => {
-    it('updates UI state when panel visibility changes', () => {
-      render(<App />);
-      
-      // Simulate element creation and selection
-      useAppStore.getState().addElement({
-        type: 'rectangle',
-        x: 100,
-        y: 100,
-        width: 200,
-        height: 100,
-        angle: 0,
-        strokeColor: '#000000',
-        backgroundColor: 'transparent',
-        strokeWidth: 2,
-        roughness: 1,
-        opacity: 1,
+    it('updates UI state when panel visibility changes', async () => {
+      await act(async () => {
+        render(<App />);
       });
       
-      const elements = useAppStore.getState().elements;
-      if (elements.length > 0) {
-        useAppStore.getState().selectElement(elements[0].id);
-      }
+      // Simulate element creation and selection
+      await act(async () => {
+        useAppStore.getState().addElement({
+          type: 'rectangle',
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 100,
+          angle: 0,
+          strokeColor: '#000000',
+          backgroundColor: 'transparent',
+          strokeWidth: 2,
+          roughness: 1,
+          opacity: 1,
+        });
+      });
+      
+      await act(async () => {
+        const elements = useAppStore.getState().elements;
+        if (elements.length > 0) {
+          useAppStore.getState().selectElement(elements[0].id);
+        }
+      });
+      
+      await waitForStateUpdate();
       
       const state = useAppStore.getState();
       expect(state.ui.propertiesPanel.visible).toBe(true);

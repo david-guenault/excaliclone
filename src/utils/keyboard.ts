@@ -127,6 +127,13 @@ export class KeyboardManager {
       action: 'zoomToFit',
       preventDefault: true,
     });
+
+    // Grid shortcuts
+    this.addShortcut({
+      key: 'g',
+      action: 'toggleGrid',
+      preventDefault: true,
+    });
   }
 
   private addShortcut(shortcut: KeyboardShortcut) {
