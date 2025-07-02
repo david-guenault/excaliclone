@@ -6,7 +6,6 @@ import { Canvas } from './components/Canvas';
 import { TopToolbar } from './components/TopToolbar';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { ZoomControl } from './components/ZoomControl';
-import { TextEditingOverlay } from './components/TextEditingOverlay';
 import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
@@ -42,12 +41,7 @@ function App() {
     zoomToFit,
     setZoom,
     setPan,
-    saveToHistory,
-    doubleClickTextEditing,
-    startDoubleClickTextEditing,
-    endDoubleClickTextEditing,
-    saveDoubleClickTextEdit,
-    cancelDoubleClickTextEdit
+    saveToHistory
   } = useAppStore();
   
   const [isPanning, setIsPanning] = useState(false);
@@ -94,6 +88,8 @@ function App() {
   const [currentTextId, setCurrentTextId] = useState<string | null>(null);
   const [editingTextPosition, setEditingTextPosition] = useState<Point | null>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [isEditingExistingElement, setIsEditingExistingElement] = useState(false);
+  const [originalText, setOriginalText] = useState<string>('');
   
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
@@ -999,7 +995,7 @@ function App() {
   // Double-click handler for text editing
   const handleCanvasDoubleClick = (point: Point, _event: MouseEvent) => {
     // Don't handle double-click if already in text editing mode
-    if (doubleClickTextEditing.isEditing) return;
+    if (isEditingText) return;
     
     // Transform canvas coordinates to world coordinates
     const worldPoint = {
@@ -1074,12 +1070,13 @@ function App() {
           textPosition = worldPoint;
       }
 
-      // Start text editing
-      startDoubleClickTextEditing(
-        hitElement.id,
-        textPosition,
-        hitElement.text || ''
-      );
+      // Start direct canvas text editing using existing system
+      setIsEditingText(true);
+      setCurrentTextId(hitElement.id);
+      setEditingTextPosition(textPosition);
+      setCursorPosition(hitElement.text ? hitElement.text.length : 0);
+      setIsEditingExistingElement(true);
+      setOriginalText(hitElement.text || '');
     }
   };
 
@@ -1124,14 +1121,20 @@ function App() {
 
   const handleTextFinish = () => {
     if (currentTextId) {
-      // Check if text element is empty and remove it
       const { elements, deleteElement } = useAppStore.getState();
       const textElement = elements.find(el => el.id === currentTextId);
-      if (textElement && (!textElement.text || textElement.text.trim() === '')) {
-        deleteElement(currentTextId);
-      } else {
-        // Save final text to history
+      
+      if (isEditingExistingElement) {
+        // For existing elements, always save changes to history
         saveToHistory();
+      } else {
+        // For new text elements, check if empty and remove if so
+        if (textElement && (!textElement.text || textElement.text.trim() === '')) {
+          deleteElement(currentTextId);
+        } else {
+          // Save final text to history
+          saveToHistory();
+        }
       }
     }
     
@@ -1139,19 +1142,29 @@ function App() {
     setCurrentTextId(null);
     setEditingTextPosition(null);
     setCursorPosition(0);
+    setIsEditingExistingElement(false);
+    setOriginalText('');
   };
 
   const handleTextCancel = () => {
     if (currentTextId) {
-      // Remove text element on cancel
-      const { deleteElement } = useAppStore.getState();
-      deleteElement(currentTextId);
+      if (isEditingExistingElement) {
+        // For existing elements, restore original text
+        updateElementSilent(currentTextId, { text: originalText });
+      } else {
+        // Only remove text element on cancel if it's a new element
+        const { deleteElement } = useAppStore.getState();
+        deleteElement(currentTextId);
+      }
     }
     
     setIsEditingText(false);
     setCurrentTextId(null);
     setEditingTextPosition(null);
     setCursorPosition(0);
+    setIsEditingExistingElement(false);
+    setOriginalText('');
+    setOriginalText('');
   };
 
   // Handle cursor blinking for text editing
@@ -1300,17 +1313,6 @@ function App() {
           onDoubleClick={handleCanvasDoubleClick}
           onWheel={handleCanvasWheel}
         />
-        
-        {/* Double-click text editing overlay */}
-        {doubleClickTextEditing.isEditing && doubleClickTextEditing.position && (
-          <TextEditingOverlay
-            elementId={doubleClickTextEditing.elementId!}
-            position={doubleClickTextEditing.position}
-            initialText={doubleClickTextEditing.initialText}
-            onSave={saveDoubleClickTextEdit}
-            onCancel={cancelDoubleClickTextEdit}
-          />
-        )}
         
       </main>
     </div>
