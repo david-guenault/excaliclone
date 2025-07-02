@@ -1,0 +1,251 @@
+/* ABOUTME: Styles for AdvancedColorPicker component based on design_examples/COLOR_PICKER_PERSONALISE.png */
+/* ABOUTME: Modal overlay with frequently used colors, main palette, nuances, and hex input sections */
+
+.advanced-color-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.advanced-color-picker {
+  position: absolute;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+  animation: slideIn 0.15s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.advanced-color-picker__section {
+  margin-bottom: 16px;
+}
+
+.advanced-color-picker__section:last-child {
+  margin-bottom: 0;
+}
+
+.advanced-color-picker__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+  text-transform: none;
+}
+
+/* Section 1: Frequently Used Colors */
+.advanced-color-picker__frequently-used {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-width: 72px; /* 3 × 16px + 2 × 6px gaps */
+}
+
+.advanced-color-picker__frequent-color {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  background: none;
+  padding: 0;
+}
+
+.advanced-color-picker__frequent-color:hover {
+  transform: scale(1.1);
+  border-color: #374151;
+}
+
+.advanced-color-picker__usage-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #374151;
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Section 2: Main Color Palette */
+.advanced-color-picker__main-palette {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  max-width: 120px; /* 5 × 20px + 4 × 4px gaps */
+}
+
+.advanced-color-picker__color {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  background: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.advanced-color-picker__color:hover {
+  transform: scale(1.05);
+  border-color: #374151;
+  z-index: 1;
+}
+
+.advanced-color-picker__color.active {
+  border-color: #1971c2;
+  border-width: 2px;
+  transform: scale(1.05);
+}
+
+.advanced-color-picker__shortcut {
+  font-size: 8px;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.6);
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+}
+
+/* Adjust text color for light backgrounds */
+.advanced-color-picker__color[style*="#ffffff"] .advanced-color-picker__shortcut,
+.advanced-color-picker__color[style*="#f8f9fa"] .advanced-color-picker__shortcut,
+.advanced-color-picker__color[style*="#e9ecef"] .advanced-color-picker__shortcut,
+.advanced-color-picker__color[style*="#fff"] .advanced-color-picker__shortcut {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+/* Section 3: Nuances */
+.advanced-color-picker__nuances {
+  display: flex;
+  gap: 4px;
+  max-width: 120px;
+}
+
+.advanced-color-picker__nuance {
+  width: 20px;
+  height: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  background: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.advanced-color-picker__nuance:hover {
+  transform: scale(1.05);
+  border-color: #374151;
+}
+
+.advanced-color-picker__nuance.active {
+  border-color: #1971c2;
+  border-width: 2px;
+  transform: scale(1.05);
+}
+
+.advanced-color-picker__nuance-number {
+  font-size: 8px;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.6);
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+}
+
+/* Section 4: Hex Input */
+.advanced-color-picker__hex-form {
+  width: 100%;
+}
+
+.advanced-color-picker__hex-input-container {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 4px 8px;
+  background: #ffffff;
+  transition: border-color 0.15s ease;
+  max-width: 120px;
+}
+
+.advanced-color-picker__hex-input-container:focus-within {
+  border-color: #1971c2;
+}
+
+.advanced-color-picker__hex-prefix {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-right: 2px;
+}
+
+.advanced-color-picker__hex-input {
+  border: none;
+  outline: none;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: #374151;
+  background: transparent;
+  width: 60px;
+  padding: 0;
+}
+
+.advanced-color-picker__hex-input.invalid {
+  color: #dc2626;
+}
+
+.advanced-color-picker__hex-input.valid {
+  color: #059669;
+}
+
+.advanced-color-picker__hex-preview {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .advanced-color-picker {
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}

@@ -46,10 +46,13 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    return {
+    const point = {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
     };
+    
+    
+    return point;
   }, []);
 
   const handleMouseDown = useCallback((event: MouseEvent) => {

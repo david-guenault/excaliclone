@@ -104,3 +104,7 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
 ## Prompting Best Practices
 
 - Pense a mettre a jour le prompt plan après chaque prompt réalisé
+
+## Miscellaneous Reminders
+
+- Rappelle-toi de ne pas oublier de commiter après des corrections ou des ajouts de fonctionalités.

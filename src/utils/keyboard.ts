@@ -94,6 +94,23 @@ export class KeyboardManager {
       preventDefault: true,
     });
 
+    // Style copy/paste shortcuts
+    this.addShortcut({
+      key: 'c',
+      ctrlKey: true,
+      shiftKey: true,
+      action: 'copyStyle',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'v',
+      ctrlKey: true,
+      shiftKey: true,
+      action: 'pasteStyle',
+      preventDefault: true,
+    });
+
     this.addShortcut({
       key: 'a',
       ctrlKey: true,

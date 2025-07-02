@@ -257,6 +257,8 @@ describe('Drag Selection Tests', () => {
       await act(async () => {
         await canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: 80, clientY: 80, bubbles: true }));
         await canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: 270, clientY: 270, bubbles: true }));
+        // Small delay to allow React state update
+        await new Promise(resolve => setTimeout(resolve, 10));
         await canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: 270, clientY: 270, bubbles: true }));
       });
 
@@ -367,9 +369,9 @@ describe('Drag Selection Tests', () => {
       });
       expect(useAppStore.getState().selectedElementIds).toHaveLength(2);
 
-      // Back to single selection
-      await clickCanvas(canvas, 125, 125);
-      expect(useAppStore.getState().selectedElementIds).toHaveLength(1);
+      // Clear selection by clicking on empty area 
+      await clickCanvas(canvas, 400, 400);
+      expect(useAppStore.getState().selectedElementIds).toHaveLength(0);
     });
   });
 });

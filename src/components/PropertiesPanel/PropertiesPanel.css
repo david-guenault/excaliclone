@@ -251,6 +251,18 @@
   font-size: 12px;
 }
 
+.line-cap-preview {
+  font-family: monospace;
+  font-size: 11px;
+  letter-spacing: -1px;
+}
+
+.line-join-preview {
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1;
+}
+
 /* Typography Controls */
 .properties-panel__text-align {
   display: flex;
@@ -291,6 +303,58 @@
   color: #6b7280;
   min-width: 20px;
   text-align: center;
+}
+
+/* Value Display for Sliders */
+.properties-panel__value-display {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-top: 6px;
+  padding: 2px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+/* Arrowhead Selectors Section */
+.properties-panel__arrowhead-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.properties-panel__arrowhead-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.properties-panel__arrowhead-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  text-align: center;
+}
+
+/* Arrowhead preview icons */
+.arrowhead-preview {
+  font-size: 11px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 12px;
+}
+
+.arrowhead-start {
+  /* Style for start arrowhead previews */
+}
+
+.arrowhead-end {
+  /* Style for end arrowhead previews */
 }
 
 .properties-panel__slider {

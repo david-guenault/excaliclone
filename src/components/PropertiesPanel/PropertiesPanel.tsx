@@ -16,9 +16,11 @@ import {
   FONT_FAMILY_PRESETS,
   FONT_WEIGHT_PRESETS,
   FONT_STYLE_PRESETS,
-  TEXT_DECORATION_PRESETS
+  TEXT_DECORATION_PRESETS,
+  DEFAULT_ARROWHEADS,
+  ARROWHEAD_TYPES
 } from '../../constants';
-import type { StrokeStyle, FillStyle, CornerStyle, TextAlign, FontWeight, FontStyle, TextDecoration } from '../../types';
+import type { StrokeStyle, FillStyle, CornerStyle, TextAlign, FontWeight, FontStyle, TextDecoration, ArrowheadType } from '../../types';
 import { SimpleColorPalette } from './SimpleColorPalette';
 import './PropertiesPanel.css';
 import './SimpleColorPalette.css';
@@ -36,7 +38,9 @@ export const PropertiesPanel: React.FC = () => {
     sendBackward,
     bringToFront,
     sendToBack,
-    toggleElementLock
+    toggleElementLock,
+    copyStyle,
+    pasteStyle
   } = useAppStore();
 
   const selectedElements = elements.filter(el => 
@@ -170,24 +174,73 @@ export const PropertiesPanel: React.FC = () => {
           </div>
         </div>
 
+        {/* 5. Extrémités (Arrowheads) - Contextual for lines and arrows */}
+        {(singleElement?.type === 'line' || singleElement?.type === 'arrow' || 
+          (isMultipleSelection && selectedElements.some(el => ['line', 'arrow'].includes(el.type)))) && (
+          <div className="properties-panel__section">
+            <h4 className="properties-panel__section-title">Extrémités</h4>
+            <div className="properties-panel__arrowhead-row">
+              <div className="properties-panel__arrowhead-group">
+                <span className="properties-panel__arrowhead-label">Début</span>
+                <div className="properties-panel__preset-row">
+                  {ARROWHEAD_TYPES.map((arrowhead) => (
+                    <button
+                      key={`start-${arrowhead.type}`}
+                      className={`properties-panel__preset-button ${
+                        (getCurrentValue('startArrowhead') || 'none') === arrowhead.type ? 'active' : ''
+                      }`}
+                      onClick={() => updateElementProperty('startArrowhead', arrowhead.type)}
+                      title={`Début: ${arrowhead.label}`}
+                    >
+                      <span className="arrowhead-preview arrowhead-start">
+                        {arrowhead.icon || '○'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="properties-panel__arrowhead-group">
+                <span className="properties-panel__arrowhead-label">Fin</span>
+                <div className="properties-panel__preset-row">
+                  {ARROWHEAD_TYPES.map((arrowhead) => (
+                    <button
+                      key={`end-${arrowhead.type}`}
+                      className={`properties-panel__preset-button ${
+                        (getCurrentValue('endArrowhead') || 'none') === arrowhead.type ? 'active' : ''
+                      }`}
+                      onClick={() => updateElementProperty('endArrowhead', arrowhead.type)}
+                      title={`Fin: ${arrowhead.label}`}
+                    >
+                      <span className="arrowhead-preview arrowhead-end">
+                        {arrowhead.icon || '○'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 6. Style de tracé (Roughness) */}
         <div className="properties-panel__section">
           <h4 className="properties-panel__section-title">Style de tracé</h4>
-          <div className="properties-panel__preset-row">
-            {ROUGHNESS_SIMPLE_PRESETS.map((preset) => (
-              <button
-                key={preset.value}
-                className={`properties-panel__preset-button ${
-                  Math.abs((getCurrentValue('roughness') as number) - preset.value) < 0.1 ? 'active' : ''
-                }`}
-                onClick={() => updateElementProperty('roughness', preset.value)}
-                title={preset.name}
-              >
-                <span className="roughness-preview">
-                  {preset.value === 0 ? '—' : preset.value === 1 ? '~' : '∿'}
-                </span>
-              </button>
-            ))}
+          <div className="properties-panel__opacity-slider">
+            <span className="opacity-label">Lisse</span>
+            <input
+              type="range"
+              min="0"
+              max="3"
+              step="0.1"
+              value={getCurrentValue('roughness') as number || 1}
+              onChange={(e) => updateElementProperty('roughness', parseFloat(e.target.value))}
+              className="properties-panel__slider"
+            />
+            <span className="opacity-label">Rugueux</span>
+          </div>
+          <div className="properties-panel__value-display">
+            Rugosité: {((getCurrentValue('roughness') as number) || 1).toFixed(1)}
           </div>
         </div>
 
@@ -384,6 +437,20 @@ export const PropertiesPanel: React.FC = () => {
         <div className="properties-panel__section">
           <h4 className="properties-panel__section-title">Actions</h4>
           <div className="properties-panel__preset-row">
+            <button 
+              className="properties-panel__action-button"
+              onClick={copyStyle}
+              title="Copy Style (Ctrl+Shift+C)"
+            >
+              🎨
+            </button>
+            <button 
+              className="properties-panel__action-button"
+              onClick={pasteStyle}
+              title="Paste Style (Ctrl+Shift+V)"
+            >
+              🖌️
+            </button>
             <button 
               className="properties-panel__action-button"
               onClick={() => isMultipleSelection ? 

@@ -1,0 +1,174 @@
+/* ABOUTME: Styles for ArrowheadSelector and ArrowheadMenu components */
+/* ABOUTME: Based on design_examples/selecteur_extremites_fleches.png design specifications */
+
+/* ArrowheadSelector Component */
+.arrowhead-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.arrowhead-selector__label {
+  font-size: 10px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.arrowhead-selector__button {
+  width: 32px;
+  height: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.arrowhead-selector__button:hover {
+  border-color: #374151;
+  background: #f9fafb;
+}
+
+.arrowhead-selector__button:active {
+  transform: scale(0.98);
+}
+
+.arrowhead-selector__direction {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: bold;
+}
+
+.arrowhead-selector__preview {
+  font-size: 10px;
+  color: #374151;
+  font-weight: bold;
+}
+
+/* ArrowheadMenu Component */
+.arrowhead-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.arrowhead-menu {
+  position: absolute;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  min-width: 120px;
+  pointer-events: auto;
+  animation: slideIn 0.15s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.arrowhead-menu__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.arrowhead-menu__option {
+  width: 32px;
+  height: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-size: 12px;
+  color: #374151;
+}
+
+.arrowhead-menu__option:hover {
+  border-color: #374151;
+  background: #f9fafb;
+  transform: scale(1.05);
+}
+
+.arrowhead-menu__option.active {
+  border-color: #8B5CF6;
+  background: #f3f4f6;
+  color: #8B5CF6;
+}
+
+.arrowhead-menu__option-icon {
+  font-weight: bold;
+}
+
+/* More options section */
+.arrowhead-menu__more {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 6px;
+}
+
+.arrowhead-menu__more-button {
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.15s ease;
+}
+
+.arrowhead-menu__more-button:not(:disabled):hover {
+  background: #f9fafb;
+  color: #374151;
+}
+
+.arrowhead-menu__more-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.arrowhead-menu__more-arrow {
+  font-size: 8px;
+  opacity: 0.7;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .arrowhead-menu {
+    max-width: 90vw;
+  }
+  
+  .arrowhead-selector__button,
+  .arrowhead-menu__option {
+    min-height: 28px; /* Larger touch targets on mobile */
+  }
+}
