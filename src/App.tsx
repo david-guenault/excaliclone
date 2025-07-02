@@ -6,6 +6,7 @@ import { Canvas } from './components/Canvas';
 import { TopToolbar } from './components/TopToolbar';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { ZoomControl } from './components/ZoomControl';
+import { TextEditingOverlay } from './components/TextEditingOverlay';
 import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
@@ -41,7 +42,12 @@ function App() {
     zoomToFit,
     setZoom,
     setPan,
-    saveToHistory
+    saveToHistory,
+    doubleClickTextEditing,
+    startDoubleClickTextEditing,
+    endDoubleClickTextEditing,
+    saveDoubleClickTextEdit,
+    cancelDoubleClickTextEdit
   } = useAppStore();
   
   const [isPanning, setIsPanning] = useState(false);
@@ -990,6 +996,125 @@ function App() {
     }
   };
 
+  // Double-click handler for text editing
+  const handleCanvasDoubleClick = (point: Point, _event: MouseEvent) => {
+    // Don't handle double-click if already in text editing mode
+    if (doubleClickTextEditing.isEditing) return;
+    
+    // Transform canvas coordinates to world coordinates
+    const worldPoint = {
+      x: (point.x / viewport.zoom) + viewport.pan.x,
+      y: (point.y / viewport.zoom) + viewport.pan.y,
+    };
+
+    // Find element at the clicked position (front-to-back search)
+    const hitElement = elements
+      .filter((el) => !el.locked) // Skip locked elements
+      .slice() // Prevent array mutation
+      .reverse() // Search from front to back (newest to oldest)
+      .find((element) => {
+        // Hit test for different element types
+        switch (element.type) {
+          case 'rectangle':
+            return (
+              worldPoint.x >= element.x &&
+              worldPoint.x <= element.x + element.width &&
+              worldPoint.y >= element.y &&
+              worldPoint.y <= element.y + element.height
+            );
+          case 'circle':
+            const centerX = element.x + element.width / 2;
+            const centerY = element.y + element.height / 2;
+            const radiusX = element.width / 2;
+            const radiusY = element.height / 2;
+            const dx = (worldPoint.x - centerX) / radiusX;
+            const dy = (worldPoint.y - centerY) / radiusY;
+            return dx * dx + dy * dy <= 1;
+          case 'line':
+          case 'arrow':
+            // Simple line hit test with tolerance
+            const tolerance = Math.max(element.strokeWidth * 2, 10);
+            const lineStart = { x: element.x, y: element.y };
+            const lineEnd = { x: element.x + element.width, y: element.y + element.height };
+            const distance = pointToLineDistance(worldPoint, lineStart, lineEnd);
+            return distance <= tolerance;
+          default:
+            return false;
+        }
+      });
+
+    if (hitElement) {
+      // Calculate text position based on element type
+      let textPosition: Point;
+      
+      switch (hitElement.type) {
+        case 'rectangle':
+          // Center of rectangle
+          textPosition = {
+            x: hitElement.x + hitElement.width / 2,
+            y: hitElement.y + hitElement.height / 2,
+          };
+          break;
+        case 'circle':
+          // Center of circle
+          textPosition = {
+            x: hitElement.x + hitElement.width / 2,
+            y: hitElement.y + hitElement.height / 2,
+          };
+          break;
+        case 'line':
+        case 'arrow':
+          // Midpoint of line/arrow
+          textPosition = {
+            x: hitElement.x + hitElement.width / 2,
+            y: hitElement.y + hitElement.height / 2,
+          };
+          break;
+        default:
+          textPosition = worldPoint;
+      }
+
+      // Start text editing
+      startDoubleClickTextEditing(
+        hitElement.id,
+        textPosition,
+        hitElement.text || ''
+      );
+    }
+  };
+
+  // Helper function to calculate distance from point to line
+  const pointToLineDistance = (point: Point, lineStart: Point, lineEnd: Point): number => {
+    const A = point.x - lineStart.x;
+    const B = point.y - lineStart.y;
+    const C = lineEnd.x - lineStart.x;
+    const D = lineEnd.y - lineStart.y;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    
+    if (lenSq === 0) return Math.sqrt(A * A + B * B);
+    
+    let param = dot / lenSq;
+    
+    let xx: number, yy: number;
+    
+    if (param < 0) {
+      xx = lineStart.x;
+      yy = lineStart.y;
+    } else if (param > 1) {
+      xx = lineEnd.x;
+      yy = lineEnd.y;
+    } else {
+      xx = lineStart.x + param * C;
+      yy = lineStart.y + param * D;
+    }
+    
+    const dx = point.x - xx;
+    const dy = point.y - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
   // Text editing handlers
   const handleTextInput = (text: string) => {
     if (currentTextId) {
@@ -1172,8 +1297,20 @@ function App() {
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleCanvasMouseMove}
           onMouseUp={handleCanvasMouseUp}
+          onDoubleClick={handleCanvasDoubleClick}
           onWheel={handleCanvasWheel}
         />
+        
+        {/* Double-click text editing overlay */}
+        {doubleClickTextEditing.isEditing && doubleClickTextEditing.position && (
+          <TextEditingOverlay
+            elementId={doubleClickTextEditing.elementId!}
+            position={doubleClickTextEditing.position}
+            initialText={doubleClickTextEditing.initialText}
+            onSave={saveDoubleClickTextEdit}
+            onCancel={cancelDoubleClickTextEdit}
+          />
+        )}
         
       </main>
     </div>

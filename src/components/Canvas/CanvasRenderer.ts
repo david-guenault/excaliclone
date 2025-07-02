@@ -179,6 +179,11 @@ export class CanvasRenderer {
     );
     
     this.rough.draw(shape);
+    
+    // Draw text if present
+    if (element.text && element.text.trim() !== '') {
+      this.drawTextInShape(element);
+    }
   }
 
   private drawCircle(element: Element) {
@@ -228,6 +233,11 @@ export class CanvasRenderer {
     });
     
     this.rough.draw(shape);
+    
+    // Draw text if present
+    if (element.text && element.text.trim() !== '') {
+      this.drawTextInShape(element);
+    }
   }
 
   private drawLine(element: Element) {
@@ -279,6 +289,11 @@ export class CanvasRenderer {
         element.roughness || 1
       );
     }
+    
+    // Draw text label if present
+    if (element.text && element.text.trim() !== '') {
+      this.drawTextOnLine(element);
+    }
   }
 
   private drawArrow(element: Element) {
@@ -329,6 +344,11 @@ export class CanvasRenderer {
         element.strokeWidth,
         element.roughness || 1
       );
+    }
+    
+    // Draw text label if present
+    if (element.text && element.text.trim() !== '') {
+      this.drawTextOnLine(element);
     }
   }
 
@@ -794,6 +814,135 @@ export class CanvasRenderer {
     }
     
     // Restore context state
+    this.ctx.restore();
+  }
+
+  private drawTextInShape(element: Element) {
+    if (!element.text || element.text.trim() === '') return;
+    
+    this.ctx.save();
+    
+    // Set text properties
+    const fontSize = element.fontSize || 16;
+    const fontFamily = element.fontFamily || 'Inter';
+    const fontWeight = element.fontWeight || 'normal';
+    const fontStyle = element.fontStyle || 'normal';
+    
+    this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+    this.ctx.fillStyle = element.strokeColor || '#000000';
+    this.ctx.textBaseline = 'middle';
+    
+    // Calculate text position based on element shape and alignment
+    let x: number;
+    let y: number;
+    
+    if (element.type === 'rectangle') {
+      // Center text in rectangle
+      x = element.width / 2;
+      y = element.height / 2;
+      
+      // Apply text alignment
+      switch (element.textAlign || 'center') {
+        case 'left':
+          x = 10; // 10px padding from left
+          this.ctx.textAlign = 'left';
+          break;
+        case 'right':
+          x = element.width - 10; // 10px padding from right
+          this.ctx.textAlign = 'right';
+          break;
+        case 'center':
+        default:
+          this.ctx.textAlign = 'center';
+          break;
+      }
+    } else if (element.type === 'circle') {
+      // Center text in circle
+      x = element.width / 2;
+      y = element.height / 2;
+      this.ctx.textAlign = 'center';
+    }
+    
+    // Draw text
+    this.ctx.fillText(element.text, x, y);
+    
+    // Draw text decoration if specified
+    if (element.textDecoration === 'underline') {
+      const textMetrics = this.ctx.measureText(element.text);
+      const underlineY = y + fontSize * 0.1;
+      
+      this.ctx.strokeStyle = element.strokeColor || '#000000';
+      this.ctx.lineWidth = 1;
+      this.ctx.beginPath();
+      this.ctx.moveTo(x - textMetrics.width / 2, underlineY);
+      this.ctx.lineTo(x + textMetrics.width / 2, underlineY);
+      this.ctx.stroke();
+    }
+    
+    this.ctx.restore();
+  }
+
+  private drawTextOnLine(element: Element) {
+    if (!element.text || element.text.trim() === '') return;
+    
+    this.ctx.save();
+    
+    // Set text properties
+    const fontSize = element.fontSize || 14; // Slightly smaller for line labels
+    const fontFamily = element.fontFamily || 'Inter';
+    const fontWeight = element.fontWeight || 'normal';
+    const fontStyle = element.fontStyle || 'normal';
+    
+    this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+    this.ctx.fillStyle = element.strokeColor || '#000000';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    
+    // Calculate midpoint of line
+    const midX = element.width / 2;
+    const midY = element.height / 2;
+    
+    // Calculate line angle for text rotation
+    const lineAngle = Math.atan2(element.height, element.width);
+    
+    // Position text slightly above the line
+    const offset = fontSize / 2 + 5; // 5px additional offset
+    const offsetX = -Math.sin(lineAngle) * offset;
+    const offsetY = Math.cos(lineAngle) * offset;
+    
+    const textX = midX + offsetX;
+    const textY = midY + offsetY;
+    
+    // Add background rectangle for better readability
+    const textMetrics = this.ctx.measureText(element.text);
+    const padding = 4;
+    const bgWidth = textMetrics.width + padding * 2;
+    const bgHeight = fontSize + padding * 2;
+    
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    this.ctx.fillRect(
+      textX - bgWidth / 2,
+      textY - bgHeight / 2,
+      bgWidth,
+      bgHeight
+    );
+    
+    // Draw text
+    this.ctx.fillStyle = element.strokeColor || '#000000';
+    this.ctx.fillText(element.text, textX, textY);
+    
+    // Draw text decoration if specified
+    if (element.textDecoration === 'underline') {
+      const underlineY = textY + fontSize * 0.1;
+      
+      this.ctx.strokeStyle = element.strokeColor || '#000000';
+      this.ctx.lineWidth = 1;
+      this.ctx.beginPath();
+      this.ctx.moveTo(textX - textMetrics.width / 2, underlineY);
+      this.ctx.lineTo(textX + textMetrics.width / 2, underlineY);
+      this.ctx.stroke();
+    }
+    
     this.ctx.restore();
   }
 }

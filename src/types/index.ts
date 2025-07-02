@@ -12,6 +12,13 @@ export interface TextEditingState {
   cursorPosition: number;
 }
 
+export interface DoubleClickTextEditingState {
+  isEditing: boolean;
+  elementId: string | null;
+  position: Point | null;
+  initialText: string;
+}
+
 export interface Rect {
   x: number;
   y: number;
@@ -147,4 +154,5 @@ export interface AppState {
   clipboard: Element[] | null;
   styleClipboard: StyleClipboard | null;
   recentColors: string[];
+  doubleClickTextEditing: DoubleClickTextEditingState;
 }

@@ -2,7 +2,7 @@
 // ABOUTME: Centralized state for elements, tools, viewport, and UI settings
 
 import { create } from 'zustand';
-import type { AppState, Element, ToolType, Point, StyleClipboard } from '../types';
+import type { AppState, Element, ToolType, Point, StyleClipboard, DoubleClickTextEditingState } from '../types';
 import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG, RECENT_COLORS_STORAGE_KEY, MAX_RECENT_COLORS, GRID_CONFIG } from '../constants';
 import { generateId } from '../utils';
 
@@ -60,6 +60,11 @@ interface AppStore extends AppState {
   pasteStyle: () => void;
   // History Actions
   saveToHistory: () => void;
+  // Double-Click Text Editing Actions
+  startDoubleClickTextEditing: (elementId: string, position: Point, initialText: string) => void;
+  endDoubleClickTextEditing: () => void;
+  saveDoubleClickTextEdit: (text: string) => void;
+  cancelDoubleClickTextEdit: () => void;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -98,6 +103,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   clipboard: null,
   styleClipboard: null,
   recentColors: JSON.parse(localStorage.getItem(RECENT_COLORS_STORAGE_KEY) || '[]'),
+  doubleClickTextEditing: {
+    isEditing: false,
+    elementId: null,
+    position: null,
+    initialText: '',
+  },
 
   // Actions
   addElement: (elementData) => {
@@ -844,6 +855,68 @@ export const useAppStore = create<AppStore>((set, get) => ({
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };
+    });
+  },
+
+  // Double-Click Text Editing Actions
+  startDoubleClickTextEditing: (elementId: string, position: Point, initialText: string) => {
+    set({
+      doubleClickTextEditing: {
+        isEditing: true,
+        elementId,
+        position,
+        initialText,
+      },
+    });
+  },
+
+  endDoubleClickTextEditing: () => {
+    set({
+      doubleClickTextEditing: {
+        isEditing: false,
+        elementId: null,
+        position: null,
+        initialText: '',
+      },
+    });
+  },
+
+  saveDoubleClickTextEdit: (text: string) => {
+    set((state) => {
+      if (!state.doubleClickTextEditing.elementId) return state;
+
+      const newElements = state.elements.map((el) =>
+        el.id === state.doubleClickTextEditing.elementId 
+          ? { ...el, text }
+          : el
+      );
+
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+
+      return {
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+        doubleClickTextEditing: {
+          isEditing: false,
+          elementId: null,
+          position: null,
+          initialText: '',
+        },
+      };
+    });
+  },
+
+  cancelDoubleClickTextEdit: () => {
+    set({
+      doubleClickTextEditing: {
+        isEditing: false,
+        elementId: null,
+        position: null,
+        initialText: '',
+      },
     });
   },
 }));
