@@ -5,9 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Canvas } from './components/Canvas';
 import { TopToolbar } from './components/TopToolbar';
 import { PropertiesPanel } from './components/PropertiesPanel';
+import { ZoomControl } from './components/ZoomControl';
 import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
-import { LINE_CONFIG, ARROW_CONFIG } from './constants';
+import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
 import { snapPointToGridWithDistance } from './utils/grid';
 import type { Point } from './types';
 import './App.css';
@@ -17,7 +18,9 @@ function App() {
     viewport, 
     elements, 
     addElement, 
+    addElementSilent,
     updateElement,
+    updateElementSilent,
     activeTool, 
     toolOptions,
     ui,
@@ -32,6 +35,8 @@ function App() {
     selectAll,
     copy,
     paste,
+    copyStyle,
+    pasteStyle,
     resetZoom,
     zoomToFit,
     setZoom,
@@ -150,8 +155,8 @@ function App() {
     const modifiers = keyboardManager.getModifierState();
     const endPoint = snapAngle(lineStart!, snappedPoint, modifiers.shift);
     
-    const { updateElement } = useAppStore.getState();
-    updateElement(currentLineId!, {
+    const { updateElementSilent } = useAppStore.getState();
+    updateElementSilent(currentLineId!, {
       width: endPoint.x - lineStart!.x,
       height: endPoint.y - lineStart!.y,
     });
@@ -168,8 +173,8 @@ function App() {
     const modifiers = keyboardManager.getModifierState();
     const endPoint = snapAngle(arrowStart!, snappedPoint, modifiers.shift);
     
-    const { updateElement } = useAppStore.getState();
-    updateElement(currentArrowId!, {
+    const { updateElementSilent } = useAppStore.getState();
+    updateElementSilent(currentArrowId!, {
       width: endPoint.x - arrowStart!.x,
       height: endPoint.y - arrowStart!.y,
     });
@@ -207,8 +212,8 @@ function App() {
       y: height >= 0 ? rectangleStart!.y : rectangleStart!.y + height,
     };
     
-    const { updateElement } = useAppStore.getState();
-    updateElement(currentRectangleId!, finalUpdate);
+    const { updateElementSilent } = useAppStore.getState();
+    updateElementSilent(currentRectangleId!, finalUpdate);
   };
 
   const handleCircleDrawingCanvasMove = (point: Point) => {
@@ -239,8 +244,8 @@ function App() {
       y: height >= 0 ? circleStart!.y : circleStart!.y + height,
     };
     
-    const { updateElement } = useAppStore.getState();
-    updateElement(currentCircleId!, finalUpdate);
+    const { updateElementSilent } = useAppStore.getState();
+    updateElementSilent(currentCircleId!, finalUpdate);
   };
 
   const handleRectangleDrawingCanvasUp = (point: Point) => {
@@ -422,15 +427,16 @@ function App() {
   // NOTE: Removed global rectangle and circle mouse up handlers
   // These tools now use Canvas events exclusively for better coordinate handling
 
-  const completeDragSelection = () => {
-    if (!dragSelectionStart || !dragSelectionEnd) return;
+  const completeDragSelection = (endPoint?: Point) => {
+    const finalEndPoint = endPoint || dragSelectionEnd;
+    if (!dragSelectionStart || !finalEndPoint) return;
     
     // Calculate selection rectangle bounds
     const selectionRect = {
-      x: Math.min(dragSelectionStart.x, dragSelectionEnd.x),
-      y: Math.min(dragSelectionStart.y, dragSelectionEnd.y),
-      width: Math.abs(dragSelectionEnd.x - dragSelectionStart.x),
-      height: Math.abs(dragSelectionEnd.y - dragSelectionStart.y),
+      x: Math.min(dragSelectionStart.x, finalEndPoint.x),
+      y: Math.min(dragSelectionStart.y, finalEndPoint.y),
+      width: Math.abs(finalEndPoint.x - dragSelectionStart.x),
+      height: Math.abs(finalEndPoint.y - dragSelectionStart.y),
     };
     
     // Find elements that intersect with the selection rectangle
@@ -442,12 +448,14 @@ function App() {
         const selectionRight = selectionRect.x + selectionRect.width;
         const selectionBottom = selectionRect.y + selectionRect.height;
         
-        return !(
+        const intersects = !(
           element.x > selectionRight ||
           elementRight < selectionRect.x ||
           element.y > selectionBottom ||
           elementBottom < selectionRect.y
         );
+        
+        return intersects;
       })
       .map(element => element.id);
     
@@ -479,10 +487,13 @@ function App() {
 
   const handleCanvasMouseDown = (point: Point, _event: MouseEvent) => {
     // Transform canvas coordinates to world coordinates for proper hit testing
+    // Inverse transformation of: scale(zoom, zoom) -> translate(-pan.x, -pan.y)
     const worldPoint = {
-      x: point.x / viewport.zoom + viewport.pan.x,
-      y: point.y / viewport.zoom + viewport.pan.y,
+      x: (point.x / viewport.zoom) + viewport.pan.x,
+      y: (point.y / viewport.zoom) + viewport.pan.y,
     };
+    
+    
     
     // Check for space+drag panning
     if (keyboardManager.isSpacePressedNow()) {
@@ -494,7 +505,11 @@ function App() {
     
     // Check if we're clicking on an existing element (for selection)
     if (activeTool === 'select') {
-      const clickedElement = elements.find(element => {
+      const clickedElement = elements
+        .filter(element => !element.locked) // Skip locked elements
+        .slice() // Create a copy before reversing to avoid mutating the original array
+        .reverse() // Search from front to back (newest to oldest)
+        .find(element => {
         // Special hit testing for pen strokes
         if (element.type === 'pen' && element.points && element.points.length > 1) {
           // Check if click is near any segment of the pen stroke
@@ -531,6 +546,45 @@ function App() {
             }
           }
           return false;
+        }
+        
+        // Special hit testing for lines and arrows (linear elements)
+        if (element.type === 'line' || element.type === 'arrow') {
+          const tolerance = Math.max(element.strokeWidth * 2, 12) / viewport.zoom; // Generous tolerance for lines/arrows
+          
+          // For lines and arrows, we need to check distance to the actual line, not the bounding box
+          const startX = element.x;
+          const startY = element.y;
+          const endX = element.x + element.width;
+          const endY = element.y + element.height;
+          
+          // Calculate distance from click point to line segment
+          const A = worldPoint.x - startX;
+          const B = worldPoint.y - startY;
+          const C = endX - startX;
+          const D = endY - startY;
+          
+          const dot = A * C + B * D;
+          const lenSq = C * C + D * D;
+          
+          if (lenSq === 0) {
+            // Start and end points are the same (degenerate line)
+            const distance = Math.sqrt(A * A + B * B);
+            return distance <= tolerance;
+          }
+          
+          let param = dot / lenSq;
+          param = Math.max(0, Math.min(1, param)); // Clamp to segment
+          
+          const closestX = startX + param * C;
+          const closestY = startY + param * D;
+          
+          const distance = Math.sqrt(
+            (worldPoint.x - closestX) * (worldPoint.x - closestX) + 
+            (worldPoint.y - closestY) * (worldPoint.y - closestY)
+          );
+          
+          return distance <= tolerance;
         }
         
         // Standard bounding box hit testing for other elements
@@ -581,7 +635,7 @@ function App() {
       setRectangleStart(snappedPoint);
       
       // Create a temporary rectangle element with minimal size
-      const createdElement = addElement({
+      const createdElement = addElementSilent({
         type: 'rectangle',
         x: snappedPoint.x,
         y: snappedPoint.y,
@@ -609,7 +663,7 @@ function App() {
       setCircleStart(snappedPoint);
       
       // Create a temporary circle element with minimal size
-      const createdElement = addElement({
+      const createdElement = addElementSilent({
         type: 'circle',
         x: snappedPoint.x,
         y: snappedPoint.y,
@@ -637,7 +691,7 @@ function App() {
       setLineStart(snappedPoint);
       
       // Create a temporary line element
-      const createdElement = addElement({
+      const createdElement = addElementSilent({
         type: 'line',
         x: snappedPoint.x,
         y: snappedPoint.y,
@@ -648,9 +702,11 @@ function App() {
         backgroundColor: 'transparent', // Lines don't use background
         strokeWidth: toolOptions.strokeWidth,
         strokeStyle: toolOptions.strokeStyle,
-        fillStyle: 'transparent', // Lines don't use fill
+        fillStyle: 'solid', // Lines use solid fill by default
         roughness: toolOptions.roughness,
         opacity: toolOptions.opacity,
+        endArrowhead: DEFAULT_ARROWHEADS.LINE_END, // No arrowhead at end by default for lines
+        startArrowhead: DEFAULT_ARROWHEADS.LINE_START, // No arrowhead at start by default for lines
       });
       
       setCurrentLineId(createdElement.id);
@@ -667,7 +723,7 @@ function App() {
       setArrowStart(snappedPoint);
       
       // Create a temporary arrow element
-      const createdElement = addElement({
+      const createdElement = addElementSilent({
         type: 'arrow',
         x: snappedPoint.x,
         y: snappedPoint.y,
@@ -678,11 +734,11 @@ function App() {
         backgroundColor: 'transparent', // Arrows don't use background
         strokeWidth: toolOptions.strokeWidth,
         strokeStyle: toolOptions.strokeStyle,
-        fillStyle: 'transparent', // Arrows don't use fill
+        fillStyle: 'solid', // Arrows use solid fill by default
         roughness: toolOptions.roughness,
         opacity: toolOptions.opacity,
-        endArrowHead: ARROW_CONFIG.DEFAULT_ARROWHEAD, // Default triangle arrowhead at end
-        startArrowHead: 'none', // No arrowhead at start by default
+        endArrowhead: DEFAULT_ARROWHEADS.ARROW_END, // Default triangle arrowhead at end
+        startArrowhead: DEFAULT_ARROWHEADS.ARROW_START, // No arrowhead at start by default
       });
       
       setCurrentArrowId(createdElement.id);
@@ -695,7 +751,7 @@ function App() {
       setIsDrawingPen(true);
       setPenPoints([snappedPoint]);
       
-      const createdElement = addElement({
+      const createdElement = addElementSilent({
         type: 'pen',
         x: snappedPoint.x,
         y: snappedPoint.y,
@@ -706,7 +762,7 @@ function App() {
         backgroundColor: toolOptions.backgroundColor,
         strokeWidth: toolOptions.strokeWidth,
         strokeStyle: toolOptions.strokeStyle,
-        fillStyle: 'transparent', // Pen strokes don't have fill
+        fillStyle: 'solid', // Pen strokes use solid fill by default
         roughness: toolOptions.roughness,
         opacity: toolOptions.opacity,
         points: [snappedPoint],
@@ -722,7 +778,7 @@ function App() {
       setCursorPosition(0);
       
       // Create a temporary text element
-      const createdElement = addElement({
+      const createdElement = addElementSilent({
         type: 'text',
         x: snappedPoint.x,
         y: snappedPoint.y,
@@ -757,6 +813,8 @@ function App() {
       y: point.y / viewport.zoom + viewport.pan.y,
     };
     
+    // DEBUG: Log mouse move events
+    
     if (isPanning && panStart && panStartViewport.current) {
       const dx = point.x - panStart.x;
       const dy = point.y - panStart.y;
@@ -789,7 +847,7 @@ function App() {
       const maxY = Math.max(...newPoints.map(p => p.y));
       
       // Update the pen element with new points and bounding box
-      updateElement(currentPenId, { 
+      updateElementSilent(currentPenId, { 
         x: minX,
         y: minY,
         width: Math.max(maxX - minX, 1),
@@ -810,11 +868,11 @@ function App() {
       } : { x: deltaX, y: deltaY };
       
       // Update all selected elements based on their initial positions
-      const { updateElement } = useAppStore.getState();
+      const { updateElementSilent } = useAppStore.getState();
       selectedElementIds.forEach(elementId => {
         const initialPosition = dragStartPositions.get(elementId);
         if (initialPosition) {
-          updateElement(elementId, { 
+          updateElementSilent(elementId, { 
             x: initialPosition.x + finalDelta.x,
             y: initialPosition.y + finalDelta.y
           });
@@ -860,6 +918,8 @@ function App() {
     
     // Handle pen drawing completion
     if (isDrawingPen && currentPenId) {
+      // Save final pen drawing to history
+      saveToHistory();
       setIsDrawingPen(false);
       setCurrentPenId(null);
       setPenPoints([]);
@@ -876,8 +936,8 @@ function App() {
     }
     
     // Handle drag selection completion
-    if (isDragSelecting && dragSelectionStart && dragSelectionEnd) {
-      completeDragSelection();
+    if (isDragSelecting && dragSelectionStart) {
+      completeDragSelection(worldPoint);
     }
     
     // Delegate to global mouse up for line/arrow operations only
@@ -901,8 +961,8 @@ function App() {
       
       // Convert mouse position to world coordinates before zoom
       const worldPointBefore = {
-        x: (mouseX / viewport.zoom) + viewport.pan.x,
-        y: (mouseY / viewport.zoom) + viewport.pan.y
+        x: mouseX / viewport.zoom + viewport.pan.x,
+        y: mouseY / viewport.zoom + viewport.pan.y
       };
       
       // Calculate new zoom level
@@ -911,8 +971,8 @@ function App() {
       
       // Convert the same mouse position to world coordinates after zoom
       const worldPointAfter = {
-        x: (mouseX / newZoom) + viewport.pan.x,
-        y: (mouseY / newZoom) + viewport.pan.y
+        x: mouseX / newZoom + viewport.pan.x,
+        y: mouseY / newZoom + viewport.pan.y
       };
       
       // Calculate the difference and adjust pan to keep the point under cursor fixed
@@ -933,7 +993,7 @@ function App() {
   // Text editing handlers
   const handleTextInput = (text: string) => {
     if (currentTextId) {
-      updateElement(currentTextId, { text });
+      updateElementSilent(currentTextId, { text });
     }
   };
 
@@ -944,6 +1004,9 @@ function App() {
       const textElement = elements.find(el => el.id === currentTextId);
       if (textElement && (!textElement.text || textElement.text.trim() === '')) {
         deleteElement(currentTextId);
+      } else {
+        // Save final text to history
+        saveToHistory();
       }
     }
     
@@ -1053,6 +1116,8 @@ function App() {
     keyboardManager.on('selectAll', selectAll);
     keyboardManager.on('copy', copy);
     keyboardManager.on('paste', paste);
+    keyboardManager.on('copyStyle', copyStyle);
+    keyboardManager.on('pasteStyle', pasteStyle);
     keyboardManager.on('resetZoom', resetZoom);
     keyboardManager.on('zoomToFit', zoomToFit);
 
@@ -1064,15 +1129,18 @@ function App() {
       keyboardManager.off('selectAll');
       keyboardManager.off('copy');
       keyboardManager.off('paste');
+      keyboardManager.off('copyStyle');
+      keyboardManager.off('pasteStyle');
       keyboardManager.off('resetZoom');
       keyboardManager.off('zoomToFit');
     };
-  }, [setActiveTool, undo, redo, deleteSelectedElements, selectAll, copy, paste, resetZoom, zoomToFit]);
+  }, [setActiveTool, undo, redo, deleteSelectedElements, selectAll, copy, paste, copyStyle, pasteStyle, resetZoom, zoomToFit]);
 
   return (
     <div className="excalibox-app">
       <TopToolbar />
       <PropertiesPanel />
+      <ZoomControl />
       
       <main 
         className="app-main"
@@ -1106,6 +1174,7 @@ function App() {
           onMouseUp={handleCanvasMouseUp}
           onWheel={handleCanvasWheel}
         />
+        
       </main>
     </div>
   );

@@ -106,7 +106,7 @@ describe('Line Tool', () => {
         backgroundColor: 'transparent',
         strokeWidth: 2,
         strokeStyle: 'solid',
-        fillStyle: 'transparent',
+        fillStyle: 'solid',
         roughness: 1,
         opacity: 1,
         cornerStyle: 'sharp',
@@ -291,7 +291,7 @@ describe('Line Tool', () => {
             backgroundColor: 'transparent',
             strokeWidth: 5,
             strokeStyle: 'dashed',
-            fillStyle: 'transparent',
+            fillStyle: 'solid',
             roughness: 2,
             opacity: 0.7,
             cornerStyle: 'sharp',
@@ -340,7 +340,7 @@ describe('Line Tool', () => {
       expect(line.roughness).toBe(2);
       expect(line.opacity).toBe(0.7);
       expect(line.backgroundColor).toBe('transparent');
-      expect(line.fillStyle).toBe('transparent');
+      expect(line.fillStyle).toBe('solid');
     });
   });
 

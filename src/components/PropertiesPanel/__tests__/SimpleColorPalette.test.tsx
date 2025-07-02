@@ -53,7 +53,7 @@ describe('SimpleColorPalette', () => {
         />
       );
       
-      const currentColorButton = screen.getByLabelText('Open color picker');
+      const currentColorButton = screen.getByLabelText('Open advanced color picker');
       expect(currentColorButton).toBeInTheDocument();
     });
 
@@ -119,7 +119,7 @@ describe('SimpleColorPalette', () => {
         />
       );
       
-      const currentColorButton = screen.getByLabelText('Open color picker');
+      const currentColorButton = screen.getByLabelText('Open advanced color picker');
       await user.click(currentColorButton);
       
       expect(screen.getByDisplayValue('#000000')).toBeInTheDocument();
@@ -137,7 +137,7 @@ describe('SimpleColorPalette', () => {
         />
       );
       
-      const currentColorButton = screen.getByLabelText('Open color picker');
+      const currentColorButton = screen.getByLabelText('Open advanced color picker');
       await user.click(currentColorButton);
       
       const hexInput = screen.getByDisplayValue('#000000');
@@ -162,7 +162,7 @@ describe('SimpleColorPalette', () => {
         />
       );
       
-      const currentColorButton = screen.getByLabelText('Open color picker');
+      const currentColorButton = screen.getByLabelText('Open advanced color picker');
       await user.click(currentColorButton);
       
       const cancelButton = screen.getByTitle('Cancel');
@@ -185,7 +185,7 @@ describe('SimpleColorPalette', () => {
       
       expect(screen.getByLabelText('Select #000000 color')).toBeInTheDocument();
       expect(screen.getByLabelText('Select #ff0000 color')).toBeInTheDocument();
-      expect(screen.getByLabelText('Open color picker')).toBeInTheDocument();
+      expect(screen.getByLabelText('Open advanced color picker')).toBeInTheDocument();
     });
   });
 });

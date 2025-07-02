@@ -352,6 +352,6 @@ describe('Pen Tool', () => {
     expect(penElement.strokeWidth).toBe(5);
     expect(penElement.roughness).toBe(2);
     expect(penElement.opacity).toBe(0.8);
-    expect(penElement.fillStyle).toBe('transparent'); // Pen strokes don't have fill
+    expect(penElement.fillStyle).toBe('solid'); // Pen strokes use solid fill by default
   });
 });

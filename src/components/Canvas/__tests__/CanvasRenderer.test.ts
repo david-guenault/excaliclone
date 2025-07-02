@@ -44,6 +44,7 @@ describe('CanvasRenderer', () => {
       strokeRect: vi.fn(),
       beginPath: vi.fn(),
       arc: vi.fn(),
+      ellipse: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
       stroke: vi.fn(),
@@ -55,13 +56,17 @@ describe('CanvasRenderer', () => {
       rotate: vi.fn(),
       fillText: vi.fn(),
       strokeText: vi.fn(),
+      measureText: vi.fn(() => ({ width: 100 })),
+      setLineDash: vi.fn(),
+      getLineDash: vi.fn(() => []),
       canvas: { width: 800, height: 600 },
       strokeStyle: '',
       fillStyle: '',
       lineWidth: 1,
       globalAlpha: 1,
       font: '',
-      textBaseline: 'top',
+      textAlign: 'start',
+      textBaseline: 'alphabetic',
     };
 
     mockViewport = {
@@ -107,6 +112,8 @@ describe('CanvasRenderer', () => {
         strokeColor: '#000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'solid',
         roughness: 1,
         opacity: 1,
       };
@@ -146,6 +153,8 @@ describe('CanvasRenderer', () => {
       strokeColor: '#ff0000',
       backgroundColor: '#00ff00',
       strokeWidth: 3,
+      strokeStyle: 'solid',
+      fillStyle: 'hachure',
       roughness: 1,
       opacity: 0.8,
     };
@@ -225,6 +234,8 @@ describe('CanvasRenderer', () => {
         strokeColor: '#000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'solid',
         roughness: 1,
         opacity: 1,
       },
@@ -239,6 +250,8 @@ describe('CanvasRenderer', () => {
         strokeColor: '#ff0000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'solid',
         roughness: 1,
         opacity: 1,
       },
@@ -287,6 +300,8 @@ describe('CanvasRenderer', () => {
       strokeColor: '#000',
       backgroundColor: '#ff0000',
       strokeWidth: 2,
+      strokeStyle: 'solid',
+      fillStyle: 'hachure',
       roughness: 1,
       opacity: 1,
     };
@@ -322,7 +337,7 @@ describe('CanvasRenderer', () => {
 
       expect(mockGenerator.rectangle).toHaveBeenCalledWith(
         expect.any(Number), expect.any(Number), expect.any(Number), expect.any(Number),
-        expect.objectContaining({ fill: undefined })
+        expect.objectContaining({ fill: "none" })
       );
     });
 
@@ -362,6 +377,8 @@ describe('CanvasRenderer', () => {
       strokeColor: '#000',
       backgroundColor: '#00ff00',
       strokeWidth: 2,
+      strokeStyle: 'solid',
+      fillStyle: 'hachure',
       roughness: 1,
       opacity: 1,
     };
@@ -407,7 +424,7 @@ describe('CanvasRenderer', () => {
 
       expect(mockGenerator.circle).toHaveBeenCalledWith(
         expect.any(Number), expect.any(Number), expect.any(Number),
-        expect.objectContaining({ fill: undefined })
+        expect.objectContaining({ fill: "none" })
       );
     });
 
@@ -438,6 +455,8 @@ describe('CanvasRenderer', () => {
       strokeColor: '#000',
       backgroundColor: 'transparent',
       strokeWidth: 2,
+      strokeStyle: 'solid',
+      fillStyle: 'solid',
       roughness: 1,
       opacity: 1,
     };
@@ -473,6 +492,8 @@ describe('CanvasRenderer', () => {
       strokeColor: '#000',
       backgroundColor: 'transparent',
       strokeWidth: 2,
+      strokeStyle: 'solid',
+      fillStyle: 'solid',
       roughness: 1,
       opacity: 1,
     };
@@ -512,6 +533,8 @@ describe('CanvasRenderer', () => {
       strokeColor: '#000',
       backgroundColor: '#ffff00',
       strokeWidth: 2,
+      strokeStyle: 'solid',
+      fillStyle: 'solid',
       roughness: 1,
       opacity: 1,
       text: 'Hello World',
@@ -572,6 +595,8 @@ describe('CanvasRenderer', () => {
       strokeColor: '#000',
       backgroundColor: 'transparent',
       strokeWidth: 2,
+      strokeStyle: 'solid',
+      fillStyle: 'solid',
       roughness: 1,
       opacity: 1,
       points: [

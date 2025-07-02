@@ -4,7 +4,7 @@
 import rough from 'roughjs';
 import type { Element, Viewport, GridSettings, ArrowheadType, Point, TextEditingState } from '../../types';
 import { renderGrid } from '../../utils/grid';
-import { ARROW_CONFIG } from '../../constants';
+import { ARROW_CONFIG, ARROWHEAD_CONFIG } from '../../constants';
 
 export class CanvasRenderer {
   private ctx: CanvasRenderingContext2D;
@@ -27,11 +27,11 @@ export class CanvasRenderer {
   private getShapeCacheKey(element: Element): string {
     // Create a unique key based on element properties that affect shape generation
     // Include element ID to ensure each element has its own cache entry
-    let key = `${element.id}-${element.type}-${element.width}-${element.height}-${element.roughness || 1}-${element.strokeWidth}-${element.strokeColor || '#000000'}-${element.strokeStyle || 'solid'}-${element.fillStyle || 'transparent'}-${element.backgroundColor || 'transparent'}`;
+    let key = `${element.id}-${element.type}-${element.width}-${element.height}-${element.roughness || 1}-${element.strokeWidth}-${element.strokeColor || '#000000'}-${element.strokeStyle || 'solid'}-${element.fillStyle || 'solid'}-${element.backgroundColor || 'transparent'}`;
     
-    // Include arrow-specific properties
-    if (element.type === 'arrow') {
-      key += `-${element.startArrowHead || 'none'}-${element.endArrowHead || 'none'}`;
+    // Include arrowhead properties for arrows and lines
+    if (element.type === 'arrow' || element.type === 'line') {
+      key += `-${element.startArrowhead || 'none'}-${element.endArrowhead || 'none'}`;
     }
     
     // Include pen points for proper caching
@@ -145,42 +145,40 @@ export class CanvasRenderer {
   private drawRectangle(element: Element) {
     if (!this.rough || !this.rough.generator) return;
     
-    // Only draw fill with Rough.js if there's actually a fill
-    if (element.backgroundColor !== 'transparent' && element.fillStyle !== 'transparent') {
-      const shape = this.getCachedShape(element, () => 
-        this.rough.generator.rectangle(0, 0, element.width, element.height, {
-          stroke: 'none', // No stroke from Rough.js
-          fill: element.backgroundColor,
-          strokeWidth: 0,
-          roughness: element.roughness || 1,
-          fillStyle: element.fillStyle,
-        })
-      );
-      
-      this.rough.draw(shape);
+    // Build Rough.js options
+    const options: any = {
+      roughness: element.roughness || 1,
+    };
+
+    // Set fill if specified
+    if (element.backgroundColor !== 'transparent') {
+      options.fill = element.backgroundColor;
+      options.fillStyle = element.fillStyle;
+    } else {
+      options.fill = 'none';
     }
-    
-    // Then draw stroke with native Canvas for style support
+
+    // Set stroke if specified
     if (element.strokeColor && element.strokeColor !== 'transparent') {
-      this.ctx.save();
+      options.stroke = element.strokeColor;
+      options.strokeWidth = element.strokeWidth;
       
-      this.ctx.strokeStyle = element.strokeColor;
-      this.ctx.lineWidth = element.strokeWidth;
-      this.ctx.lineCap = 'round';
-      this.ctx.lineJoin = 'round';
-      
-      // Apply stroke style
+      // Add stroke style support
       if (element.strokeStyle === 'dashed') {
-        this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+        options.strokeLineDash = [element.strokeWidth * 3, element.strokeWidth * 2];
       } else if (element.strokeStyle === 'dotted') {
-        this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
-      } else {
-        this.ctx.setLineDash([]);
+        options.strokeLineDash = [element.strokeWidth, element.strokeWidth * 1.5];
       }
-      
-      this.ctx.strokeRect(0, 0, element.width, element.height);
-      this.ctx.restore();
+    } else {
+      options.stroke = 'none';
     }
+
+    // Draw rectangle with Rough.js
+    const shape = this.getCachedShape(element, () => 
+      this.rough.generator.rectangle(0, 0, element.width, element.height, options)
+    );
+    
+    this.rough.draw(shape);
   }
 
   private drawCircle(element: Element) {
@@ -188,66 +186,54 @@ export class CanvasRenderer {
     const centerX = element.width / 2;
     const centerY = element.height / 2;
     
-    // Only draw fill with Rough.js if there's actually a fill
-    if (element.backgroundColor !== 'transparent' && element.fillStyle !== 'transparent') {
-      const shape = this.getCachedShape(element, () => {
-        const options = {
-          stroke: 'none', // No stroke from Rough.js
-          fill: element.backgroundColor,
-          strokeWidth: 0,
-          roughness: element.roughness || 1,
-          fillStyle: element.fillStyle,
-        };
-        
-        // For circles/ellipses, use ellipse if width != height, otherwise circle
-        if (Math.abs(element.width - element.height) < 1) {
-          // Draw as circle
-          const radius = element.width / 2;
-          return this.rough.generator.circle(centerX, centerY, radius * 2, options);
-        } else {
-          // Draw as ellipse
-          return this.rough.generator.ellipse(centerX, centerY, element.width, element.height, options);
-        }
-      });
-      
-      this.rough.draw(shape);
+    // Build Rough.js options
+    const options: any = {
+      roughness: element.roughness || 1,
+    };
+
+    // Set fill if specified
+    if (element.backgroundColor !== 'transparent') {
+      options.fill = element.backgroundColor;
+      options.fillStyle = element.fillStyle;
+    } else {
+      options.fill = 'none';
     }
-    
-    // Then draw stroke with native Canvas for style support
+
+    // Set stroke if specified
     if (element.strokeColor && element.strokeColor !== 'transparent') {
-      this.ctx.save();
+      options.stroke = element.strokeColor;
+      options.strokeWidth = element.strokeWidth;
       
-      this.ctx.strokeStyle = element.strokeColor;
-      this.ctx.lineWidth = element.strokeWidth;
-      this.ctx.lineCap = 'round';
-      this.ctx.lineJoin = 'round';
-      
-      // Apply stroke style
+      // Add stroke style support
       if (element.strokeStyle === 'dashed') {
-        this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+        options.strokeLineDash = [element.strokeWidth * 3, element.strokeWidth * 2];
       } else if (element.strokeStyle === 'dotted') {
-        this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
-      } else {
-        this.ctx.setLineDash([]);
+        options.strokeLineDash = [element.strokeWidth, element.strokeWidth * 1.5];
       }
-      
-      // Draw circle or ellipse stroke
-      this.ctx.beginPath();
-      if (Math.abs(element.width - element.height) < 1) {
-        // Circle
-        const radius = element.width / 2;
-        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-      } else {
-        // Ellipse
-        this.ctx.ellipse(centerX, centerY, element.width / 2, element.height / 2, 0, 0, 2 * Math.PI);
-      }
-      this.ctx.stroke();
-      this.ctx.restore();
+    } else {
+      options.stroke = 'none';
     }
+
+    // Draw circle/ellipse with Rough.js
+    const shape = this.getCachedShape(element, () => {
+      // For circles/ellipses, use ellipse if width != height, otherwise circle
+      if (Math.abs(element.width - element.height) < 1) {
+        // Draw as circle
+        const radius = element.width / 2;
+        return this.rough.generator.circle(centerX, centerY, radius * 2, options);
+      } else {
+        // Draw as ellipse
+        return this.rough.generator.ellipse(centerX, centerY, element.width, element.height, options);
+      }
+    });
+    
+    this.rough.draw(shape);
   }
 
   private drawLine(element: Element) {
     if (!this.rough || !this.rough.generator) return;
+    
+    // Use Rough.js for line rendering
     const options: any = {
       stroke: element.strokeColor,
       strokeWidth: element.strokeWidth,
@@ -266,10 +252,39 @@ export class CanvasRenderer {
     );
     
     this.rough.draw(shape);
+    
+    // Draw arrowheads if specified for lines
+    const lineAngle = Math.atan2(element.height, element.width);
+    
+    // Draw end arrowhead
+    if (element.endArrowhead && element.endArrowhead !== 'none') {
+      this.drawArrowhead(
+        { x: element.width, y: element.height },
+        lineAngle,
+        element.endArrowhead,
+        element.strokeColor,
+        element.strokeWidth,
+        element.roughness || 1
+      );
+    }
+    
+    // Draw start arrowhead (if specified)
+    if (element.startArrowhead && element.startArrowhead !== 'none') {
+      this.drawArrowhead(
+        { x: 0, y: 0 },
+        lineAngle + Math.PI, // Reverse direction for start arrow
+        element.startArrowhead,
+        element.strokeColor,
+        element.strokeWidth,
+        element.roughness || 1
+      );
+    }
   }
 
   private drawArrow(element: Element) {
     if (!this.rough || !this.rough.generator) return;
+    
+    // Use Rough.js for arrow line rendering
     const options: any = {
       stroke: element.strokeColor,
       strokeWidth: element.strokeWidth,
@@ -293,11 +308,11 @@ export class CanvasRenderer {
     const lineAngle = Math.atan2(element.height, element.width);
     
     // Draw end arrowhead
-    if (element.endArrowHead && element.endArrowHead !== 'none') {
+    if (element.endArrowhead && element.endArrowhead !== 'none') {
       this.drawArrowhead(
         { x: element.width, y: element.height },
         lineAngle,
-        element.endArrowHead,
+        element.endArrowhead,
         element.strokeColor,
         element.strokeWidth,
         element.roughness || 1
@@ -305,11 +320,11 @@ export class CanvasRenderer {
     }
     
     // Draw start arrowhead (if specified)
-    if (element.startArrowHead && element.startArrowHead !== 'none') {
+    if (element.startArrowhead && element.startArrowhead !== 'none') {
       this.drawArrowhead(
         { x: 0, y: 0 },
         lineAngle + Math.PI, // Reverse direction for start arrow
-        element.startArrowHead,
+        element.startArrowhead,
         element.strokeColor,
         element.strokeWidth,
         element.roughness || 1
@@ -325,8 +340,8 @@ export class CanvasRenderer {
     strokeWidth: number,
     roughness: number
   ) {
-    const headLength = ARROW_CONFIG.ARROWHEAD_SIZE * (strokeWidth / 2 + 0.5); // Scale with stroke width
-    const headAngle = ARROW_CONFIG.ARROWHEAD_ANGLE;
+    const headLength = ARROWHEAD_CONFIG.DEFAULT_SIZE * (strokeWidth * ARROWHEAD_CONFIG.SIZE_MULTIPLIER / 2 + 0.5); // Scale with stroke width
+    const headAngle = ARROWHEAD_CONFIG.ANGLE;
     
     switch (type) {
       case 'triangle': {
@@ -381,10 +396,10 @@ export class CanvasRenderer {
         break;
       }
       
-      case 'dot': {
-        // Dot arrowhead
-        const dotRadius = headLength * 0.4;
-        this.rough.circle(position.x, position.y, dotRadius * 2, {
+      case 'circle': {
+        // Circle arrowhead
+        const circleRadius = headLength * 0.4;
+        this.rough.circle(position.x, position.y, circleRadius * 2, {
           stroke: color,
           fill: color,
           strokeWidth: Math.max(1, strokeWidth * 0.7),
@@ -471,6 +486,7 @@ export class CanvasRenderer {
   }
 
   private drawPen(element: Element) {
+    if (!this.rough || !this.rough.generator) return;
     if (!element.points || element.points.length < 2) return;
     
     // Filter out invalid points and ensure we have valid coordinates
@@ -486,50 +502,82 @@ export class CanvasRenderer {
     
     if (validPoints.length < 2) return;
     
-    // Use native Canvas for better stroke style control
-    this.ctx.save();
+    // Convert points to relative coordinates
+    const relativePoints = validPoints.map(point => ({
+      x: point.x - element.x,
+      y: point.y - element.y
+    }));
     
-    // Set stroke properties
-    this.ctx.strokeStyle = element.strokeColor;
-    this.ctx.lineWidth = element.strokeWidth;
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
-    
-    // Apply stroke style
+    // Rough.js options for pen strokes
+    const options: any = {
+      stroke: element.strokeColor,
+      strokeWidth: element.strokeWidth,
+      roughness: element.roughness || 1,
+      fill: 'none'
+    };
+
+    // Add stroke style support
     if (element.strokeStyle === 'dashed') {
-      this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+      options.strokeLineDash = [element.strokeWidth * 3, element.strokeWidth * 2];
     } else if (element.strokeStyle === 'dotted') {
-      this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
+      options.strokeLineDash = [element.strokeWidth, element.strokeWidth * 1.5];
+    }
+
+    // For line caps and joins, use Canvas native rendering
+    if (element.lineCap && element.lineCap !== 'butt' || element.lineJoin && element.lineJoin !== 'miter') {
+      this.ctx.save();
+      
+      // Set stroke properties including caps and joins
+      this.ctx.strokeStyle = element.strokeColor;
+      this.ctx.lineWidth = element.strokeWidth;
+      this.ctx.lineCap = element.lineCap || 'round';
+      this.ctx.lineJoin = element.lineJoin || 'round';
+      
+      // Apply stroke style
+      if (element.strokeStyle === 'dashed') {
+        this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+      } else if (element.strokeStyle === 'dotted') {
+        this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
+      } else {
+        this.ctx.setLineDash([]);
+      }
+      
+      // Draw the complete path
+      this.ctx.beginPath();
+      const firstPoint = relativePoints[0];
+      this.ctx.moveTo(firstPoint.x, firstPoint.y);
+      
+      for (let i = 1; i < relativePoints.length; i++) {
+        const point = relativePoints[i];
+        this.ctx.lineTo(point.x, point.y);
+      }
+      
+      this.ctx.stroke();
+      this.ctx.restore();
     } else {
-      this.ctx.setLineDash([]);
+      // Draw multiple connected line segments with Rough.js for better rough effect
+      // This gives each segment its own rough variation
+      for (let i = 0; i < relativePoints.length - 1; i++) {
+        const start = relativePoints[i];
+        const end = relativePoints[i + 1];
+        
+        // Use individual lines instead of linearPath for better rough effects
+        const lineShape = this.rough.generator.line(
+          start.x, start.y,
+          end.x, end.y,
+          options
+        );
+        
+        this.rough.draw(lineShape);
+      }
     }
-    
-    // Calculate bounding box for coordinate transformation
-    const minX = Math.min(...validPoints.map(p => p.x));
-    const minY = Math.min(...validPoints.map(p => p.y));
-    
-    // Draw the path
-    this.ctx.beginPath();
-    
-    // Move to first point (relative to element position)
-    const firstPoint = validPoints[0];
-    this.ctx.moveTo(firstPoint.x - minX, firstPoint.y - minY);
-    
-    // Draw lines to subsequent points
-    for (let i = 1; i < validPoints.length; i++) {
-      const point = validPoints[i];
-      this.ctx.lineTo(point.x - minX, point.y - minY);
-    }
-    
-    this.ctx.stroke();
-    this.ctx.restore();
   }
 
   private renderSelectionIndicators(elements: Element[], selectedElementIds: string[]) {
     // Save current context state
     this.ctx.save();
     
-    // Apply viewport transformations for proper scaling and positioning
+    // Apply viewport transformations JUST LIKE in renderElement
     this.ctx.scale(this.viewport.zoom, this.viewport.zoom);
     this.ctx.translate(-this.viewport.pan.x, -this.viewport.pan.y);
     
@@ -542,7 +590,7 @@ export class CanvasRenderer {
       const element = elements.find(el => el.id === elementId);
       if (!element) return;
       
-      // Transform to element's coordinate system
+      // Apply element transformations EXACTLY LIKE in renderElement
       this.ctx.save();
       this.ctx.translate(element.x + element.width / 2, element.y + element.height / 2);
       this.ctx.rotate(element.angle);
@@ -550,11 +598,11 @@ export class CanvasRenderer {
       
       // Draw selection outline
       this.ctx.strokeStyle = SELECTION_COLOR;
-      this.ctx.lineWidth = SELECTION_STROKE_WIDTH / this.viewport.zoom;
-      this.ctx.setLineDash([5 / this.viewport.zoom, 5 / this.viewport.zoom]); // Dashed line
+      this.ctx.lineWidth = SELECTION_STROKE_WIDTH / this.viewport.zoom; // Scale with zoom like original
+      this.ctx.setLineDash([5 / this.viewport.zoom, 5 / this.viewport.zoom]); // Scale with zoom like original
       this.ctx.globalAlpha = 0.8;
       
-      // Draw bounding box based on element type
+      // Draw bounding box (back to original element-space coordinates)
       if (element.type === 'rectangle' || element.type === 'circle') {
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
       } else if (element.type === 'line' || element.type === 'arrow') {
@@ -568,30 +616,16 @@ export class CanvasRenderer {
         // For pen strokes, draw a box around the stroke bounds
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
       } else if (element.type === 'text') {
-        // For text elements, calculate actual text bounds (same as drawText)
-        const fontSize = element.fontSize || 16;
-        const fontFamily = element.fontFamily || 'Inter';
-        const fontWeight = element.fontWeight || 'normal';
-        const fontStyle = element.fontStyle || 'normal';
-        
-        this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-        
-        const lines = (element.text || '').split('\n');
-        const lineHeight = fontSize * 1.2;
-        const maxLineWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
-        const textHeight = lines.length * lineHeight;
-        const padding = 4;
-        
-        // Draw selection box around actual text bounds with consistent padding
-        this.ctx.strokeRect(-2, -2, maxLineWidth + (padding * 2) + 4, textHeight + (padding * 2) + 4);
+        // For text elements, use simple bounding box
+        this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
       }
       
-      // Draw resize handles (small squares at corners)
+      // Draw resize handles (back to original element-space coordinates)
       this.ctx.setLineDash([]); // Reset to solid line
       this.ctx.fillStyle = SELECTION_COLOR;
       this.ctx.globalAlpha = 1.0;
       
-      const handleSize = HANDLE_SIZE / this.viewport.zoom;
+      const handleSize = HANDLE_SIZE / this.viewport.zoom; // Scale with zoom like original
       const halfHandle = handleSize / 2;
       
       if (element.type === 'rectangle' || element.type === 'circle') {
@@ -614,7 +648,7 @@ export class CanvasRenderer {
         this.ctx.fillRect(element.width - halfHandle, element.height - halfHandle, handleSize, handleSize);
         this.ctx.strokeRect(element.width - halfHandle, element.height - halfHandle, handleSize, handleSize);
       } else if (element.type === 'pen') {
-        // Corner handles for pen strokes (similar to rectangles)
+        // Corner handles for pen strokes
         const positions = [
           [-halfHandle, -halfHandle], // Top-left
           [element.width - halfHandle, -halfHandle], // Top-right
@@ -627,28 +661,12 @@ export class CanvasRenderer {
           this.ctx.strokeRect(x, y, handleSize, handleSize);
         });
       } else if (element.type === 'text') {
-        // Corner handles for text elements based on actual text bounds (consistent with selection box)
-        const fontSize = element.fontSize || 16;
-        const fontFamily = element.fontFamily || 'Inter';
-        const fontWeight = element.fontWeight || 'normal';
-        const fontStyle = element.fontStyle || 'normal';
-        
-        this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-        
-        const lines = (element.text || '').split('\n');
-        const lineHeight = fontSize * 1.2;
-        const maxLineWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
-        const textHeight = lines.length * lineHeight;
-        const padding = 4;
-        
-        const textBoxWidth = maxLineWidth + (padding * 2);
-        const textBoxHeight = textHeight + (padding * 2);
-        
+        // Corner handles for text elements
         const positions = [
           [-halfHandle, -halfHandle], // Top-left
-          [textBoxWidth - halfHandle, -halfHandle], // Top-right
-          [textBoxWidth - halfHandle, textBoxHeight - halfHandle], // Bottom-right
-          [-halfHandle, textBoxHeight - halfHandle], // Bottom-left
+          [element.width - halfHandle, -halfHandle], // Top-right
+          [element.width - halfHandle, element.height - halfHandle], // Bottom-right
+          [-halfHandle, element.height - halfHandle], // Bottom-left
         ];
         
         positions.forEach(([x, y]) => {
@@ -657,7 +675,7 @@ export class CanvasRenderer {
         });
       }
       
-      this.ctx.restore();
+      this.ctx.restore(); // Restore element transformations
     });
     
     // Restore context state
@@ -668,7 +686,11 @@ export class CanvasRenderer {
     // Save current context state
     this.ctx.save();
     
-    // Calculate rectangle bounds
+    // Apply viewport transformations since dragSelectionRect coordinates are in world space
+    this.ctx.scale(this.viewport.zoom, this.viewport.zoom);
+    this.ctx.translate(-this.viewport.pan.x, -this.viewport.pan.y);
+    
+    // Calculate rectangle bounds in world coordinates
     const x = Math.min(dragSelectionRect.start.x, dragSelectionRect.end.x);
     const y = Math.min(dragSelectionRect.start.y, dragSelectionRect.end.y);
     const width = Math.abs(dragSelectionRect.end.x - dragSelectionRect.start.x);
@@ -677,8 +699,8 @@ export class CanvasRenderer {
     // Selection rectangle styles
     this.ctx.strokeStyle = '#007acc'; // Blue color
     this.ctx.fillStyle = 'rgba(0, 122, 204, 0.1)'; // Light blue fill
-    this.ctx.lineWidth = 1 / this.viewport.zoom;
-    this.ctx.setLineDash([3 / this.viewport.zoom, 3 / this.viewport.zoom]); // Dashed line
+    this.ctx.lineWidth = 1 / this.viewport.zoom; // Scale line width
+    this.ctx.setLineDash([3 / this.viewport.zoom, 3 / this.viewport.zoom]); // Scale dash
     this.ctx.globalAlpha = 0.8;
     
     // Fill the rectangle with light blue

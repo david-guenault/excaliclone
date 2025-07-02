@@ -709,8 +709,8 @@ describe('Integration Tests - Drawing Workflow', () => {
         strokeStyle: 'solid',
         roughness: 1,
         opacity: 1,
-        endArrowHead: 'triangle',
-        startArrowHead: 'none',
+        endArrowhead: 'triangle',
+        startArrowhead: 'none',
       });
       expect(arrow.id).toBeDefined();
       expect(typeof arrow.x).toBe('number');

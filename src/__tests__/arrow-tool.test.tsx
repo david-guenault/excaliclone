@@ -85,7 +85,7 @@ describe('Arrow Tool', () => {
           backgroundColor: 'transparent',
           strokeWidth: 2,
           strokeStyle: 'solid',
-          fillStyle: 'transparent',
+          fillStyle: 'solid',
           roughness: 1,
           opacity: 1,
         },

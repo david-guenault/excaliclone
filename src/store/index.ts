@@ -2,14 +2,16 @@
 // ABOUTME: Centralized state for elements, tools, viewport, and UI settings
 
 import { create } from 'zustand';
-import type { AppState, Element, ToolType, Point } from '../types';
+import type { AppState, Element, ToolType, Point, StyleClipboard } from '../types';
 import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG, RECENT_COLORS_STORAGE_KEY, MAX_RECENT_COLORS, GRID_CONFIG } from '../constants';
 import { generateId } from '../utils';
 
 interface AppStore extends AppState {
   // Actions
   addElement: (element: Omit<Element, 'id'>) => Element;
+  addElementSilent: (element: Omit<Element, 'id'>) => Element;
   updateElement: (id: string, updates: Partial<Element>) => void;
+  updateElementSilent: (id: string, updates: Partial<Element>) => void;
   deleteElement: (id: string) => void;
   deleteSelectedElements: () => void;
   selectElement: (id: string) => void;
@@ -21,6 +23,8 @@ interface AppStore extends AppState {
   setPan: (pan: Point) => void;
   resetZoom: () => void;
   zoomToFit: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
   copy: () => void;
   paste: () => void;
   undo: () => void;
@@ -51,6 +55,9 @@ interface AppStore extends AppState {
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   toggleElementLock: (id: string) => void;
+  // Style Actions
+  copyStyle: () => void;
+  pasteStyle: () => void;
   // History Actions
   saveToHistory: () => void;
 }
@@ -89,6 +96,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   history: [[]],
   historyIndex: 0,
   clipboard: null,
+  styleClipboard: null,
   recentColors: JSON.parse(localStorage.getItem(RECENT_COLORS_STORAGE_KEY) || '[]'),
 
   // Actions
@@ -101,7 +109,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ...elementData,
       // Default properties for new elements (only if not provided)
       strokeStyle: elementData.strokeStyle || 'solid',
-      fillStyle: elementData.fillStyle || 'transparent',
+      fillStyle: elementData.fillStyle || 'solid',
       cornerStyle: elementData.cornerStyle || 'sharp',
       fontFamily: elementData.fontFamily || 'Inter',
       fontSize: elementData.fontSize || 16,
@@ -128,6 +136,38 @@ export const useAppStore = create<AppStore>((set, get) => ({
     return createdElement;
   },
 
+  addElementSilent: (elementData) => {
+    let createdElement: Element;
+    
+    // Create element first
+    createdElement = {
+      // Apply provided data first, then defaults for missing properties
+      ...elementData,
+      // Default properties for new elements (only if not provided)
+      strokeStyle: elementData.strokeStyle || 'solid',
+      fillStyle: elementData.fillStyle || 'solid',
+      cornerStyle: elementData.cornerStyle || 'sharp',
+      fontFamily: elementData.fontFamily || 'Inter',
+      fontSize: elementData.fontSize || 16,
+      fontWeight: elementData.fontWeight || 'normal',
+      fontStyle: elementData.fontStyle || 'normal',
+      textAlign: elementData.textAlign || 'left',
+      locked: elementData.locked || false,
+      zIndex: elementData.zIndex || 0,
+      id: generateId(),
+    };
+    
+    set((state) => {
+      const newElements = [...state.elements, createdElement];
+      
+      return {
+        elements: newElements,
+      };
+    });
+    
+    return createdElement;
+  },
+
   updateElement: (id, updates) => {
     set((state) => {
       const newElements = state.elements.map((el) =>
@@ -142,6 +182,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
         elements: newElements,
         history: newHistory,
         historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  updateElementSilent: (id, updates) => {
+    set((state) => {
+      const newElements = state.elements.map((el) =>
+        el.id === id ? { ...el, ...updates } : el
+      );
+      
+      return { 
+        elements: newElements,
       };
     });
   },
@@ -323,6 +375,26 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
+  zoomIn: () => {
+    set((state) => {
+      const currentZoom = state.viewport.zoom;
+      const newZoom = Math.min(currentZoom + 0.1, CANVAS_CONFIG.MAX_ZOOM);
+      return {
+        viewport: { ...state.viewport, zoom: newZoom },
+      };
+    });
+  },
+
+  zoomOut: () => {
+    set((state) => {
+      const currentZoom = state.viewport.zoom;
+      const newZoom = Math.max(currentZoom - 0.1, CANVAS_CONFIG.MIN_ZOOM);
+      return {
+        viewport: { ...state.viewport, zoom: newZoom },
+      };
+    });
+  },
+
   copy: () => {
     set((state) => {
       if (state.selectedElementIds.length === 0) return state;
@@ -353,6 +425,104 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return {
         elements: allElements,
         selectedElementIds: newElements.map((el) => el.id),
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  // Style Actions
+  copyStyle: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      // Get the first selected element's style properties
+      const sourceElement = state.elements.find((el) =>
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (!sourceElement) return state;
+      
+      const styleClipboard: StyleClipboard = {
+        strokeColor: sourceElement.strokeColor,
+        backgroundColor: sourceElement.backgroundColor,
+        strokeWidth: sourceElement.strokeWidth,
+        strokeStyle: sourceElement.strokeStyle,
+        fillStyle: sourceElement.fillStyle,
+        roughness: sourceElement.roughness,
+        opacity: sourceElement.opacity,
+        cornerStyle: sourceElement.cornerStyle,
+        fontFamily: sourceElement.fontFamily,
+        fontSize: sourceElement.fontSize,
+        fontWeight: sourceElement.fontWeight,
+        fontStyle: sourceElement.fontStyle,
+        textAlign: sourceElement.textAlign,
+        textDecoration: sourceElement.textDecoration,
+        startArrowhead: sourceElement.startArrowhead,
+        endArrowhead: sourceElement.endArrowhead,
+      };
+      
+      return { styleClipboard };
+    });
+  },
+
+  pasteStyle: () => {
+    set((state) => {
+      if (!state.styleClipboard || state.selectedElementIds.length === 0) return state;
+      
+      const updatedElements = state.elements.map((element) => {
+        if (state.selectedElementIds.includes(element.id)) {
+          const updatedElement = { ...element };
+          
+          // Apply style properties from clipboard
+          updatedElement.strokeColor = state.styleClipboard!.strokeColor;
+          updatedElement.backgroundColor = state.styleClipboard!.backgroundColor;
+          updatedElement.strokeWidth = state.styleClipboard!.strokeWidth;
+          updatedElement.strokeStyle = state.styleClipboard!.strokeStyle;
+          updatedElement.fillStyle = state.styleClipboard!.fillStyle;
+          updatedElement.roughness = state.styleClipboard!.roughness;
+          updatedElement.opacity = state.styleClipboard!.opacity;
+          
+          // Apply conditional properties (only if they exist in clipboard)
+          if (state.styleClipboard!.cornerStyle !== undefined) {
+            updatedElement.cornerStyle = state.styleClipboard!.cornerStyle;
+          }
+          if (state.styleClipboard!.fontFamily !== undefined) {
+            updatedElement.fontFamily = state.styleClipboard!.fontFamily;
+          }
+          if (state.styleClipboard!.fontSize !== undefined) {
+            updatedElement.fontSize = state.styleClipboard!.fontSize;
+          }
+          if (state.styleClipboard!.fontWeight !== undefined) {
+            updatedElement.fontWeight = state.styleClipboard!.fontWeight;
+          }
+          if (state.styleClipboard!.fontStyle !== undefined) {
+            updatedElement.fontStyle = state.styleClipboard!.fontStyle;
+          }
+          if (state.styleClipboard!.textAlign !== undefined) {
+            updatedElement.textAlign = state.styleClipboard!.textAlign;
+          }
+          if (state.styleClipboard!.textDecoration !== undefined) {
+            updatedElement.textDecoration = state.styleClipboard!.textDecoration;
+          }
+          if (state.styleClipboard!.startArrowhead !== undefined) {
+            updatedElement.startArrowhead = state.styleClipboard!.startArrowhead;
+          }
+          if (state.styleClipboard!.endArrowhead !== undefined) {
+            updatedElement.endArrowhead = state.styleClipboard!.endArrowhead;
+          }
+          
+          return updatedElement;
+        }
+        return element;
+      });
+      
+      // Save to history
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(updatedElements);
+      
+      return {
+        elements: updatedElements,
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };

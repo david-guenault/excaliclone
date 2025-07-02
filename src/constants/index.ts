@@ -23,6 +23,8 @@ export const DEFAULT_TOOL_OPTIONS = {
   fontStyle: 'normal' as const,
   textAlign: 'left' as const,
   textDecoration: 'none' as const,
+  startArrowhead: 'none' as const,
+  endArrowhead: 'none' as const,
 } as const;
 
 export const COLORS = {
@@ -140,11 +142,11 @@ export const BACKGROUND_COLORS = [
   '#F3F4F6', // Light Gray
 ] as const;
 
-// Fill Patterns (Remplissage)
+// Fill Patterns (Remplissage) - 3 patterns as per spec
 export const FILL_PATTERNS = [
+  { type: 'solid' as const, icon: '█', label: 'Solid' },
   { type: 'hachure' as const, icon: '▦', label: 'Hachure' },
   { type: 'cross-hatch' as const, icon: '▩', label: 'Cross-hatch' },
-  { type: 'solid' as const, icon: '█', label: 'Solid' },
 ] as const;
 
 // Stroke Width Presets (Largeur du contour)
@@ -155,6 +157,20 @@ export const STROKE_STYLE_PRESETS = [
   { type: 'solid' as const, preview: '━━━━━', label: 'Solid' },
   { type: 'dashed' as const, preview: '┅┅┅┅┅', label: 'Dashed' },
   { type: 'dotted' as const, preview: '·····', label: 'Dotted' },
+] as const;
+
+// Line Cap Presets (Terminaisons de ligne)
+export const LINE_CAP_PRESETS = [
+  { type: 'butt' as const, preview: '━━━', label: 'Butt' },
+  { type: 'round' as const, preview: '●━━━●', label: 'Round' },
+  { type: 'square' as const, preview: '■━━━■', label: 'Square' },
+] as const;
+
+// Line Join Presets (Jonctions de ligne)
+export const LINE_JOIN_PRESETS = [
+  { type: 'miter' as const, preview: '⟨⟩', label: 'Miter' },
+  { type: 'round' as const, preview: '◜◝', label: 'Round' },
+  { type: 'bevel' as const, preview: '⌜⌝', label: 'Bevel' },
 ] as const;
 
 // Roughness Presets simplified (Style de tracé)
@@ -225,19 +241,82 @@ export const MAX_RECENT_COLORS = 12;
 
 // Properties Panel Color Palettes (5 predefined + 1 current/picker)
 export const PANEL_STROKE_COLORS = [
-  '#000000', // Black
-  '#c92a2a', // Red  
-  '#2b8a3e', // Green
-  '#1864ab', // Blue
-  '#e67700', // Orange
+  '#000000', // Noir
+  '#e03131', // Rouge
+  '#2f9e44', // Vert
+  '#1971c2', // Bleu
+  '#f08c00', // Orange
 ] as const;
 
 export const PANEL_BACKGROUND_COLORS = [
   'transparent', // Transparent
-  '#ffffff',     // White
-  '#f1f3f5',     // Light Gray
-  '#d0ebff',     // Light Blue
-  '#fff3bf',     // Light Yellow
+  '#ffc9c9',     // Rouge clair
+  '#b2f2bb',     // Vert clair
+  '#a5d8ff',     // Bleu clair
+  '#ffec99',     // Jaune clair
+] as const;
+
+// Advanced Color Picker Constants
+export const ADVANCED_COLOR_PICKER = {
+  FREQUENTLY_USED_STORAGE_KEY: 'excalibox-frequently-used-colors',
+  MAX_FREQUENTLY_USED: 6,
+  MODAL_WIDTH: 240,
+  MODAL_HEIGHT: 360,
+} as const;
+
+// Main Color Palette for Advanced Picker (organized by hue families)
+export const MAIN_COLOR_PALETTE = [
+  // Row 1: Grays and basics
+  '#ffffff', '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da',
+  // Row 2: Reds
+  '#ffe8e8', '#ffc9c9', '#ffa8a8', '#ff8787', '#ff6b6b',
+  // Row 3: Greens  
+  '#d3f9d8', '#b2f2bb', '#8ce99a', '#69db7c', '#51cf66',
+  // Row 4: Blues
+  '#d0ebff', '#a5d8ff', '#74c0fc', '#4dabf7', '#339af0',
+  // Row 5: Yellows/Oranges
+  '#fff3bf', '#ffec99', '#ffe066', '#ffd43b', '#fcc419',
+] as const;
+
+// Keyboard shortcuts for main palette (q, w, e, r, t, etc.)
+export const COLOR_KEYBOARD_SHORTCUTS = [
+  'q', 'w', 'e', 'r', 't',
+  'a', 's', 'd', 'f', 'g', 
+  'z', 'x', 'c', 'v', 'b',
+  'y', 'u', 'i', 'o', 'p',
+  'h', 'j', 'k', 'l', 'n'
+] as const;
+
+// Color families for nuances generation
+export const COLOR_FAMILIES = {
+  red: ['#ffe8e8', '#ffc9c9', '#ffa8a8', '#ff8787', '#ff6b6b'],
+  green: ['#d3f9d8', '#b2f2bb', '#8ce99a', '#69db7c', '#51cf66'],
+  blue: ['#d0ebff', '#a5d8ff', '#74c0fc', '#4dabf7', '#339af0'],
+  yellow: ['#fff3bf', '#ffec99', '#ffe066', '#ffd43b', '#fcc419'],
+  gray: ['#ffffff', '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da'],
+} as const;
+
+// Arrowhead Constants
+export const ARROWHEAD_CONFIG = {
+  DEFAULT_SIZE: 12, // Base size in pixels
+  SIZE_MULTIPLIER: 1.5, // Multiplier based on strokeWidth
+  ANGLE: Math.PI / 6, // 30 degrees for triangle arrowheads
+} as const;
+
+// Default arrowhead values
+export const DEFAULT_ARROWHEADS = {
+  ARROW_START: 'none' as const,
+  ARROW_END: 'triangle' as const,
+  LINE_START: 'none' as const,
+  LINE_END: 'none' as const,
+} as const;
+
+// Arrowhead type options for UI
+export const ARROWHEAD_TYPES = [
+  { type: 'none' as const, icon: '', label: 'Aucune' },
+  { type: 'triangle' as const, icon: '▷', label: 'Flèche triangle' },
+  { type: 'line' as const, icon: '⊢', label: 'Flèche ligne' },
+  { type: 'circle' as const, icon: '●', label: 'Point/Cercle' },
 ] as const;
 
 // Re-export color constants
