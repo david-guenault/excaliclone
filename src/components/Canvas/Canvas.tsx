@@ -18,6 +18,7 @@ interface CanvasProps {
   onMouseDown?: (point: Point, event: MouseEvent) => void;
   onMouseMove?: (point: Point, event: MouseEvent) => void;
   onMouseUp?: (point: Point, event: MouseEvent) => void;
+  onDoubleClick?: (point: Point, event: MouseEvent) => void;
   onWheel?: (event: WheelEvent) => void;
 }
 
@@ -33,6 +34,7 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
   onMouseDown,
   onMouseMove,
   onMouseUp,
+  onDoubleClick,
   onWheel,
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -70,6 +72,11 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     onMouseUp?.(point, event);
   }, [getCanvasPoint, onMouseUp]);
 
+  const handleDoubleClick = useCallback((event: MouseEvent) => {
+    const point = getCanvasPoint(event);
+    onDoubleClick?.(point, event);
+  }, [getCanvasPoint, onDoubleClick]);
+
   const handleWheel = useCallback((event: WheelEvent) => {
     onWheel?.(event);
   }, [onWheel]);
@@ -102,15 +109,17 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('dblclick', handleDoubleClick);
     canvas.addEventListener('wheel', handleWheel);
 
     return () => {
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('dblclick', handleDoubleClick);
       canvas.removeEventListener('wheel', handleWheel);
     };
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleWheel]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleDoubleClick, handleWheel]);
 
   return (
     <canvas
