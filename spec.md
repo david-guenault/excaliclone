@@ -78,8 +78,8 @@ interface Element {
   imageUrl?: string; // For image elements
   locked?: boolean; // For element locking
   zIndex?: number; // For layering
-  startArrowHead?: ArrowheadType; // For arrow start
-  endArrowHead?: ArrowheadType; // For arrow end
+  startArrowhead?: ArrowheadType; // For arrow start
+  endArrowhead?: ArrowheadType; // For arrow end
 }
 
 interface Viewport {
@@ -145,16 +145,25 @@ interface UIState {
 - **Circle Tool** (C): Draw circles and ellipses by click+drag to size, constraint with Shift for circles
 - **Arrow Tool** (A): Draw arrows with customizable heads by click+drag
 - **Line Tool** (L): Draw straight lines with angle snapping by click+drag
-- **Pen Tool** (P): Freehand drawing with smooth stroke rendering
+- **Pen Tool** (P): Freehand drawing with Rough.js hand-drawn effects and smooth stroke rendering
 - **Text Tool** (T): Add and edit text directly on canvas with real-time editing
 - **Image Tool** (I): Insert and manage images
 - **Eraser Tool** (E): Remove elements from canvas
 
+### Rough.js Integration
+- **Hand-drawn Aesthetic**: All shapes (rectangles, circles, lines, arrows, pen strokes) rendered with Rough.js for authentic sketched appearance
+- **Configurable Roughness**: Fine-grained roughness control from 0.0 (precise) to 3.0 (very rough) with 0.1 step increments
+- **Complete Coverage**: Both stroke and fill rendering use Rough.js for consistent hand-drawn style across all elements
+- **Performance Optimized**: Shape caching system with Map-based storage and LRU eviction for smooth rendering
+
 #### Selection Behavior
 - **Single Selection**: Click on any element to select it
+- **Overlapping Elements**: When elements overlap, the front-most (newest) element is selected by default
+- **Locked Element Exclusion**: Locked elements are excluded from selection, allowing selection of elements behind them
 - **Multi-Selection**: Click+drag to create selection rectangle for multiple elements
 - **Selection Visual**: Selected elements show selection indicators (handles, bounding box)
 - **Deselection**: Click on empty canvas area to clear selection
+- **Z-Index Aware**: Selection respects visual layering order - front elements have selection priority
 
 #### Tool Modifiers
 - **Shift**: Constrain proportions (squares, circles, 45° angles)
@@ -179,8 +188,6 @@ interface UIState {
 - **Recent Colors**: History of recently used colors
 - **Custom Colors**: Full color picker for palette expansion
 - **Stroke Styles**: Solid, dashed, dotted lines
-- **Line Caps**: Round, square, butt endings
-- **Line Joins**: Round, bevel, miter connections
 - **Fill Options**: Solid, hachure, cross-hatch patterns
 - **Typography**: Font family, size, weight, style controls
 
@@ -264,7 +271,10 @@ interface UIState {
 │elements  │                                             │
 │selected) │                                             │
 │          │                                             │
-└─────────┴─────────────────────────────────────────────┘
+└─────────┴───────────────────────────────┬─────────────┘
+                                          │Zoom Control │
+                                          │(Bottom-Left)│
+                                          └─────────────┘
 ```
 
 ### Top Tool Palette
@@ -284,19 +294,21 @@ interface UIState {
 
 ##### **1. Trait (Stroke Colors)**
 - **Layout**: Single horizontal row with all elements same size
-- **Colors**: 5 predefined colors (black, red, green, blue, orange) + last selected color with color picker access
+- **Colors**: 5 predefined colors (noir #000000, rouge #e03131, vert #2f9e44, bleu #1971c2, orange #f08c00) + last selected color with color picker access
 - **Elements**: 6 equal-sized squares (24px × 24px each)
-- **Last Element**: Shows current selected color and opens color picker on click
+- **Last Element**: Shows current selected color and opens advanced color picker on click
 - **Interaction**: Click predefined colors to select, click last element for custom color picker
 - **Visual**: Square color swatches with rounded corners, uniform sizing, current selection highlighted
+- **Custom Picker**: Advanced interface with frequently used colors, full palette grid, nuances, and hex input
 
 ##### **2. Arrière-plan (Background Colors)**  
 - **Layout**: Single horizontal row with all elements same size
-- **Colors**: 5 predefined fill colors (transparent, white, light gray, light blue, light yellow) + last selected color with color picker access
+- **Colors**: 5 predefined fill colors (transparent, rouge clair #ffc9c9, vert clair #b2f2bb, bleu clair #a5d8ff, jaune clair #ffec99) + last selected color with color picker access
 - **Elements**: 6 equal-sized squares (24px × 24px each)  
-- **Last Element**: Shows current selected fill color and opens color picker on click
+- **Last Element**: Shows current selected fill color and opens advanced color picker on click
 - **Interaction**: Click predefined colors to select, click last element for custom color picker
 - **Visual**: Square color swatches with fill pattern preview, uniform sizing, lighter/softer tones than stroke colors
+- **Custom Picker**: Same advanced interface as stroke colors with frequently used colors, full palette grid, nuances, and hex input
 
 ##### **3. Remplissage (Fill Pattern)**
 - **Layout**: Horizontal row of 3 pattern options
@@ -321,9 +333,11 @@ interface UIState {
 - **Visual**: Line previews showing actual dash/dot patterns
 
 ##### **6. Style de tracé (Drawing Style/Roughness)**
-- **Layout**: Horizontal row of 3 roughness options
-- **Styles**: Smooth, normal, rough (wavy line indicators)
-- **Visual**: Curved line previews showing roughness level
+- **Layout**: Horizontal slider with fine-grained control (0.0 to 3.0 range, step 0.1)
+- **Labels**: "Lisse" to "Rugueux" endpoint labels
+- **Value Display**: Real-time roughness value indicator (e.g., "Rugosité: 1.4")
+- **Visual**: Clean slider track with current value display below
+- **Interaction**: Drag slider for immediate roughness adjustment with live preview
 
 ##### **7. Angles (Corner Style)**
 - **Layout**: Horizontal row of 2 corner options
@@ -373,7 +387,19 @@ interface UIState {
 - **Visual**: Directional arrows with proper Unicode symbols
 - **Interaction**: Single click for immediate layer reordering
 
-##### **13. Actions (Element Operations)**
+##### **13. Extrémités (Arrowheads) - Lines and Arrows Only**
+- **Layout**: Two vertical groups for start and end arrowheads
+- **Groups**: "Début" (start) and "Fin" (end) with 4 options each
+- **Types**: 
+  - None (○) - no arrowhead
+  - Triangle (▷) - filled triangle arrowhead
+  - Line (⊢) - simple line arrowhead
+  - Circle (●) - filled circle arrowhead
+- **Visual**: Small icon previews showing actual arrowhead appearance
+- **Context**: Only visible when lines or arrows are selected
+- **Interaction**: Click to select arrowhead type for each end independently
+
+##### **14. Actions (Element Operations)**
 - **Layout**: Horizontal row of 4 action buttons
 - **Actions**:
   - Duplicate element (📋) - creates copy with 20px offset
@@ -382,6 +408,45 @@ interface UIState {
   - Link element (🔗) - linking functionality placeholder
 - **Visual**: Emoji icons for clear visual recognition
 - **Interaction**: Single click for immediate action with visual state feedback
+
+#### **Advanced Color Picker Interface (based on design_examples/COLOR_PICKER_PERSONALISE.png)**
+
+##### **Section 1: Frequently Used Colors**
+- **Layout**: Top section with small grid of recently/frequently used colors
+- **Grid**: 2 rows × 3 columns of small color squares (16px × 16px)
+- **Colors**: Black and other frequently selected colors with usage counter
+- **Interaction**: Click to select color immediately
+- **Visual**: Rounded squares with subtle borders
+
+##### **Section 2: Main Color Palette**
+- **Layout**: Large grid of predefined colors organized by hue families
+- **Grid**: 5 rows × 3 columns of medium color squares (20px × 20px)  
+- **Organization**: Colors grouped by families (blues, greens, reds, yellows, etc.)
+- **Coverage**: Wide spectrum covering most common design colors
+- **Letters**: Each color labeled with letter (q, w, e, r, t, etc.) for keyboard shortcuts
+- **Interaction**: Click to select, hover shows color name/value
+
+##### **Section 3: Nuances**
+- **Layout**: Horizontal row of color variations
+- **Colors**: 5 variations from light to dark of currently selected hue family
+- **Labels**: Numbered variations (1, 2, 3, 4, 5) with visual previews
+- **Purpose**: Quick access to different shades/tints of chosen color family
+- **Visual**: Rectangular color strips showing gradual intensity changes
+
+##### **Section 4: Hex Code Input**
+- **Layout**: Text input field with hash symbol prefix
+- **Input**: Direct hex code entry (e.g., "ffec99") 
+- **Validation**: Real-time validation with color preview
+- **Format**: 6-character hex without # symbol in input
+- **Interaction**: Type to enter custom color, instant preview update
+
+##### **Overall Design**
+- **Modal Overlay**: Floating modal dialog over main interface
+- **Size**: Compact but comprehensive, approximately 240px × 360px
+- **Sections**: Clear visual separation between each section
+- **Background**: Clean white background with subtle shadows
+- **Typography**: Small, clean labels in French
+- **Close Behavior**: Click outside to close, Escape key to cancel
 
 #### **Design Principles**
 - **Consistent Spacing**: Uniform gaps between sections and elements
@@ -440,6 +505,38 @@ interface UIState {
 - **No Canvas Displacement**: Panel opens as overlay without shifting or resizing the main canvas/diagram area
 - **Absolute Positioning**: Panel positioned absolutely over the canvas, not affecting document flow
 - **Canvas Interaction**: Canvas remains fully interactive and maintains its viewport position when panel opens/closes
+
+### Bottom-Left Zoom Control
+- **Position**: Bottom-left corner of screen, absolutely positioned
+- **Layout**: Horizontal control with 3 elements
+  - Zoom Out button (−) on the left
+  - Current zoom percentage display in center
+  - Zoom In button (+) on the right
+- **Positioning**: 
+  - 16px margin from left screen edge
+  - 16px margin from bottom screen edge
+  - Fixed position overlay, does not affect canvas layout
+- **Visual Design**:
+  - Compact horizontal layout based on design_examples/zoom-control-bot-left.png
+  - Clean, minimalist styling matching overall application theme
+  - Rounded corners and subtle shadows for modern appearance
+  - Consistent button sizing (32px × 28px minimum)
+- **Zoom Range**: 10% to 500% (0.1x to 5x scale factor)
+- **Zoom Steps**: 
+  - Standard increment: 10% per click
+  - Keyboard shortcuts: Ctrl+Scroll for fine control
+- **Percentage Display**: 
+  - Shows current zoom level as percentage (e.g., "125%")
+  - Clean numeric display with % symbol
+  - Updates in real-time during zoom operations
+- **Button Interactions**:
+  - Zoom Out (−): Decreases zoom by 10%, disabled at minimum zoom
+  - Zoom In (+): Increases zoom by 10%, disabled at maximum zoom
+  - Hover states for visual feedback
+- **Integration**: 
+  - Connected to existing viewport zoom system
+  - Maintains cursor-centered zooming behavior
+  - Syncs with Ctrl+Scroll zoom operations
 
 ### Keyboard Shortcuts
 
@@ -523,13 +620,14 @@ interface UIState {
 
 ## Quality Assurance
 
-### Testing Strategy - ✅ COMPLETE
-- **Unit Tests**: All utility functions and core logic (526/526 tests passing)
+### Testing Strategy - ✅ COMPLETE + ENHANCED
+- **Unit Tests**: All utility functions and core logic (530/530 tests passing)
 - **Integration Tests**: Component interactions (complete coverage)
 - **E2E Tests**: Complete user workflows (comprehensive test suite)
 - **Performance Tests**: Large drawing stress tests (error handling complete)
 - **Visual Regression**: Canvas rendering consistency (CanvasRenderer fully tested)
-- **Option B Implementation**: Zero technical debt, 100% test passing rate achieved
+- **Selection Logic Tests**: Overlapping element selection behavior (4 new tests)
+- **Option B Implementation**: Zero technical debt, enhanced selection logic with full test coverage
 
 ### Code Quality - ✅ PRISTINE STATUS
 - **TypeScript**: Strict mode with full type coverage
@@ -602,8 +700,8 @@ interface UIState {
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: 2025-01-28  
+**Document Version**: 1.4  
+**Last Updated**: 2025-07-02  
 **Author**: Development Team  
-**Review Status**: Test Infrastructure Complete - Option B Achieved  
-**Test Status**: 526/526 PASSING (100%) ✅ PRISTINE
+**Review Status**: Zoom Control Specification Added - Bottom-Left UI Component Designed  
+**Test Status**: Fill Pattern Implementation ✅ COMPLETE, Zoom Control Specification ✅ COMPLETE

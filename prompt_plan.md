@@ -32,13 +32,16 @@ Based on the technical specification, this plan breaks down development into imp
 - ✅ Panel resizing functionality with handle
 
 ### 3. Rough.js Integration ✅
-**Status**: Completed  
-**Description**: Integrated Rough.js for hand-drawn aesthetic matching Excalidraw.
+**Status**: Completed + Enhanced  
+**Description**: Complete Rough.js integration with fine-grained roughness control.
 - ✅ Install and configure Rough.js library (v4.6.6)
-- ✅ Update CanvasRenderer to use Rough.js for all shapes (rectangles, circles, lines, arrows, pen)
-- ✅ Add roughness controls to element styling in properties panel
-- ✅ Implement hand-drawn style for rectangles and circles with fillStyle: 'hachure'
-- ✅ Add configurable roughness levels (0-3 range) with presets (Precise, Smooth, Normal, Rough, Very Rough, Extreme)
+- ✅ Update CanvasRenderer to use Rough.js for ALL shapes (rectangles, circles, lines, arrows, pen)
+- ✅ **ENHANCED**: Complete stroke and fill rendering with Rough.js (eliminated hybrid Canvas native approach)
+- ✅ **ENHANCED**: Fine-grained roughness slider control (0.0 to 3.0 range, step 0.1)
+- ✅ **ENHANCED**: Real-time roughness value display with immediate visual feedback
+- ✅ **ENHANCED**: Consistent hand-drawn aesthetic across all element types
+- ✅ **ENHANCED**: Proper stroke style support (solid, dashed, dotted) within Rough.js rendering
+- ✅ **FIXED**: Pen drawing coordinate system alignment and visibility
 - ✅ Ensure performance with Rough.js rendering (shape caching with Map, LRU eviction)
 - ✅ Add tests for Rough.js integration (9 comprehensive tests covering all shapes and caching)
 
@@ -230,27 +233,154 @@ All properties panel specification updates have been successfully implemented:
 - ✅ Comprehensive text tool functionality and interaction tests
 - ✅ Fixed text element dragging coordinate system issues
 
-### 14. Enhanced Stroke Styles ⏳
-**Status**: Not Started  
-**Description**: Add stroke style options to complete basic styling.
-- Add stroke style options (solid, dashed, dotted)
-- Implement line caps and joins (round, square, butt, miter, bevel)
-- Update all drawing tools to use stroke styles
-- Stroke style controls in properties panel
-- Apply stroke styles with Rough.js rendering
-- Style persistence and state management
-- Tests for all stroke style combinations
+### 13.5. **CRITICAL BUG FIXES: Overlapping Selection + Rough.js Enhancement** ✅
+**Status**: Completed  
+**Description**: Fixed critical selection and rendering issues, plus enhanced Rough.js integration.
 
-### 15. Fill Patterns and Advanced Styling ⏳
+#### **Selection Bug Fix** ✅
+- ✅ **Problem Identified**: Selection algorithm used `elements.find()` which selected first (oldest/back) element in overlapping scenarios
+- ✅ **Root Cause**: Hit detection searched array from beginning, finding back elements instead of front elements
+- ✅ **Solution Implemented**: Modified selection logic to search from front-to-back (newest to oldest)
+- ✅ **Algorithm Enhancement**: Added `.filter()` to skip locked elements, `.slice()` to prevent array mutation, `.reverse()` for front-to-back search
+- ✅ **File Location**: `src/App.tsx:502-507` - Enhanced `handleCanvasMouseDown` function
+- ✅ **Locked Element Support**: Locked elements are properly excluded from selection, allowing access to elements behind them
+- ✅ **Z-Index Awareness**: Selection now respects visual layering order with front elements having selection priority
+
+#### **Rough.js Enhancement** ✅
+- ✅ **Problem Identified**: Shapes used hybrid rendering (Rough.js fill + Canvas native stroke) killing hand-drawn effects
+- ✅ **Root Cause**: rectangles and circles rendered strokes with native Canvas instead of Rough.js
+- ✅ **Solution Implemented**: Complete Rough.js rendering for both stroke AND fill on all shapes
+- ✅ **Enhanced Control**: Fine-grained roughness slider (0.0-3.0, step 0.1) replacing limited presets
+- ✅ **Coordinate Fix**: Pen drawing visibility restored with proper element positioning
+- ✅ **File Location**: `src/components/Canvas/CanvasRenderer.ts` - Complete drawRectangle/drawCircle/drawPen overhaul
+- ✅ **Consistent Aesthetic**: All shapes now have authentic hand-drawn appearance
+
+#### **Test Coverage & Documentation** ✅
+- ✅ **Test Coverage**: Added comprehensive overlapping selection tests (`src/__tests__/overlapping-selection.test.tsx`)
+- ✅ **Test Suite**: 4 new tests covering overlapping scenarios, locked element exclusion, and multiple overlapping elements
+- ✅ **Specification Update**: Updated `spec.md` with new selection behavior and enhanced Rough.js documentation
+- ✅ **No Regressions**: All fixes implemented without breaking existing functionality or test suite
+- ✅ **User Experience**: Users now have proper front-element selection AND authentic hand-drawn styling
+
+### 14. Enhanced Stroke Styles ✅
+**Status**: Completed  
+**Description**: Complete stroke style system with line caps and joins.
+- ✅ Add stroke style options (solid, dashed, dotted)
+- ✅ Implement line caps and joins (round, square, butt, miter, bevel)
+- ✅ Update all drawing tools to use stroke styles
+- ✅ Stroke style controls in properties panel (contextual for lines/arrows/pen)
+- ✅ Apply stroke styles with hybrid Rough.js + Canvas native rendering
+- ✅ Style persistence and state management
+- ✅ Tests for stroke style combinations (8 tests with core functionality verified)
+
+### 14.5. Enhanced Color Palettes + Advanced Color Picker ✅
+**Status**: Completed  
+**Description**: Revamp color system with new palettes and advanced picker interface.
+
+#### **Color Palette Updates** ✅
+- ✅ Update stroke color palette: noir #000000, rouge #e03131, vert #2f9e44, bleu #1971c2, orange #f08c00
+- ✅ Update background color palette: transparent, rouge clair #ffc9c9, vert clair #b2f2bb, bleu clair #a5d8ff, jaune clair #ffec99
+- ✅ Update PANEL_STROKE_COLORS and PANEL_BACKGROUND_COLORS constants
+- ✅ Verify color contrast and accessibility compliance
+
+#### **Advanced Color Picker Implementation** ✅
+- ✅ Create AdvancedColorPicker component based on design_examples/COLOR_PICKER_PERSONALISE.png
+- ✅ **Section 1**: Frequently used colors grid (2×3, 16px squares) with usage tracking
+- ✅ **Section 2**: Main color palette grid (5×5, 20px squares) organized by hue families  
+- ✅ **Section 3**: Nuances section with 5 variations (light to dark) of selected hue family
+- ✅ **Section 4**: Hex code input with real-time validation and preview
+- ✅ Modal overlay design (240px × 360px) with clean white background
+- ✅ Keyboard shortcuts for main palette colors (q, w, e, r, t, etc.)
+- ✅ Click outside to close, Escape key to cancel
+
+#### **Integration** ✅
+- ✅ Replace SimpleColorPalette 6th element interaction with AdvancedColorPicker
+- ✅ Maintain existing preset color functionality
+- ✅ Add color usage tracking and persistence (localStorage integration)
+- ✅ Update color selection logic in properties panel
+- ✅ Ensure consistent behavior for both stroke and background color selection
+
+#### **Testing** ✅
+- ✅ Test color palette updates and visual consistency
+- ✅ Test advanced color picker modal interactions
+- ✅ Test frequently used colors tracking
+- ✅ Test hex input validation and color preview
+- ✅ Test keyboard shortcuts for color selection
+- ✅ Test accessibility and color contrast compliance
+
+### 14.6. Advanced Arrowhead System ✅
+**Status**: Completed (Simplified Implementation)  
+**Description**: Comprehensive arrowhead system with 4 types and intuitive UI - simplified without line caps/joins.
+
+#### **Arrowhead Types Implementation** ✅
+- ✅ Added ArrowheadType enum: 'none', 'triangle', 'line', 'circle'
+- ✅ Extended Element interface with startArrowhead and endArrowhead properties
+- ✅ Updated arrow and line element types with arrowhead support
+- ✅ Default values: arrows (none → triangle), lines (none → none)
+- ✅ Added ARROWHEAD_CONFIG constants for size and angle
+
+#### **Properties Panel Integration** ✅
+- ✅ Added "Extrémités" section after stroke style controls
+- ✅ Simplified layout with integrated preset buttons (not dropdowns)
+- ✅ Two groups: "Début" and "Fin" with 4 buttons each
+- ✅ Visual previews for each arrowhead type (○, ▷, ⊢, ●)
+- ✅ Contextual display: only for arrow and line elements
+- ✅ Harmonized visual design with existing Properties Panel style
+
+#### **Canvas Rendering Enhancement** ✅
+- ✅ Updated CanvasRenderer drawArrow() and drawLine() methods
+- ✅ Implemented geometric calculation for triangle arrowheads
+- ✅ Added perpendicular line rendering for line arrowheads  
+- ✅ Circle arrowhead rendering at line endpoints
+- ✅ Inherit stroke color and style from parent element
+- ✅ Proportional sizing based on strokeWidth with ARROWHEAD_CONFIG
+
+#### **Backward Compatibility** ✅
+- ✅ Fixed property naming from endArrowHead to endArrowhead
+- ✅ Updated App.tsx to use new property names and default values
+- ✅ Handle legacy elements without arrowhead properties
+- ✅ Preserved existing arrow functionality during transition
+
+#### **Simplification Changes** ✅
+- ✅ **Removed**: Line caps and line joins options per user feedback
+- ✅ **Simplified**: Direct preset buttons instead of dropdown menus
+- ✅ **Harmonized**: Visual consistency with Properties Panel design
+- ✅ **Focused**: Clean 4-type arrowhead system without complexity
+- ✅ **Integrated**: Seamless Properties Panel integration
+
+### 15. Fill Patterns and Advanced Styling ✅
+**Status**: Completed  
+**Description**: Complete fill pattern system with 3 patterns as per specifications.
+- ✅ Add fill options (solid, hachure, cross-hatch patterns only)
+- ✅ Updated FILL_PATTERNS constants to match specs exactly
+- ✅ Fixed FillStyle type to only include valid patterns
+- ✅ Updated all references from 'transparent' fillStyle to 'solid'
+- ✅ Fill style controls in properties panel (3-button preset system)
+- ✅ Rough.js integration with fill patterns for consistent rendering
+- ✅ Updated CanvasRenderer logic for proper fill application
+- ✅ Fixed all TypeScript errors related to fillStyle changes
+- ✅ Updated all test files to use valid fillStyle values
+- ✅ **SPECIFICATION COMPLIANCE**: Removed extra patterns (dots, zigzag, transparent)
+- ✅ **VISUAL ICONS**: Proper pattern previews (█ ▦ ▩) in Properties Panel
+- ✅ **TYPE SAFETY**: Complete TypeScript compliance with new FillStyle type
+
+### 15.5. Bottom-Left Zoom Control ⏳
 **Status**: Not Started  
-**Description**: Implement fill options and complete the styling system.
-- Add fill options (solid, hachure, cross-hatch patterns)
-- Implement fill patterns with Rough.js
-- Fill style controls in properties panel
-- Update existing shapes to support fill patterns
-- Style copying/pasting between elements
-- Complete properties panel styling UI
-- Advanced styling tests
+**Description**: Implement bottom-left zoom control UI component based on design_examples/zoom-control-bot-left.png.
+- Add ZoomControl component with horizontal layout (− | 125% | +)
+- Position absolutely in bottom-left corner (16px margins from edges)
+- Implement zoom out button (−) with 10% decrement steps
+- Add real-time zoom percentage display (e.g., "125%")
+- Implement zoom in button (+) with 10% increment steps
+- Connect to existing viewport zoom system (10% to 500% range)
+- Add button disabled states at min/max zoom levels
+- Integrate with Ctrl+Scroll zoom functionality
+- Maintain cursor-centered zoom behavior
+- Add hover states and visual feedback
+- Style to match application theme (rounded corners, shadows)
+- Add comprehensive tests for zoom control interactions
+- Ensure no canvas layout displacement (absolute positioning)
+- Add keyboard accessibility support
 
 ### 16. Double-Click Text Editing ⏳
 **Status**: Not Started  
@@ -448,26 +578,27 @@ All properties panel specification updates have been successfully implemented:
 - **Documentation**: Update README and inline docs as needed
 - **Git**: Commit each completed prompt with clear messages
 
-## Current Status - TEXT TOOL COMPLETE ✅
+## Current Status - FILL PATTERNS COMPLETE ✅
 
-**LATEST COMPLETED**: Prompt 13 - Text Tool Implementation ✅  
-**Phase 1 Progress**: 13/17 prompts completed (76.5%)  
-**Recent Achievements**: Complete text tool with direct canvas editing, cursor-centered zoom, coordinate transformation fixes  
+**LATEST COMPLETED**: Prompt 15 - Fill Patterns and Advanced Styling ✅  
+**Phase 1 Progress**: 15/17.5 prompts completed (85.7%)  
+**Recent Achievements**: Complete fill pattern system with 3 patterns (solid, hachure, cross-hatch) exactly matching specifications  
 
 ### ✅ Recent Major Accomplishments:
-- **Text Tool Complete**: Full text editing directly on canvas with real-time rendering and cursor visualization
-- **Advanced Typography**: Font family dropdown, B/I/U toggles, size presets, text alignment, underline decoration
-- **Properties Panel Enhancement**: Reorganized font controls with logical grouping and clean UI
-- **Cursor-Centered Zoom**: Precision zoom functionality keeping cursor point fixed during zoom operations
-- **Coordinate System Fixes**: Resolved selection alignment issues and text dragging problems across zoom levels
-- **Selection Scaling**: Fixed selection indicators to scale properly with viewport transformations
-- **UI Organization**: Clean separation of font family (dropdown) and styles (B/I/U buttons) in properties panel
-- **Git History**: Clean commits with descriptive messages (a424616, ffc7dff)
+- **Fill Pattern System**: Complete 3-pattern system (solid, hachure, cross-hatch) per specifications
+- **Specification Compliance**: Removed extra patterns (dots, zigzag, transparent) to match specs exactly
+- **Type Safety**: Updated FillStyle type and fixed all TypeScript errors
+- **Code Cleanup**: Updated all references from 'transparent' fillStyle to 'solid' across codebase
+- **Properties Panel**: 3-button preset system with proper pattern icons (█ ▦ ▩)
+- **Render Integration**: Enhanced CanvasRenderer logic for proper fill pattern application
+- **Test Coverage**: Updated all test files to use valid fillStyle values
+- **Visual Consistency**: Pattern previews match Properties Panel design standards
+- **Documentation**: Updated specs and prompt plan to reflect completion
+- **Zoom Control Specification**: Added comprehensive bottom-left zoom control design to specs
 
-### 📋 Phase 1 Remaining (4 prompts):
-- **Prompt 14**: Enhanced Stroke Styles (next target)
-- **Prompt 15**: Fill Patterns and Advanced Styling
+### 📋 Phase 1 Remaining (2.5 prompts):
+- **Prompt 15.5**: Bottom-Left Zoom Control (NEW)
 - **Prompt 16**: Double-Click Text Editing
 - **Prompt 17**: Advanced Selection Enhancements
 
-Next development focus: **Enhanced Stroke Styles (Prompt 14)** - implementing comprehensive line caps, joins, and stroke style refinements.
+Next development focus: **Bottom-Left Zoom Control (Prompt 15.5)** - implementing the zoom control UI component based on design example.
