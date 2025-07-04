@@ -1141,13 +1141,29 @@ export class CanvasRenderer {
       // Draw underline decoration if specified
       if (element.textDecoration === 'underline') {
         const textMetrics = this.ctx.measureText(line);
-        const underlineY = y + fontSize * 0.1;
+        const underlineY = y + fontSize * 0.15; // Position underline below text baseline
+        
+        // Calculate underline position based on text alignment
+        let underlineStartX: number;
+        let underlineEndX: number;
+        
+        if (textAlign === 'left') {
+          underlineStartX = padding;
+          underlineEndX = padding + textMetrics.width;
+        } else if (textAlign === 'right') {
+          underlineStartX = element.width - padding - textMetrics.width;
+          underlineEndX = element.width - padding;
+        } else {
+          // Center alignment
+          underlineStartX = centerX - textMetrics.width / 2;
+          underlineEndX = centerX + textMetrics.width / 2;
+        }
         
         this.ctx.strokeStyle = element.strokeColor || '#000000';
         this.ctx.lineWidth = 1;
         this.ctx.beginPath();
-        this.ctx.moveTo(centerX - textMetrics.width / 2, underlineY);
-        this.ctx.lineTo(centerX + textMetrics.width / 2, underlineY);
+        this.ctx.moveTo(underlineStartX, underlineY);
+        this.ctx.lineTo(underlineEndX, underlineY);
         this.ctx.stroke();
       }
       
@@ -1247,7 +1263,7 @@ export class CanvasRenderer {
     
     // Draw text decoration if specified
     if (element.textDecoration === 'underline') {
-      const underlineY = textY + fontSize * 0.1;
+      const underlineY = textY + fontSize * 0.15; // Position underline below text baseline
       
       this.ctx.strokeStyle = element.strokeColor || '#000000';
       this.ctx.lineWidth = 1;
