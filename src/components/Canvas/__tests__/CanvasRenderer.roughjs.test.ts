@@ -23,7 +23,7 @@ vi.mock('roughjs', () => ({
   },
 }));
 
-describe.skip('CanvasRenderer Rough.js Integration', () => {
+describe('CanvasRenderer Rough.js Integration', () => {
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
   let renderer: CanvasRenderer;
@@ -60,6 +60,8 @@ describe.skip('CanvasRenderer Rough.js Integration', () => {
         strokeColor: '#000000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'hachure',
         roughness: 1,
         opacity: 1,
       };
@@ -90,6 +92,8 @@ describe.skip('CanvasRenderer Rough.js Integration', () => {
         strokeColor: '#000000',
         backgroundColor: '#ff0000',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'hachure',
         roughness: 1.5,
         opacity: 1,
       };
@@ -121,6 +125,8 @@ describe.skip('CanvasRenderer Rough.js Integration', () => {
         strokeColor: '#000000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'hachure',
         roughness: 1,
         opacity: 1,
       };
@@ -151,6 +157,8 @@ describe.skip('CanvasRenderer Rough.js Integration', () => {
         strokeColor: '#000000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'hachure',
         roughness: 1,
         opacity: 1,
       };
@@ -183,6 +191,8 @@ describe.skip('CanvasRenderer Rough.js Integration', () => {
         strokeColor: '#000000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'hachure',
         roughness: 1,
         opacity: 1,
       };
@@ -213,6 +223,8 @@ describe.skip('CanvasRenderer Rough.js Integration', () => {
         strokeColor: '#000000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'hachure',
         roughness: 1,
         opacity: 1,
       };
@@ -242,6 +254,8 @@ describe.skip('CanvasRenderer Rough.js Integration', () => {
         strokeColor: '#000000',
         backgroundColor: 'transparent',
         strokeWidth: 2,
+        strokeStyle: 'solid',
+        fillStyle: 'hachure',
         roughness: 1,
         opacity: 1,
       };

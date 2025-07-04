@@ -11,7 +11,7 @@ export class CanvasRenderer {
   private viewport: Viewport;
   private rough: any;
   private shapeCache: Map<string, any> = new Map();
-  private useRoughJs: boolean = false; // DISABLED: Waiting for explicit authorization from Doctor Biz
+  private useRoughJs: boolean = true; // ENABLED: Hand-drawn style with Rough.js for all shapes
 
   constructor(ctx: CanvasRenderingContext2D, viewport: Viewport) {
     this.ctx = ctx;
@@ -159,7 +159,8 @@ export class CanvasRenderer {
         options.fill = element.backgroundColor;
         options.fillStyle = element.fillStyle;
       } else {
-        options.fill = 'none';
+        options.fill = undefined;
+        options.fillStyle = element.fillStyle;
       }
 
       if (element.strokeColor && element.strokeColor !== 'transparent') {
@@ -181,7 +182,7 @@ export class CanvasRenderer {
       
       this.rough.draw(shape);
     } else {
-      // PRECISE Canvas native implementation for testing
+      // Canvas native fallback (not used when Rough.js is enabled)
       this.ctx.save();
       
       // Set stroke style
@@ -234,7 +235,8 @@ export class CanvasRenderer {
         options.fill = element.backgroundColor;
         options.fillStyle = element.fillStyle;
       } else {
-        options.fill = 'none';
+        options.fill = undefined;
+        options.fillStyle = element.fillStyle;
       }
 
       if (element.strokeColor && element.strokeColor !== 'transparent') {
@@ -261,7 +263,7 @@ export class CanvasRenderer {
       
       this.rough.draw(shape);
     } else {
-      // PRECISE Canvas native implementation for testing
+      // Canvas native fallback (not used when Rough.js is enabled)
       this.ctx.save();
       
       // Set stroke style
