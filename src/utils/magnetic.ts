@@ -255,7 +255,7 @@ export function getMagneticSnapPoint(
   const magneticConfig: MagneticConfig = {
     enabled: true,
     strength: magneticStrength,
-    radius: magneticStrength * 1.2, // Slightly larger detection radius
+    radius: magneticStrength * 2.0, // Larger detection radius for better grid intersection detection
     gridEnabled: true,
     elementEnabled: true,
     ...config,
@@ -297,8 +297,8 @@ export function getMagneticSnapPoint(
   const pointTypeStrength = nearestMagneticPoint.strength || 1.0;
   const totalStrength = fieldStrength * pointTypeStrength;
   
-  // Minimum threshold for magnetic snap
-  if (totalStrength < magneticConfig.strength * 0.3) {
+  // Minimum threshold for magnetic snap - reduced threshold for more responsive snapping
+  if (totalStrength < magneticConfig.strength * 0.1) {
     return null;
   }
   

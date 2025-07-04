@@ -97,7 +97,7 @@ function App() {
 
   // Helper function to apply both grid and magnetic snapping
   const applySnapping = (point: Point, operation: 'drawing' | 'moving' | 'resizing', excludeElementId?: string): Point => {
-    // If magnetic snapping is enabled, use it (it includes grid magnetism)
+    // If magnetic snapping is enabled, use ONLY magnetic snapping (no fallback to regular grid)
     if (ui.grid && ui.grid.magneticEnabled) {
       const magneticConfig = {
         enabled: ui.grid.magneticEnabled,
@@ -107,7 +107,7 @@ function App() {
         elementEnabled: true,
       };
       
-      const magneticSnappedPoint = applyMagneticSnapping(point, {
+      return applyMagneticSnapping(point, {
         gridSize: ui.grid.size,
         magneticConfig,
         elements,
@@ -115,14 +115,9 @@ function App() {
         excludeElementId,
         operation,
       });
-      
-      // If magnetic snapping found a target, use it
-      if (magneticSnappedPoint && (magneticSnappedPoint.x !== point.x || magneticSnappedPoint.y !== point.y)) {
-        return magneticSnappedPoint;
-      }
     }
     
-    // Otherwise, fall back to regular grid snapping if enabled
+    // Otherwise, use regular grid snapping if enabled
     return ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
   };
   
