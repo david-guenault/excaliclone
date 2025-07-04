@@ -134,7 +134,7 @@ describe('Simple Grid System', () => {
       const menuButton = screen.getByLabelText('Menu des options');
       fireEvent.click(menuButton);
       
-      // Check for grid menu item
+      // Check for grid menu item (flat design without shortcuts)
       const gridMenuItem = screen.getByLabelText('Configuration de la grille');
       expect(gridMenuItem).toBeInTheDocument();
       expect(gridMenuItem).toHaveTextContent('Grille...');

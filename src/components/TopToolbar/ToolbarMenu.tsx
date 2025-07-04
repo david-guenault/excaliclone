@@ -92,11 +92,10 @@ export const ToolbarMenu: React.FC = () => {
                 onClick={handleGridClick}
                 role="menuitem"
                 aria-label="Configuration de la grille"
-                title="Ouvrir les paramètres de grille (G)"
+                title="Ouvrir les paramètres de grille"
               >
                 <span className="toolbar-menu__icon">⊞</span>
                 <span className="toolbar-menu__label">Grille...</span>
-                <span className="toolbar-menu__shortcut">G</span>
               </button>
             </div>
           </div>
