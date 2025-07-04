@@ -6,6 +6,7 @@ import { Canvas } from './components/Canvas';
 import { TopToolbar } from './components/TopToolbar';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { ZoomControl } from './components/ZoomControl';
+import { GridDialog } from './components/GridDialog';
 import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
@@ -48,7 +49,8 @@ function App() {
     startTextEditing,
     updateTextContent,
     finishTextEditing,
-    toggleGrid
+    toggleGrid,
+    closeGridDialog
   } = useAppStore();
   
   const [isPanning, setIsPanning] = useState(false);
@@ -1224,6 +1226,12 @@ function App() {
       <TopToolbar />
       <PropertiesPanel />
       <ZoomControl />
+      
+      {/* Grid Configuration Dialog */}
+      <GridDialog 
+        isOpen={ui.dialogs.gridDialog}
+        onClose={closeGridDialog}
+      />
       
       <main 
         className="app-main"

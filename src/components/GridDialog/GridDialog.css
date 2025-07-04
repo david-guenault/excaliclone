@@ -1,0 +1,232 @@
+/* ABOUTME: Styles for the grid configuration dialog */
+/* ABOUTME: Modal overlay and form styling for grid settings */
+
+.grid-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.grid-dialog {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: grid-dialog-appear 0.2s ease-out;
+}
+
+@keyframes grid-dialog-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.grid-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e1e5e9;
+  background: #f7f9fb;
+}
+
+.grid-dialog-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e1e1e;
+}
+
+.grid-dialog-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.grid-dialog-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.grid-dialog-content {
+  padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.grid-section {
+  margin-bottom: 24px;
+}
+
+.grid-section:last-child {
+  margin-bottom: 0;
+}
+
+.grid-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.grid-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #1e1e1e;
+  cursor: pointer;
+}
+
+.grid-control:last-child {
+  margin-bottom: 0;
+}
+
+.grid-control input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.grid-control input[type="number"] {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.15s ease;
+}
+
+.grid-control input[type="number"]:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.grid-control span {
+  min-width: 0;
+  flex: 1;
+}
+
+.grid-dialog-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e1e5e9;
+  background: #f7f9fb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.grid-dialog-button {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: white;
+  color: #374151;
+}
+
+.grid-dialog-button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.grid-dialog-button-primary {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+
+.grid-dialog-button-primary:hover {
+  background: #5338f5;
+  border-color: #5338f5;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .grid-dialog {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+
+  .grid-dialog-header,
+  .grid-dialog-footer {
+    background: #111827;
+    border-color: #374151;
+  }
+
+  .grid-dialog-header h3 {
+    color: #f9fafb;
+  }
+
+  .grid-dialog-close {
+    color: #9ca3af;
+  }
+
+  .grid-dialog-close:hover {
+    background: #374151;
+    color: #d1d5db;
+  }
+
+  .grid-section h4 {
+    color: #d1d5db;
+  }
+
+  .grid-control {
+    color: #f9fafb;
+  }
+
+  .grid-control input[type="number"] {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .grid-control input[type="number"]:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  }
+
+  .grid-dialog-button {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .grid-dialog-button:hover {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+}

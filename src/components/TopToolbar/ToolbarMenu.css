@@ -91,6 +91,35 @@
   min-height: 40px;
 }
 
+/* Action Buttons */
+.toolbar-menu__action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  text-align: left;
+}
+
+.toolbar-menu__action:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.toolbar-menu__action:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
 /* Toggle Buttons */
 .toolbar-menu__toggle {
   display: flex;
@@ -337,6 +366,22 @@
   
   .toolbar-menu__separator {
     background: #374151;
+  }
+  
+  .toolbar-menu__action {
+    border-color: #374151;
+    background: #111827;
+    color: #e5e7eb;
+  }
+  
+  .toolbar-menu__action:hover {
+    border-color: #4b5563;
+    background: #1f2937;
+  }
+  
+  .toolbar-menu__action:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
   
   .toolbar-menu__toggle {

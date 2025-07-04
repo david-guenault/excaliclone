@@ -11,13 +11,8 @@ export const ToolbarMenu: React.FC = () => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   
   const { 
-    ui,
-    setGridVisible,
-    setGridSize,
-    setGridSnapEnabled,
+    openGridDialog,
   } = useAppStore();
-
-  const { grid } = ui;
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -50,9 +45,9 @@ export const ToolbarMenu: React.FC = () => {
     }
   }, [isOpen]);
 
-  const handleGridSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const size = Math.max(5, Math.min(100, parseInt(e.target.value) || 20));
-    setGridSize(size);
+  const handleGridClick = () => {
+    setIsOpen(false); // Close menu first
+    openGridDialog(); // Then open dialog
   };
 
 
@@ -65,7 +60,7 @@ export const ToolbarMenu: React.FC = () => {
         aria-label="Menu des options"
         aria-expanded={isOpen}
         aria-haspopup="true"
-        title="Options d'affichage (grille)"
+        title="Menu des options"
       >
         <svg 
           width="20" 
@@ -89,52 +84,19 @@ export const ToolbarMenu: React.FC = () => {
           role="menu"
           aria-labelledby="toolbar-menu-button"
         >
-          {/* Grid Controls Section */}
+          {/* Grid Menu Item */}
           <div className="toolbar-menu__section">
-            <h4 className="toolbar-menu__title">Grille</h4>
-            
             <div className="toolbar-menu__item">
               <button
-                className={`toolbar-menu__toggle ${grid.showGrid ? 'active' : ''}`}
-                onClick={() => setGridVisible(!grid.showGrid)}
+                className="toolbar-menu__action"
+                onClick={handleGridClick}
                 role="menuitem"
-                aria-label="Afficher la grille"
-                title="Afficher/masquer la grille (G)"
+                aria-label="Configuration de la grille"
+                title="Ouvrir les paramètres de grille (G)"
               >
                 <span className="toolbar-menu__icon">⊞</span>
-                <span className="toolbar-menu__label">Afficher la grille</span>
+                <span className="toolbar-menu__label">Grille...</span>
                 <span className="toolbar-menu__shortcut">G</span>
-              </button>
-            </div>
-
-            <div className="toolbar-menu__item">
-              <label className="toolbar-menu__control">
-                <span className="toolbar-menu__label">Taille de la grille</span>
-                <div className="toolbar-menu__input-group">
-                  <input
-                    type="number"
-                    className="toolbar-menu__input"
-                    value={grid.size}
-                    onChange={handleGridSizeChange}
-                    min="5"
-                    max="100"
-                    aria-label="Taille de la grille en pixels"
-                  />
-                  <span className="toolbar-menu__unit">px</span>
-                </div>
-              </label>
-            </div>
-
-            <div className="toolbar-menu__item">
-              <button
-                className={`toolbar-menu__toggle ${grid.snapToGrid ? 'active' : ''}`}
-                onClick={() => setGridSnapEnabled(!grid.snapToGrid)}
-                role="menuitem"
-                aria-label="Accrochage à la grille"
-                title="Activer l'accrochage à la grille"
-              >
-                <span className="toolbar-menu__icon">⊡</span>
-                <span className="toolbar-menu__label">Accrochage grille</span>
               </button>
             </div>
           </div>

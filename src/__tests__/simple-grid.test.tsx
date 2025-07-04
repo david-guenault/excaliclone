@@ -24,6 +24,8 @@ describe('Simple Grid System', () => {
       setGridSnapEnabled: vi.fn(),
       setGridSnapDistance: vi.fn(),
       toggleGrid: vi.fn(),
+      openGridDialog: vi.fn(),
+      closeGridDialog: vi.fn(),
       snapToGrid: vi.fn((point) => point),
       setActiveTool: vi.fn(),
       addElement: vi.fn(),
@@ -89,6 +91,9 @@ describe('Simple Grid System', () => {
           color: '#c1c5c9',
           opacity: 0.6,
         },
+        dialogs: {
+          gridDialog: false,
+        },
       },
       history: [[]],
       historyIndex: 0,
@@ -122,134 +127,66 @@ describe('Simple Grid System', () => {
       expect(mockStoreActions.toggleGrid).toHaveBeenCalled();
     });
 
-    it('should show grid toggle button in toolbar menu', () => {
+    it('should show grid menu item in toolbar menu', () => {
       render(<App />);
       
       // Open toolbar menu
       const menuButton = screen.getByLabelText('Menu des options');
       fireEvent.click(menuButton);
       
-      // Check for grid visibility toggle
-      const gridToggle = screen.getByLabelText('Afficher la grille');
-      expect(gridToggle).toBeInTheDocument();
+      // Check for grid menu item
+      const gridMenuItem = screen.getByLabelText('Configuration de la grille');
+      expect(gridMenuItem).toBeInTheDocument();
+      expect(gridMenuItem).toHaveTextContent('Grille...');
     });
 
-    it('should call setGridVisible when grid toggle is clicked', () => {
+    it('should open grid dialog when grid menu item is clicked', () => {
       render(<App />);
       
       // Open toolbar menu
       const menuButton = screen.getByLabelText('Menu des options');
       fireEvent.click(menuButton);
       
-      // Click grid toggle
-      const gridToggle = screen.getByLabelText('Afficher la grille');
-      fireEvent.click(gridToggle);
+      // Click grid menu item
+      const gridMenuItem = screen.getByLabelText('Configuration de la grille');
+      fireEvent.click(gridMenuItem);
       
-      expect(mockStoreActions.setGridVisible).toHaveBeenCalledWith(true);
-    });
-  });
-
-  describe('Grid Size Controls', () => {
-    it('should show grid size input in toolbar menu', () => {
-      render(<App />);
-      
-      // Open toolbar menu
-      const menuButton = screen.getByLabelText('Menu des options');
-      fireEvent.click(menuButton);
-      
-      // Check for grid size input
-      const sizeInput = screen.getByLabelText('Taille de la grille en pixels');
-      expect(sizeInput).toBeInTheDocument();
-      expect(sizeInput).toHaveValue(20); // Default size
-    });
-
-    it('should update grid size when input value changes', () => {
-      render(<App />);
-      
-      // Open toolbar menu
-      const menuButton = screen.getByLabelText('Menu des options');
-      fireEvent.click(menuButton);
-      
-      // Change grid size
-      const sizeInput = screen.getByLabelText('Taille de la grille en pixels');
-      fireEvent.change(sizeInput, { target: { value: '40' } });
-      
-      expect(mockStoreActions.setGridSize).toHaveBeenCalledWith(40);
-    });
-
-    it('should constrain grid size to valid range (5-100)', () => {
-      render(<App />);
-      
-      // Open toolbar menu
-      const menuButton = screen.getByLabelText('Menu des options');
-      fireEvent.click(menuButton);
-      
-      const sizeInput = screen.getByLabelText('Taille de la grille en pixels');
-      
-      // Test minimum constraint
-      fireEvent.change(sizeInput, { target: { value: '2' } });
-      expect(mockStoreActions.setGridSize).toHaveBeenCalledWith(5);
-      
-      // Test maximum constraint
-      fireEvent.change(sizeInput, { target: { value: '150' } });
-      expect(mockStoreActions.setGridSize).toHaveBeenCalledWith(100);
+      expect(mockStoreActions.openGridDialog).toHaveBeenCalled();
     });
   });
 
-  describe('Grid Snapping Controls', () => {
-    it('should show snap to grid toggle in toolbar menu', () => {
-      render(<App />);
-      
-      // Open toolbar menu
-      const menuButton = screen.getByLabelText('Menu des options');
-      fireEvent.click(menuButton);
-      
-      // Check for snap toggle
-      const snapToggle = screen.getByLabelText('Accrochage à la grille');
-      expect(snapToggle).toBeInTheDocument();
-    });
-
-    it('should call setGridSnapEnabled when snap toggle is clicked', () => {
-      render(<App />);
-      
-      // Open toolbar menu
-      const menuButton = screen.getByLabelText('Menu des options');
-      fireEvent.click(menuButton);
-      
-      // Click snap toggle
-      const snapToggle = screen.getByLabelText('Accrochage à la grille');
-      fireEvent.click(snapToggle);
-      
-      expect(mockStoreActions.setGridSnapEnabled).toHaveBeenCalledWith(true);
-    });
-
-    it('should indicate active state when snap is enabled', () => {
-      // Update store state to have snap enabled
-      const stateWithSnapEnabled = {
+  describe('Grid Dialog Integration', () => {
+    it('should open grid dialog and display grid controls', () => {
+      // Mock store state with dialog open
+      const stateWithDialogOpen = {
         ...defaultStoreState,
         ui: {
           ...defaultStoreState.ui,
-          grid: {
-            ...defaultStoreState.ui.grid,
-            snapToGrid: true,
+          dialogs: {
+            gridDialog: true,
           },
         },
       };
 
       (useAppStore as any).mockReturnValue({
-        ...stateWithSnapEnabled,
+        ...stateWithDialogOpen,
         ...mockStoreActions,
       });
 
       render(<App />);
       
-      // Open toolbar menu
-      const menuButton = screen.getByLabelText('Menu des options');
-      fireEvent.click(menuButton);
+      // Grid dialog should be visible
+      expect(screen.getByText('Configuration de la grille')).toBeInTheDocument();
+      expect(screen.getByLabelText('Afficher la grille')).toBeInTheDocument();
+      expect(screen.getByLabelText('Taille de la grille en pixels')).toBeInTheDocument();
+      expect(screen.getByLabelText('Accrochage à la grille')).toBeInTheDocument();
+    });
+
+    it('should not show grid dialog when closed', () => {
+      render(<App />);
       
-      // Check that snap toggle shows active state
-      const snapToggle = screen.getByLabelText('Accrochage à la grille');
-      expect(snapToggle).toHaveClass('active');
+      // Grid dialog should not be visible by default
+      expect(screen.queryByText('Configuration de la grille')).not.toBeInTheDocument();
     });
   });
 
@@ -279,27 +216,59 @@ describe('Simple Grid System', () => {
     });
 
     it('should have grid snapping enabled in state', () => {
+      // Mock store state with dialog open to access snap controls
+      const stateWithSnapEnabled = {
+        ...defaultStoreState,
+        ui: {
+          ...defaultStoreState.ui,
+          grid: {
+            ...defaultStoreState.ui.grid,
+            snapToGrid: true,
+          },
+          dialogs: {
+            gridDialog: true,
+          },
+        },
+      };
+
+      (useAppStore as any).mockReturnValue({
+        ...stateWithSnapEnabled,
+        ...mockStoreActions,
+      });
+
       render(<App />);
       
-      // Open toolbar menu to verify snap controls are active
-      const menuButton = screen.getByLabelText('Menu des options');
-      fireEvent.click(menuButton);
-      
-      // Check that snap toggle shows active state (indicates enabled state)
+      // Check that snap toggle shows checked state in dialog
       const snapToggle = screen.getByLabelText('Accrochage à la grille');
-      expect(snapToggle).toHaveClass('active');
+      expect(snapToggle).toBeChecked();
     });
 
     it('should display snap controls when snapping is enabled', () => {
+      // Mock store state with snap enabled and dialog open
+      const stateWithSnapEnabled = {
+        ...defaultStoreState,
+        ui: {
+          ...defaultStoreState.ui,
+          grid: {
+            ...defaultStoreState.ui.grid,
+            snapToGrid: true,
+          },
+          dialogs: {
+            gridDialog: true,
+          },
+        },
+      };
+
+      (useAppStore as any).mockReturnValue({
+        ...stateWithSnapEnabled,
+        ...mockStoreActions,
+      });
+
       render(<App />);
       
-      // Open toolbar menu
-      const menuButton = screen.getByLabelText('Menu des options');
-      fireEvent.click(menuButton);
-      
-      // Check that snap toggle shows active state
+      // Check that snap toggle is checked in dialog
       const snapToggle = screen.getByLabelText('Accrochage à la grille');
-      expect(snapToggle).toHaveClass('active');
+      expect(snapToggle).toBeChecked();
     });
 
     it('should apply snapping to coordinates when enabled', () => {
@@ -330,8 +299,8 @@ describe('Simple Grid System', () => {
       const menuButton = screen.getByLabelText('Menu des options');
       fireEvent.click(menuButton);
       
-      // Should have grid section
-      expect(screen.getByText('Grille')).toBeInTheDocument();
+      // Should have grid menu item
+      expect(screen.getByText('Grille...')).toBeInTheDocument();
       
       // Should NOT have magnetic section
       expect(screen.queryByText('Grille Magnétique')).not.toBeInTheDocument();
@@ -351,7 +320,7 @@ describe('Simple Grid System', () => {
       // No magnetic action should be called
     });
 
-    it('should maintain grid state consistency', () => {
+    it('should maintain grid state and show correct menu item', () => {
       const gridState = {
         enabled: true,
         size: 25,
@@ -381,15 +350,10 @@ describe('Simple Grid System', () => {
       const menuButton = screen.getByLabelText('Menu des options');
       fireEvent.click(menuButton);
       
-      // Check that UI reflects the grid state
-      const sizeInput = screen.getByLabelText('Taille de la grille en pixels');
-      expect(sizeInput).toHaveValue(25);
-      
-      const gridToggle = screen.getByLabelText('Afficher la grille');
-      expect(gridToggle).toHaveClass('active');
-      
-      const snapToggle = screen.getByLabelText('Accrochage à la grille');
-      expect(snapToggle).toHaveClass('active');
+      // Check that grid menu item is present
+      const gridMenuItem = screen.getByLabelText('Configuration de la grille');
+      expect(gridMenuItem).toBeInTheDocument();
+      expect(gridMenuItem).toHaveTextContent('Grille...');
     });
   });
 });

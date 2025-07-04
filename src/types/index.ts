@@ -140,6 +140,9 @@ export interface UIState {
   };
   canvasLocked: boolean;
   grid: GridSettings;
+  dialogs: {
+    gridDialog: boolean;
+  };
 }
 
 export interface AppState {

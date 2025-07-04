@@ -53,6 +53,10 @@ interface AppStore extends AppState {
   setGridSnapDistance: (distance: number) => void;
   toggleGrid: () => void;
   snapToGrid: (point: Point) => Point;
+  // Dialog Actions
+  openGridDialog: () => void;
+  closeGridDialog: () => void;
+  toggleGridDialog: () => void;
   // Element Management Actions
   duplicateElement: (id: string) => void;
   duplicateSelectedElements: () => void;
@@ -102,6 +106,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       showGrid: false, // Hidden by default, can be toggled
       color: GRID_CONFIG.COLOR,
       opacity: GRID_CONFIG.OPACITY,
+    },
+    dialogs: {
+      gridDialog: false,
     },
   },
   history: [[]],
@@ -1080,6 +1087,43 @@ export const useAppStore = create<AppStore>((set, get) => ({
       textEditing: {
         ...state.textEditing,
         cursorVisible: !state.textEditing.cursorVisible,
+      },
+    }));
+  },
+
+  // Dialog Actions
+  openGridDialog: () => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        dialogs: {
+          ...state.ui.dialogs,
+          gridDialog: true,
+        },
+      },
+    }));
+  },
+
+  closeGridDialog: () => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        dialogs: {
+          ...state.ui.dialogs,
+          gridDialog: false,
+        },
+      },
+    }));
+  },
+
+  toggleGridDialog: () => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        dialogs: {
+          ...state.ui.dialogs,
+          gridDialog: !state.ui.dialogs.gridDialog,
+        },
       },
     }));
   },
