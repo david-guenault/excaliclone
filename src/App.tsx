@@ -10,7 +10,6 @@ import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
 import { snapPointToGridWithDistance } from './utils/grid';
-import { applyMagneticSnapping } from './utils/magnetic';
 import type { Point } from './types';
 import './App.css';
 
@@ -95,29 +94,9 @@ function App() {
   // Get text editing actions
   const { toggleCursor } = useAppStore();
 
-  // Helper function to apply both grid and magnetic snapping
-  const applySnapping = (point: Point, operation: 'drawing' | 'moving' | 'resizing', excludeElementId?: string): Point => {
-    // If magnetic snapping is enabled, use ONLY magnetic snapping (no fallback to regular grid)
-    if (ui.grid && ui.grid.magneticEnabled) {
-      const magneticConfig = {
-        enabled: ui.grid.magneticEnabled,
-        strength: ui.grid.magneticStrength,
-        radius: ui.grid.magneticRadius,
-        gridEnabled: true,
-        elementEnabled: true,
-      };
-      
-      return applyMagneticSnapping(point, {
-        gridSize: ui.grid.size,
-        magneticConfig,
-        elements,
-        viewport,
-        excludeElementId,
-        operation,
-      });
-    }
-    
-    // Otherwise, use regular grid snapping if enabled
+  // Helper function to apply grid snapping
+  const applySnapping = (point: Point): Point => {
+    // Use regular grid snapping if enabled
     return ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
   };
   
@@ -181,7 +160,7 @@ function App() {
     if (!point) return;
     
     // Apply grid and magnetic snapping to end point
-    const snappedPoint = applySnapping(point, 'drawing');
+    const snappedPoint = applySnapping(point);
     
     // Update the line while drawing
     const modifiers = keyboardManager.getModifierState();
@@ -199,7 +178,7 @@ function App() {
     if (!point) return;
     
     // Apply grid and magnetic snapping to end point
-    const snappedPoint = applySnapping(point, 'drawing');
+    const snappedPoint = applySnapping(point);
     
     // Update the arrow while drawing
     const modifiers = keyboardManager.getModifierState();
@@ -218,7 +197,7 @@ function App() {
   // New Canvas-based handlers for better coordinate handling
   const handleRectangleDrawingCanvasMove = (point: Point) => {
     // Apply grid and magnetic snapping to end point
-    const snappedPoint = applySnapping(point, 'drawing');
+    const snappedPoint = applySnapping(point);
     
     // Calculate rectangle dimensions
     const modifiers = keyboardManager.getModifierState();
@@ -250,7 +229,7 @@ function App() {
 
   const handleCircleDrawingCanvasMove = (point: Point) => {
     // Apply grid and magnetic snapping to end point
-    const snappedPoint = applySnapping(point, 'drawing');
+    const snappedPoint = applySnapping(point);
     
     // Calculate circle dimensions
     const modifiers = keyboardManager.getModifierState();
@@ -282,7 +261,7 @@ function App() {
 
   const handleRectangleDrawingCanvasUp = (point: Point) => {
     // Apply grid and magnetic snapping to final end point
-    const snappedPoint = applySnapping(point, 'drawing');
+    const snappedPoint = applySnapping(point);
     
     // Calculate final rectangle dimensions
     const modifiers = keyboardManager.getModifierState();
@@ -323,7 +302,7 @@ function App() {
 
   const handleCircleDrawingCanvasUp = (point: Point) => {
     // Apply grid and magnetic snapping to final end point
-    const snappedPoint = applySnapping(point, 'drawing');
+    const snappedPoint = applySnapping(point);
     
     // Calculate final circle dimensions
     const modifiers = keyboardManager.getModifierState();
@@ -381,7 +360,7 @@ function App() {
     if (!point) return;
     
     // Apply grid and magnetic snapping to final end point
-    const snappedPoint = applySnapping(point, 'drawing');
+    const snappedPoint = applySnapping(point);
     
     // Finalize the line
     const modifiers = keyboardManager.getModifierState();
@@ -421,7 +400,7 @@ function App() {
     if (!point) return;
     
     // Apply grid and magnetic snapping to final end point
-    const snappedPoint = applySnapping(point, 'drawing');
+    const snappedPoint = applySnapping(point);
     
     // Finalize the arrow
     const modifiers = keyboardManager.getModifierState();
@@ -665,7 +644,7 @@ function App() {
         }
       } else {
         // Start drag selection on empty area
-        const snappedPoint = applySnapping(worldPoint, 'drawing');
+        const snappedPoint = applySnapping(worldPoint);
         setIsDragSelecting(true);
         setDragSelectionStart(snappedPoint);
         setDragSelectionEnd(snappedPoint);
@@ -681,7 +660,7 @@ function App() {
     
     if (activeTool === 'rectangle') {
       // Apply grid and magnetic snapping to start point
-      const snappedPoint = applySnapping(worldPoint, 'drawing');
+      const snappedPoint = applySnapping(worldPoint);
       
       // Start rectangle drawing
       setIsDrawingRectangle(true);
@@ -709,7 +688,7 @@ function App() {
       // NOTE: Rectangle drawing uses Canvas events only - no global listeners needed
     } else if (activeTool === 'circle') {
       // Apply grid and magnetic snapping to start point
-      const snappedPoint = applySnapping(worldPoint, 'drawing');
+      const snappedPoint = applySnapping(worldPoint);
       
       // Start circle drawing
       setIsDrawingCircle(true);
@@ -737,7 +716,7 @@ function App() {
       // NOTE: Circle drawing uses Canvas events only - no global listeners needed
     } else if (activeTool === 'line') {
       // Apply grid and magnetic snapping to start point
-      const snappedPoint = applySnapping(worldPoint, 'drawing');
+      const snappedPoint = applySnapping(worldPoint);
       
       // Start line drawing
       setIsDrawingLine(true);
@@ -769,7 +748,7 @@ function App() {
       document.addEventListener('mouseup', handleGlobalMouseUp);
     } else if (activeTool === 'arrow') {
       // Apply grid and magnetic snapping to start point
-      const snappedPoint = applySnapping(worldPoint, 'drawing');
+      const snappedPoint = applySnapping(worldPoint);
       
       // Start arrow drawing
       setIsDrawingArrow(true);
@@ -800,7 +779,7 @@ function App() {
       document.addEventListener('mousemove', handleGlobalMouseMove);
       document.addEventListener('mouseup', handleGlobalMouseUp);
     } else if (activeTool === 'pen') {
-      const snappedPoint = applySnapping(worldPoint, 'drawing');
+      const snappedPoint = applySnapping(worldPoint);
       setIsDrawingPen(true);
       setPenPoints([snappedPoint]);
       
@@ -823,7 +802,7 @@ function App() {
       
       setCurrentPenId(createdElement.id);
     } else if (activeTool === 'text') {
-      const snappedPoint = applySnapping(worldPoint, 'drawing');
+      const snappedPoint = applySnapping(worldPoint);
       
       // Create a new text element and start editing it directly
       const createdElement = addElementSilent({
@@ -885,7 +864,7 @@ function App() {
     
     // Handle pen drawing
     if (isDrawingPen && currentPenId) {
-      const snappedPoint = applySnapping(worldPoint, 'drawing');
+      const snappedPoint = applySnapping(worldPoint);
       const newPoints = [...penPoints, snappedPoint];
       setPenPoints(newPoints);
       
@@ -908,7 +887,7 @@ function App() {
     // Handle element dragging
     if (isDraggingElements && dragStart && dragStartPositions.size > 0) {
       // Apply grid and magnetic snapping to drag movement
-      const snappedTargetPoint = applySnapping(worldPoint, 'moving', selectedElementIds[0]);
+      const snappedTargetPoint = applySnapping(worldPoint);
       const finalDelta = {
         x: snappedTargetPoint.x - dragStart.x,
         y: snappedTargetPoint.y - dragStart.y
@@ -929,7 +908,7 @@ function App() {
     
     // Handle drag selection
     if (isDragSelecting && dragSelectionStart) {
-      const snappedPoint = applySnapping(worldPoint, 'drawing');
+      const snappedPoint = applySnapping(worldPoint);
       setDragSelectionEnd(snappedPoint);
     }
     

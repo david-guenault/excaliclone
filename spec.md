@@ -222,15 +222,15 @@ interface UIState {
 - **Image Support**: Import and embed images
 - **Advanced Text**: Rich text formatting, text boxes
 
-#### Magnetic Grid System
-- **Grid Intersection Magnetism**: Elements are automatically attracted ONLY to grid line intersections, not to grid lines themselves
-- **Element Magnetism**: Virtual attraction zones around element edges, centers, and corners for alignment
-- **Configurable Magnetism**: Adjustable magnetic strength (10-50px) and detection radius for precision control
-- **Visual Indicators**: Real-time visual guides showing magnetic snap points at grid intersections and element alignment zones
-- **Smart Alignment**: Automatic alignment assistance when elements approach grid intersections or other elements
-- **Magnetic Toggle**: Quick enable/disable of magnetic behavior (M key shortcut)
-- **Context-Aware**: Different magnetic behavior for drawing vs moving elements
-- **Precise Grid Snapping**: Magnetic attraction only occurs at exact grid intersection points, ensuring clean geometric alignment
+#### Grid System
+- **Grid Visibility**: Toggle-able grid overlay with customizable spacing and visual properties
+- **Grid Snapping**: Elements automatically snap to grid intersections when snap-to-grid is enabled
+- **Configurable Grid**: Adjustable grid size (5-100px) with visual size presets (Fine, Normal, Coarse, Large)
+- **Snap Distance**: Configurable snap sensitivity for precise or relaxed grid alignment
+- **Visual Grid**: High-contrast grid lines that remain visible at all zoom levels
+- **Grid Toggle**: Quick show/hide grid visibility (G key shortcut)
+- **Snap Toggle**: Independent control for grid snapping behavior
+- **Clean Alignment**: Precise grid intersection snapping for professional geometric layouts
 
 #### Performance Optimizations
 - **Viewport Culling**: Only render visible elements

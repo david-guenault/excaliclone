@@ -1,5 +1,5 @@
 // ABOUTME: Dropdown menu component for toolbar with grid controls
-// ABOUTME: Contains application-level settings like grid and magnetic grid options
+// ABOUTME: Contains application-level settings like grid visibility and snapping options
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../../store';
@@ -15,9 +15,6 @@ export const ToolbarMenu: React.FC = () => {
     setGridVisible,
     setGridSize,
     setGridSnapEnabled,
-    setGridMagneticEnabled,
-    setGridMagneticStrength,
-    setGridMagneticRadius,
   } = useAppStore();
 
   const { grid } = ui;
@@ -58,15 +55,6 @@ export const ToolbarMenu: React.FC = () => {
     setGridSize(size);
   };
 
-  const handleMagneticStrengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const strength = Math.max(10, Math.min(50, parseInt(e.target.value) || 25));
-    setGridMagneticStrength(strength);
-  };
-
-  const handleMagneticRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const radius = Math.max(20, Math.min(100, parseInt(e.target.value) || 30));
-    setGridMagneticRadius(radius);
-  };
 
   return (
     <div className="toolbar-menu" ref={menuRef}>
@@ -77,7 +65,7 @@ export const ToolbarMenu: React.FC = () => {
         aria-label="Menu des options"
         aria-expanded={isOpen}
         aria-haspopup="true"
-        title="Options d'affichage (grille, magnétique)"
+        title="Options d'affichage (grille)"
       >
         <svg 
           width="20" 
@@ -151,77 +139,6 @@ export const ToolbarMenu: React.FC = () => {
             </div>
           </div>
 
-          <div className="toolbar-menu__separator" />
-
-          {/* Magnetic Grid Controls Section */}
-          <div className="toolbar-menu__section">
-            <h4 className="toolbar-menu__title">Grille Magnétique</h4>
-            
-            <div className="toolbar-menu__item">
-              <button
-                className={`toolbar-menu__toggle magnetic ${grid.magneticEnabled ? 'active' : ''}`}
-                onClick={() => setGridMagneticEnabled(!grid.magneticEnabled)}
-                role="menuitem"
-                aria-label="Grille magnétique"
-                title="Activer la grille magnétique (M)"
-                data-testid="magnetic-toggle"
-              >
-                <span className="toolbar-menu__icon">🧲</span>
-                <span className="toolbar-menu__label">Mode magnétique</span>
-                <span className="toolbar-menu__shortcut">M</span>
-                {grid.magneticEnabled && (
-                  <div 
-                    className="toolbar-menu__status-indicator" 
-                    data-testid="magnetic-status-indicator"
-                  />
-                )}
-              </button>
-            </div>
-
-            <div className="toolbar-menu__item">
-              <label className="toolbar-menu__control">
-                <span className="toolbar-menu__label">Force magnétique</span>
-                <div className="toolbar-menu__slider-group">
-                  <input
-                    type="range"
-                    className="toolbar-menu__slider"
-                    value={grid.magneticStrength}
-                    onChange={handleMagneticStrengthChange}
-                    min="10"
-                    max="50"
-                    disabled={!grid.magneticEnabled}
-                    aria-label="Force magnétique"
-                  />
-                  <span className="toolbar-menu__value">{grid.magneticStrength}px</span>
-                </div>
-              </label>
-            </div>
-
-            <div className="toolbar-menu__item">
-              <label className="toolbar-menu__control">
-                <span className="toolbar-menu__label">Rayon magnétique</span>
-                <div className="toolbar-menu__slider-group">
-                  <input
-                    type="range"
-                    className="toolbar-menu__slider"
-                    value={grid.magneticRadius}
-                    onChange={handleMagneticRadiusChange}
-                    min="20"
-                    max="100"
-                    disabled={!grid.magneticEnabled}
-                    aria-label="Rayon magnétique"
-                  />
-                  <span className="toolbar-menu__value">{grid.magneticRadius}px</span>
-                </div>
-              </label>
-            </div>
-
-            {grid.magneticEnabled && (
-              <div className="toolbar-menu__help">
-                <p>La grille magnétique attire automatiquement les éléments vers les points de grille et autres éléments pour faciliter l'alignement.</p>
-              </div>
-            )}
-          </div>
         </div>
       )}
     </div>

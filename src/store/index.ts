@@ -53,11 +53,6 @@ interface AppStore extends AppState {
   setGridSnapDistance: (distance: number) => void;
   toggleGrid: () => void;
   snapToGrid: (point: Point) => Point;
-  // Magnetic Grid Actions
-  setGridMagneticEnabled: (enabled: boolean) => void;
-  setGridMagneticStrength: (strength: number) => void;
-  setGridMagneticRadius: (radius: number) => void;
-  toggleMagneticGrid: () => void;
   // Element Management Actions
   duplicateElement: (id: string) => void;
   duplicateSelectedElements: () => void;
@@ -107,9 +102,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       showGrid: false, // Hidden by default, can be toggled
       color: GRID_CONFIG.COLOR,
       opacity: GRID_CONFIG.OPACITY,
-      magneticEnabled: GRID_CONFIG.DEFAULT_MAGNETIC_ENABLED,
-      magneticStrength: GRID_CONFIG.DEFAULT_MAGNETIC_STRENGTH,
-      magneticRadius: GRID_CONFIG.DEFAULT_MAGNETIC_RADIUS,
     },
   },
   history: [[]],
@@ -852,60 +844,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       : point;
   },
 
-  // Magnetic Grid Actions
-  setGridMagneticEnabled: (magneticEnabled: boolean) => {
-    set((state) => ({
-      ui: {
-        ...state.ui,
-        grid: {
-          ...state.ui.grid,
-          magneticEnabled,
-        },
-      },
-    }));
-  },
-
-  setGridMagneticStrength: (magneticStrength: number) => {
-    set((state) => ({
-      ui: {
-        ...state.ui,
-        grid: {
-          ...state.ui.grid,
-          magneticStrength: Math.max(
-            GRID_CONFIG.MIN_MAGNETIC_STRENGTH, 
-            Math.min(GRID_CONFIG.MAX_MAGNETIC_STRENGTH, magneticStrength)
-          ),
-        },
-      },
-    }));
-  },
-
-  setGridMagneticRadius: (magneticRadius: number) => {
-    set((state) => ({
-      ui: {
-        ...state.ui,
-        grid: {
-          ...state.ui.grid,
-          magneticRadius: Math.max(
-            GRID_CONFIG.MIN_MAGNETIC_RADIUS, 
-            Math.min(GRID_CONFIG.MAX_MAGNETIC_RADIUS, magneticRadius)
-          ),
-        },
-      },
-    }));
-  },
-
-  toggleMagneticGrid: () => {
-    set((state) => ({
-      ui: {
-        ...state.ui,
-        grid: {
-          ...state.ui.grid,
-          magneticEnabled: !state.ui.grid.magneticEnabled,
-        },
-      },
-    }));
-  },
 
   // Element Management Actions
   duplicateElement: (id: string) => {

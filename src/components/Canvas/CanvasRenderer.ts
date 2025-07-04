@@ -11,7 +11,7 @@ export class CanvasRenderer {
   private viewport: Viewport;
   private rough: any;
   private shapeCache: Map<string, any> = new Map();
-  private useRoughJs: boolean = false; // TEMPORARY: disable Rough.js for precision testing
+  private useRoughJs: boolean = true; // Use Rough.js for hand-drawn aesthetic
 
   constructor(ctx: CanvasRenderingContext2D, viewport: Viewport) {
     this.ctx = ctx;

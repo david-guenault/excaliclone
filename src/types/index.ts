@@ -128,9 +128,6 @@ export interface GridSettings {
   showGrid: boolean;
   color: string;
   opacity: number;
-  magneticEnabled: boolean; // Enable/disable magnetic snapping
-  magneticStrength: number; // Magnetic attraction strength (10-50px)
-  magneticRadius: number; // Detection radius for magnetic fields (20-100px)
 }
 
 export interface UIState {
