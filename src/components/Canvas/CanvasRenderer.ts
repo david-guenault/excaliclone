@@ -1141,7 +1141,7 @@ export class CanvasRenderer {
       // Draw underline decoration if specified
       if (element.textDecoration === 'underline') {
         const textMetrics = this.ctx.measureText(line);
-        const underlineY = y + fontSize * 0.15; // Position underline below text baseline
+        const underlineY = y + fontSize * 0.3; // Position underline below text baseline
         
         // Calculate underline position based on text alignment
         let underlineStartX: number;
@@ -1263,7 +1263,7 @@ export class CanvasRenderer {
     
     // Draw text decoration if specified
     if (element.textDecoration === 'underline') {
-      const underlineY = textY + fontSize * 0.15; // Position underline below text baseline
+      const underlineY = textY + fontSize * 0.3; // Position underline below text baseline
       
       this.ctx.strokeStyle = element.strokeColor || '#000000';
       this.ctx.lineWidth = 1;
