@@ -23,6 +23,24 @@
   overflow: hidden;
 }
 
+/* Hand tool cursor styles */
+.app-main[data-tool="hand"] {
+  cursor: grab;
+}
+
+.app-main[data-tool="hand"][data-panning="true"] {
+  cursor: grabbing;
+}
+
+/* Ensure cursor changes apply to canvas content */
+.app-main[data-tool="hand"] canvas {
+  cursor: grab;
+}
+
+.app-main[data-tool="hand"][data-panning="true"] canvas {
+  cursor: grabbing;
+}
+
 /* Reset any default styles */
 * {
   box-sizing: border-box;

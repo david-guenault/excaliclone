@@ -41,6 +41,7 @@ export class KeyboardManager {
     // Tool switching shortcuts
     const toolShortcuts: Array<{ key: string; tool: ToolType }> = [
       { key: 's', tool: 'select' },
+      { key: 'h', tool: 'hand' },
       { key: 'r', tool: 'rectangle' },
       { key: 'c', tool: 'circle' },
       { key: 'l', tool: 'line' },

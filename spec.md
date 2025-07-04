@@ -147,7 +147,7 @@ interface UIState {
 
 #### Drawing Tools
 - **Lock Tool** (1): Toggle canvas locking to prevent accidental edits
-- **Hand Tool** (H): Pan the canvas viewport
+- **Hand Tool** (H): Pan the canvas viewport with click-drag interaction for smooth navigation
 - **Selection Tool** (S): Select elements by click, multiple elements by click+drag selection rectangle
 - **Rectangle Tool** (R): Draw rectangles by click+drag to size, constraint with Shift for squares
 - **Diamond Tool** (D): Draw diamond/rhombus shapes by click+drag to size
@@ -625,10 +625,12 @@ interface UIState {
 - `Ctrl+Shift+G` - Ungroup
 
 #### Navigation
-- `Space+Drag` - Pan canvas
-- `Ctrl+Scroll` - Zoom
-- `Ctrl+0` - Reset zoom
-- `Ctrl+1` - Zoom to fit
+- **Hand Tool** - Select hand tool (H) then click-drag to pan canvas viewport smoothly
+- **Space+Drag** - Alternative pan method: hold Space key and drag to pan canvas
+- **Scroll Wheel** - Zoom in/out with cursor-centered zooming behavior
+- **Ctrl+Scroll** - Fine zoom control with cursor-centered behavior
+- **Ctrl+0** - Reset zoom to 100% (1x scale)
+- **Ctrl+1** - Zoom to fit all elements in viewport
 
 ## Performance Requirements
 

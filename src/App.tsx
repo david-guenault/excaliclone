@@ -516,8 +516,8 @@ function App() {
     
     
     
-    // Check for space+drag panning
-    if (keyboardManager.isSpacePressedNow()) {
+    // Check for space+drag panning or hand tool panning
+    if (keyboardManager.isSpacePressedNow() || activeTool === 'hand') {
       setIsPanning(true);
       setPanStart(point);
       panStartViewport.current = { ...viewport.pan };
@@ -1235,6 +1235,8 @@ function App() {
       
       <main 
         className="app-main"
+        data-tool={activeTool}
+        data-panning={isPanning ? 'true' : undefined}
         style={{
           marginTop: '64px', // Account for top toolbar
           // Remove marginLeft - properties panel is now absolute overlay
