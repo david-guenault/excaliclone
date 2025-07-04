@@ -97,11 +97,9 @@ export function applyResize(
   handleType: ResizeHandleType, 
   currentPoint: Point, 
   startPoint: Point,
-  originalBounds?: {x: number, y: number, width: number, height: number}
+  originalBounds?: {x: number, y: number, width: number, height: number},
+  snapFunction?: (point: Point) => Point
 ): Partial<Element> {
-  const deltaX = currentPoint.x - startPoint.x;
-  const deltaY = currentPoint.y - startPoint.y;
-
   // Use original bounds if provided, otherwise use current element bounds
   const bounds = originalBounds || {
     x: element.x,
@@ -109,6 +107,13 @@ export function applyResize(
     width: element.width,
     height: element.height
   };
+
+  // Apply snapping to the current point if snap function is provided
+  const snappedCurrentPoint = snapFunction ? snapFunction(currentPoint) : currentPoint;
+  
+  // Calculate deltas based on snapped point
+  const deltaX = snappedCurrentPoint.x - startPoint.x;
+  const deltaY = snappedCurrentPoint.y - startPoint.y;
 
   if (element.type === 'line' || element.type === 'arrow') {
     // For lines and arrows, just move the endpoints

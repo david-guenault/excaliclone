@@ -339,12 +339,13 @@ interface UIState {
 - **Trigger**: Click to open dropdown menu with application-level settings
 - **Menu Contents**:
   
-##### **Grid Controls Section**
-- **Grid Toggle**: Toggle button for grid visibility with grid icon (⊞) and G keyboard shortcut
-- **Grid Size**: Number input for grid spacing (5-100px, default 20px) with px unit display
-- **Snap to Grid**: Toggle button for grid snapping behavior with snap icon (⊡)
-- **Layout**: Vertical menu items with clear French labels and icons
-- **Visual**: Toggle buttons with active state highlighting, keyboard shortcuts displayed
+##### **Grid Configuration Section**
+- **Grid Dialog Access**: Single "Grille..." menu item opens comprehensive grid configuration dialog
+- **Modal Interface**: Dedicated dialog with all grid controls organized in clear sections
+- **Grid Visibility Toggle**: Checkbox to show/hide grid lines on canvas
+- **Grid Size Control**: Slider (10-50px) with real-time preview and numeric display
+- **Snap to Grid**: Toggle for element snapping behavior during creation, movement, and resizing
+- **Coordinate Synchronization**: Grid rendering synchronized with viewport transformations for accurate alignment
 
 
 ### Left Properties Panel
@@ -766,8 +767,8 @@ interface UIState {
 
 ---
 
-**Document Version**: 1.4  
-**Last Updated**: 2025-07-02  
+**Document Version**: 1.5  
+**Last Updated**: 2025-07-04  
 **Author**: Development Team  
-**Review Status**: Zoom Control Specification Added - Bottom-Left UI Component Designed  
-**Test Status**: Fill Pattern Implementation ✅ COMPLETE, Zoom Control Specification ✅ COMPLETE
+**Review Status**: Grid Dialog System Implementation Complete - Resize Grid Snapping Added  
+**Test Status**: Grid Dialog ✅ COMPLETE, Resize Grid Snapping ✅ COMPLETE, Toolbar Menu Redesign ✅ COMPLETE

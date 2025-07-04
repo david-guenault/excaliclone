@@ -909,7 +909,14 @@ function App() {
     if (isResizing && resizeElementId && resizeHandle && resizeStartPoint && resizeStartBounds) {
       const element = elements.find(el => el.id === resizeElementId);
       if (element) {
-        const resizeUpdates = applyResize(element, resizeHandle, worldPoint, resizeStartPoint, resizeStartBounds);
+        const resizeUpdates = applyResize(
+          element, 
+          resizeHandle, 
+          worldPoint, 
+          resizeStartPoint, 
+          resizeStartBounds,
+          applySnapping // Pass the snapping function
+        );
         updateElementSilent(resizeElementId, resizeUpdates);
       }
     }
