@@ -96,24 +96,33 @@ export function applyResize(
   element: Element, 
   handleType: ResizeHandleType, 
   currentPoint: Point, 
-  startPoint: Point
+  startPoint: Point,
+  originalBounds?: {x: number, y: number, width: number, height: number}
 ): Partial<Element> {
   const deltaX = currentPoint.x - startPoint.x;
   const deltaY = currentPoint.y - startPoint.y;
+
+  // Use original bounds if provided, otherwise use current element bounds
+  const bounds = originalBounds || {
+    x: element.x,
+    y: element.y,
+    width: element.width,
+    height: element.height
+  };
 
   if (element.type === 'line' || element.type === 'arrow') {
     // For lines and arrows, just move the endpoints
     if (handleType === 'start-point') {
       return {
-        x: element.x + deltaX,
-        y: element.y + deltaY,
-        width: element.width - deltaX,
-        height: element.height - deltaY,
+        x: bounds.x + deltaX,
+        y: bounds.y + deltaY,
+        width: bounds.width - deltaX,
+        height: bounds.height - deltaY,
       };
     } else if (handleType === 'end-point') {
       return {
-        width: element.width + deltaX,
-        height: element.height + deltaY,
+        width: bounds.width + deltaX,
+        height: bounds.height + deltaY,
       };
     }
   } else {
@@ -122,27 +131,27 @@ export function applyResize(
     
     switch (handleType) {
       case 'top-left':
-        updates.x = element.x + deltaX;
-        updates.y = element.y + deltaY;
-        updates.width = element.width - deltaX;
-        updates.height = element.height - deltaY;
+        updates.x = bounds.x + deltaX;
+        updates.y = bounds.y + deltaY;
+        updates.width = bounds.width - deltaX;
+        updates.height = bounds.height - deltaY;
         break;
         
       case 'top-right':
-        updates.y = element.y + deltaY;
-        updates.width = element.width + deltaX;
-        updates.height = element.height - deltaY;
+        updates.y = bounds.y + deltaY;
+        updates.width = bounds.width + deltaX;
+        updates.height = bounds.height - deltaY;
         break;
         
       case 'bottom-right':
-        updates.width = element.width + deltaX;
-        updates.height = element.height + deltaY;
+        updates.width = bounds.width + deltaX;
+        updates.height = bounds.height + deltaY;
         break;
         
       case 'bottom-left':
-        updates.x = element.x + deltaX;
-        updates.width = element.width - deltaX;
-        updates.height = element.height + deltaY;
+        updates.x = bounds.x + deltaX;
+        updates.width = bounds.width - deltaX;
+        updates.height = bounds.height + deltaY;
         break;
     }
     
@@ -150,14 +159,14 @@ export function applyResize(
     const minSize = 10;
     if (updates.width !== undefined && updates.width < minSize) {
       if (handleType === 'top-left' || handleType === 'bottom-left') {
-        updates.x = element.x + element.width - minSize;
+        updates.x = bounds.x + bounds.width - minSize;
       }
       updates.width = minSize;
     }
     
     if (updates.height !== undefined && updates.height < minSize) {
       if (handleType === 'top-left' || handleType === 'top-right') {
-        updates.y = element.y + element.height - minSize;
+        updates.y = bounds.y + bounds.height - minSize;
       }
       updates.height = minSize;
     }
