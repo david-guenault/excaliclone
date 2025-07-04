@@ -88,23 +88,28 @@ interface Viewport {
   bounds: Rect;
 }
 
-interface GridState {
+interface GridSettings {
   enabled: boolean;
   size: number;
-  snapEnabled: boolean;
-  magneticEnabled: boolean;    // Enable/disable magnetic snapping
-  magneticStrength: number;    // Attraction strength (10-50px)
-  magneticRadius: number;      // Detection radius for magnetic fields
+  snapToGrid: boolean;
+  snapDistance: number;
+  showGrid: boolean;
+  color: string;
+  opacity: number;
 }
 
 interface UIState {
   propertiesPanel: {
     visible: boolean;
-    width: number; // 250-400px
+    width: number; // Fixed at 200px
   };
-  toolPalette: {
-    position: 'top';
+  topToolbar: {
     visible: boolean;
+  };
+  canvasLocked: boolean;
+  grid: GridSettings;
+  dialogs: {
+    gridDialog: boolean;
   };
 }
 ```
@@ -132,13 +137,13 @@ interface UIState {
 #### Canvas System
 - **Infinite Canvas**: Dynamically expanding drawing surface
 - **Viewport Management**: Smooth pan and zoom (10% to 500%) with cursor-centered zooming
-- **Grid System**: Configurable grid with snap-to-grid functionality
-- **Magnetic Grid**: Intelligent magnetic snapping that assists element placement and alignment
+- **Grid System**: Configurable grid with snap-to-grid functionality and dedicated dialog interface
 - **Visual Feedback**: Real-time guides during drawing operations
 - **Selection Indicators**: Visual selection feedback with proper zoom scaling
 - **Coordinate Transformation**: Consistent world-to-screen coordinate conversion for all interactions
 - **Zoom-aware Selection**: Selection rectangles and indicators scale properly with viewport zoom
 - **Drag Operations**: Element dragging works consistently across all zoom levels
+- **Grid Synchronization**: Grid rendering synchronized with element coordinate system for stable zoom behavior
 
 #### Drawing Tools
 - **Lock Tool** (1): Toggle canvas locking to prevent accidental edits
@@ -223,14 +228,33 @@ interface UIState {
 - **Advanced Text**: Rich text formatting, text boxes
 
 #### Grid System
+- **Grid Dialog Interface**: Dedicated modal dialog for all grid configuration accessed via toolbar menu
 - **Grid Visibility**: Toggle-able grid overlay with customizable spacing and visual properties
 - **Grid Snapping**: Elements automatically snap to grid intersections when snap-to-grid is enabled
-- **Configurable Grid**: Adjustable grid size (5-100px) with visual size presets (Fine, Normal, Coarse, Large)
+- **Configurable Grid**: Adjustable grid size (5-100px) with input validation and constraints
 - **Snap Distance**: Configurable snap sensitivity for precise or relaxed grid alignment
-- **Visual Grid**: High-contrast grid lines that remain visible at all zoom levels
-- **Grid Toggle**: Quick show/hide grid visibility (G key shortcut)
-- **Snap Toggle**: Independent control for grid snapping behavior
+- **Visual Grid**: Grid lines that synchronize with element coordinate system for stable zoom behavior
+- **Grid Toggle**: Quick show/hide grid visibility (G key opens configuration dialog)
+- **Snap Toggle**: Independent control for grid snapping behavior in dialog
 - **Clean Alignment**: Precise grid intersection snapping for professional geometric layouts
+- **Dialog UI**: Modal overlay with sections for visibility, size, and snapping controls
+
+#### Advanced Selection System (Implemented)
+- **Multi-selection with Shift+Click**: Add individual elements to selection by holding Shift while clicking
+- **Ctrl+A Select All**: Select all visible elements with keyboard shortcut
+- **Enhanced Drag Selection**: Rectangular selection with visual feedback and optional Shift modifier for additive selection
+- **Keyboard Navigation**: Tab/Shift+Tab and arrow keys for cycling through elements and navigating selection
+- **Group Manipulation**: Move, resize, and transform multiple selected elements as a unified group
+- **Bulk Operations**: Delete, duplicate, and apply style changes to multiple elements simultaneously
+- **Selection Persistence**: Maintain selection state across operations and tool switches
+- **Visual Feedback**: Clear selection indicators with handles and bounding rectangles for multi-selection
+
+#### Toolbar Menu System (Implemented)
+- **Flat Design Interface**: Clean, borderless menu items with subtle hover effects
+- **Grid Configuration Access**: Single "Grille..." menu item opens dedicated configuration dialog
+- **Extensible Architecture**: Menu structure designed for easy addition of future features and sub-menus
+- **Keyboard Shortcut Free**: No shortcut indicators in menu for cleaner appearance
+- **Modal Dialog Integration**: Seamless integration between menu actions and dialog interfaces
 
 #### Performance Optimizations
 - **Viewport Culling**: Only render visible elements
@@ -322,19 +346,6 @@ interface UIState {
 - **Layout**: Vertical menu items with clear French labels and icons
 - **Visual**: Toggle buttons with active state highlighting, keyboard shortcuts displayed
 
-##### **Magnetic Grid Controls Section**
-- **Magnetic Toggle**: Toggle button for magnetic grid functionality with magnetic field icon (🧲) and M keyboard shortcut
-- **Magnetic Strength**: Horizontal slider for attraction strength (10-50px, default 25px) with real-time value display
-- **Magnetic Radius**: Horizontal slider for detection radius (20-100px, default 30px) with real-time value display
-- **Help Text**: Explanatory text when magnetic mode is enabled describing functionality
-- **Visual Feedback**: 
-  - Magnetic toggle with distinctive magnetic field icon and active state
-  - Animated status indicator showing when magnetic mode is active
-  - Strength and radius sliders with real-time numeric value display (disabled when magnetic is off)
-  - Help text explaining magnetic attraction behavior
-- **Integration**: Works seamlessly with existing grid snapping system
-- **Performance**: Throttled slider updates for smooth interaction
-- **Accessibility**: ARIA labels, keyboard navigation, and proper menu semantics
 
 ### Left Properties Panel
 - **Position**: Left side of screen, vertical panel
