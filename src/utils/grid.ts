@@ -50,16 +50,10 @@ export function renderGrid(
   }
 
   const { size, color, opacity } = gridSettings;
-  const { zoom, pan, bounds } = viewport;
+  const { zoom, pan } = viewport;
 
   // Save context state
   ctx.save();
-
-  // Calculate the world space bounds of the visible area
-  const worldLeft = -pan.x / zoom;
-  const worldTop = -pan.y / zoom;
-  const worldRight = worldLeft + bounds.width / zoom;
-  const worldBottom = worldTop + bounds.height / zoom;
 
   // Create a fixed grid that extends beyond the visible area
   // Use large fixed bounds centered on world origin (0,0), not viewport center
