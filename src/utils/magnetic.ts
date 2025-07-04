@@ -90,8 +90,8 @@ export function generateGridMagneticPoints(
     bottom: (-viewport.pan.y + viewport.bounds.height) / viewport.zoom,
   };
   
-  // Expand bounds slightly to include magnetic points just outside viewport
-  const margin = 100; // pixels
+  // Expand bounds significantly to ensure magnetic points are available
+  const margin = 200; // Increased margin for better coverage
   const expandedBounds = {
     left: worldBounds.left - margin,
     top: worldBounds.top - margin,
@@ -105,14 +105,14 @@ export function generateGridMagneticPoints(
   const startY = Math.floor(expandedBounds.top / gridSize) * gridSize;
   const endY = Math.ceil(expandedBounds.bottom / gridSize) * gridSize;
   
-  // Generate grid intersection points
+  // Generate grid intersection points ONLY (no line points)
   for (let x = startX; x <= endX; x += gridSize) {
     for (let y = startY; y <= endY; y += gridSize) {
       points.push({
         x,
         y,
         type: 'grid',
-        strength: 1.0, // Full strength for grid points
+        strength: 1.0, // Full strength for grid intersection points
       });
     }
   }
@@ -297,8 +297,11 @@ export function getMagneticSnapPoint(
   const pointTypeStrength = nearestMagneticPoint.strength || 1.0;
   const totalStrength = fieldStrength * pointTypeStrength;
   
-  // Minimum threshold for magnetic snap - reduced threshold for more responsive snapping
-  if (totalStrength < magneticConfig.strength * 0.1) {
+  // Very low threshold for grid intersection points - ensure they always snap when close
+  const isGridPoint = nearestMagneticPoint.type === 'grid';
+  const threshold = isGridPoint ? magneticConfig.strength * 0.05 : magneticConfig.strength * 0.1;
+  
+  if (totalStrength < threshold) {
     return null;
   }
   

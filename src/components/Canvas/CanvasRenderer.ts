@@ -11,6 +11,7 @@ export class CanvasRenderer {
   private viewport: Viewport;
   private rough: any;
   private shapeCache: Map<string, any> = new Map();
+  private useRoughJs: boolean = false; // TEMPORARY: disable Rough.js for precision testing
 
   constructor(ctx: CanvasRenderingContext2D, viewport: Viewport) {
     this.ctx = ctx;
@@ -146,42 +147,70 @@ export class CanvasRenderer {
   }
 
   private drawRectangle(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
-    if (!this.rough || !this.rough.generator) return;
-    
-    // Build Rough.js options
-    const options: any = {
-      roughness: element.roughness || 1,
-    };
-
-    // Set fill if specified
-    if (element.backgroundColor !== 'transparent') {
-      options.fill = element.backgroundColor;
-      options.fillStyle = element.fillStyle;
-    } else {
-      options.fill = 'none';
-    }
-
-    // Set stroke if specified
-    if (element.strokeColor && element.strokeColor !== 'transparent') {
-      options.stroke = element.strokeColor;
-      options.strokeWidth = element.strokeWidth;
+    if (this.useRoughJs) {
+      // Original Rough.js implementation
+      if (!this.rough || !this.rough.generator) return;
       
-      // Add stroke style support
-      if (element.strokeStyle === 'dashed') {
-        options.strokeLineDash = [element.strokeWidth * 3, element.strokeWidth * 2];
-      } else if (element.strokeStyle === 'dotted') {
-        options.strokeLineDash = [element.strokeWidth, element.strokeWidth * 1.5];
-      }
-    } else {
-      options.stroke = 'none';
-    }
+      const options: any = {
+        roughness: element.roughness || 1,
+      };
 
-    // Draw rectangle with Rough.js
-    const shape = this.getCachedShape(element, () => 
-      this.rough.generator.rectangle(0, 0, element.width, element.height, options)
-    );
-    
-    this.rough.draw(shape);
+      if (element.backgroundColor !== 'transparent') {
+        options.fill = element.backgroundColor;
+        options.fillStyle = element.fillStyle;
+      } else {
+        options.fill = 'none';
+      }
+
+      if (element.strokeColor && element.strokeColor !== 'transparent') {
+        options.stroke = element.strokeColor;
+        options.strokeWidth = element.strokeWidth;
+        
+        if (element.strokeStyle === 'dashed') {
+          options.strokeLineDash = [element.strokeWidth * 3, element.strokeWidth * 2];
+        } else if (element.strokeStyle === 'dotted') {
+          options.strokeLineDash = [element.strokeWidth, element.strokeWidth * 1.5];
+        }
+      } else {
+        options.stroke = 'none';
+      }
+
+      const shape = this.getCachedShape(element, () => 
+        this.rough.generator.rectangle(0, 0, element.width, element.height, options)
+      );
+      
+      this.rough.draw(shape);
+    } else {
+      // PRECISE Canvas native implementation for testing
+      this.ctx.save();
+      
+      // Set stroke style
+      if (element.strokeColor && element.strokeColor !== 'transparent') {
+        this.ctx.strokeStyle = element.strokeColor;
+        this.ctx.lineWidth = element.strokeWidth;
+        
+        if (element.strokeStyle === 'dashed') {
+          this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+        } else if (element.strokeStyle === 'dotted') {
+          this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
+        } else {
+          this.ctx.setLineDash([]);
+        }
+      }
+      
+      // Fill rectangle
+      if (element.backgroundColor !== 'transparent') {
+        this.ctx.fillStyle = element.backgroundColor;
+        this.ctx.fillRect(0, 0, element.width, element.height);
+      }
+      
+      // Stroke rectangle  
+      if (element.strokeColor && element.strokeColor !== 'transparent') {
+        this.ctx.strokeRect(0, 0, element.width, element.height);
+      }
+      
+      this.ctx.restore();
+    }
     
     // Draw text if present
     if (element.text && element.text.trim() !== '') {
@@ -190,52 +219,88 @@ export class CanvasRenderer {
   }
 
   private drawCircle(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
-    if (!this.rough || !this.rough.generator) return;
     const centerX = element.width / 2;
     const centerY = element.height / 2;
     
-    // Build Rough.js options
-    const options: any = {
-      roughness: element.roughness || 1,
-    };
-
-    // Set fill if specified
-    if (element.backgroundColor !== 'transparent') {
-      options.fill = element.backgroundColor;
-      options.fillStyle = element.fillStyle;
-    } else {
-      options.fill = 'none';
-    }
-
-    // Set stroke if specified
-    if (element.strokeColor && element.strokeColor !== 'transparent') {
-      options.stroke = element.strokeColor;
-      options.strokeWidth = element.strokeWidth;
+    if (this.useRoughJs) {
+      // Original Rough.js implementation
+      if (!this.rough || !this.rough.generator) return;
       
-      // Add stroke style support
-      if (element.strokeStyle === 'dashed') {
-        options.strokeLineDash = [element.strokeWidth * 3, element.strokeWidth * 2];
-      } else if (element.strokeStyle === 'dotted') {
-        options.strokeLineDash = [element.strokeWidth, element.strokeWidth * 1.5];
-      }
-    } else {
-      options.stroke = 'none';
-    }
+      const options: any = {
+        roughness: element.roughness || 1,
+      };
 
-    // Draw circle/ellipse with Rough.js
-    const shape = this.getCachedShape(element, () => {
-      // For circles/ellipses, use ellipse if width != height, otherwise circle
+      if (element.backgroundColor !== 'transparent') {
+        options.fill = element.backgroundColor;
+        options.fillStyle = element.fillStyle;
+      } else {
+        options.fill = 'none';
+      }
+
+      if (element.strokeColor && element.strokeColor !== 'transparent') {
+        options.stroke = element.strokeColor;
+        options.strokeWidth = element.strokeWidth;
+        
+        if (element.strokeStyle === 'dashed') {
+          options.strokeLineDash = [element.strokeWidth * 3, element.strokeWidth * 2];
+        } else if (element.strokeStyle === 'dotted') {
+          options.strokeLineDash = [element.strokeWidth, element.strokeWidth * 1.5];
+        }
+      } else {
+        options.stroke = 'none';
+      }
+
+      const shape = this.getCachedShape(element, () => {
+        if (Math.abs(element.width - element.height) < 1) {
+          const radius = element.width / 2;
+          return this.rough.generator.circle(centerX, centerY, radius * 2, options);
+        } else {
+          return this.rough.generator.ellipse(centerX, centerY, element.width, element.height, options);
+        }
+      });
+      
+      this.rough.draw(shape);
+    } else {
+      // PRECISE Canvas native implementation for testing
+      this.ctx.save();
+      
+      // Set stroke style
+      if (element.strokeColor && element.strokeColor !== 'transparent') {
+        this.ctx.strokeStyle = element.strokeColor;
+        this.ctx.lineWidth = element.strokeWidth;
+        
+        if (element.strokeStyle === 'dashed') {
+          this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+        } else if (element.strokeStyle === 'dotted') {
+          this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
+        } else {
+          this.ctx.setLineDash([]);
+        }
+      }
+      
+      this.ctx.beginPath();
       if (Math.abs(element.width - element.height) < 1) {
         // Draw as circle
         const radius = element.width / 2;
-        return this.rough.generator.circle(centerX, centerY, radius * 2, options);
+        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
       } else {
         // Draw as ellipse
-        return this.rough.generator.ellipse(centerX, centerY, element.width, element.height, options);
+        this.ctx.ellipse(centerX, centerY, element.width / 2, element.height / 2, 0, 0, 2 * Math.PI);
       }
-    });
-    
-    this.rough.draw(shape);
+      
+      // Fill circle
+      if (element.backgroundColor !== 'transparent') {
+        this.ctx.fillStyle = element.backgroundColor;
+        this.ctx.fill();
+      }
+      
+      // Stroke circle
+      if (element.strokeColor && element.strokeColor !== 'transparent') {
+        this.ctx.stroke();
+      }
+      
+      this.ctx.restore();
+    }
     
     // Draw text if present
     if (element.text && element.text.trim() !== '') {
