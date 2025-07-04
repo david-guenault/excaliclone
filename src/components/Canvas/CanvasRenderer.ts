@@ -1083,14 +1083,26 @@ export class CanvasRenderer {
     // Calculate starting Y position to center text vertically
     const startY = centerY - (totalTextHeight / 2) + (lineHeight / 2);
     
-    // Always center text horizontally
-    this.ctx.textAlign = 'center';
+    // Set text alignment based on element property
+    const textAlign = element.textAlign || 'center';
+    this.ctx.textAlign = textAlign;
     
     // Draw each line and cursor if editing
     let charCount = 0;
     lines.forEach((line, index) => {
       const y = startY + (index * lineHeight);
-      this.ctx.fillText(line, centerX, y);
+      
+      // Calculate X position based on text alignment
+      let textX: number;
+      if (textAlign === 'left') {
+        textX = padding; // Left aligned with padding
+      } else if (textAlign === 'right') {
+        textX = element.width - padding; // Right aligned with padding
+      } else {
+        textX = centerX; // Center aligned
+      }
+      
+      this.ctx.fillText(line, textX, y);
       
       // Draw cursor if this element is being edited
       if (textEditing && textEditing.cursorVisible) {
@@ -1106,8 +1118,15 @@ export class CanvasRenderer {
           const textMetrics = this.ctx.measureText(textToCursor);
           const lineMetrics = this.ctx.measureText(line);
           
-          // Calculate cursor X position (centered text)
-          const cursorX = centerX - lineMetrics.width / 2 + textMetrics.width;
+          // Calculate cursor X position based on alignment
+          let cursorX: number;
+          if (textAlign === 'left') {
+            cursorX = padding + textMetrics.width;
+          } else if (textAlign === 'right') {
+            cursorX = element.width - padding - lineMetrics.width + textMetrics.width;
+          } else {
+            cursorX = centerX - lineMetrics.width / 2 + textMetrics.width;
+          }
           
           // Draw cursor line
           this.ctx.strokeStyle = element.strokeColor || '#000000';

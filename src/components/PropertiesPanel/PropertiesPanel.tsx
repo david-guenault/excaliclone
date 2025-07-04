@@ -265,8 +265,9 @@ export const PropertiesPanel: React.FC = () => {
           </div>
         )}
 
-        {/* 8-10. Typography sections - Contextual for text elements */}
-        {(singleElement?.type === 'text' || (isMultipleSelection && selectedElements.some(el => el.type === 'text'))) && (
+        {/* 8-10. Typography sections - Contextual for elements with text */}
+        {(singleElement && (singleElement.type === 'text' || singleElement.text) || 
+          (isMultipleSelection && selectedElements.some(el => el.type === 'text' || el.text))) && (
           <>
             {/* 8. Famille de police */}
             <div className="properties-panel__section">
