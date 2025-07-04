@@ -25,8 +25,8 @@ describe('Grid Utilities', () => {
       snapToGrid: true,
       snapDistance: 10,
       showGrid: true,
-      color: '#e1e5e9',
-      opacity: 0.3,
+      color: '#c1c5c9',
+      opacity: 0.6,
     };
 
     // Mock canvas and context
@@ -156,8 +156,8 @@ describe('Grid Utilities', () => {
       renderGrid(mockContext, mockGridSettings, mockViewport);
       
       expect(mockContext.save).toHaveBeenCalled();
-      expect(mockContext.strokeStyle).toBe('#e1e5e9');
-      expect(mockContext.globalAlpha).toBe(0.3);
+      expect(mockContext.strokeStyle).toBe('#c1c5c9');
+      expect(mockContext.globalAlpha).toBe(0.6);
       expect(mockContext.beginPath).toHaveBeenCalled();
       expect(mockContext.stroke).toHaveBeenCalled();
       expect(mockContext.restore).toHaveBeenCalled();
@@ -174,7 +174,7 @@ describe('Grid Utilities', () => {
       
       expect(mockContext.scale).toHaveBeenCalledWith(2, 2);
       expect(mockContext.translate).toHaveBeenCalledWith(50, 30);
-      expect(mockContext.lineWidth).toBe(0.5); // 1 / zoom
+      expect(mockContext.lineWidth).toBe(0.25); // 0.5 / zoom
     });
 
     it('optimizes grid line drawing for viewport bounds', () => {

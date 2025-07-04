@@ -55,22 +55,28 @@ export function renderGrid(
   // Save context state
   ctx.save();
 
-  // Set grid line style
-  ctx.strokeStyle = color;
-  ctx.globalAlpha = opacity;
-  ctx.lineWidth = 1 / zoom; // Scale line width with zoom
-  ctx.setLineDash([]);
+  // Calculate the world space bounds of the visible area
+  const worldLeft = -pan.x / zoom;
+  const worldTop = -pan.y / zoom;
+  const worldRight = (bounds.width - pan.x) / zoom;
+  const worldBottom = (bounds.height - pan.y) / zoom;
 
-  // Calculate visible grid bounds with some padding
-  const padding = size * 2;
-  const startX = Math.floor((-pan.x - padding) / (size * zoom)) * size;
-  const endX = Math.ceil((bounds.width / zoom - pan.x + padding) / size) * size;
-  const startY = Math.floor((-pan.y - padding) / (size * zoom)) * size;
-  const endY = Math.ceil((bounds.height / zoom - pan.y + padding) / size) * size;
+  // Add generous padding to ensure grid lines extend beyond visible area
+  const padding = size * 10;
+  const startX = Math.floor((worldLeft - padding) / size) * size;
+  const endX = Math.ceil((worldRight + padding) / size) * size;
+  const startY = Math.floor((worldTop - padding) / size) * size;
+  const endY = Math.ceil((worldBottom + padding) / size) * size;
 
   // Apply viewport transformations
   ctx.scale(zoom, zoom);
   ctx.translate(pan.x, pan.y);
+
+  // Set grid line style with improved visibility
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = Math.max(0.4, opacity); // Ensure minimum visibility
+  ctx.lineWidth = 0.5 / zoom; // Thinner lines that scale with zoom
+  ctx.setLineDash([]);
 
   // Draw vertical lines
   ctx.beginPath();

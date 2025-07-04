@@ -106,8 +106,8 @@ export const GRID_CONFIG = {
   MIN_SIZE: 5,
   MAX_SIZE: 100,
   DEFAULT_SNAP_DISTANCE: 10,
-  COLOR: '#e1e5e9',
-  OPACITY: 0.3,
+  COLOR: '#c1c5c9',
+  OPACITY: 0.6,
   // Magnetic grid defaults
   DEFAULT_MAGNETIC_ENABLED: true,
   DEFAULT_MAGNETIC_STRENGTH: 25,
