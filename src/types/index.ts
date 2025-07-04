@@ -41,6 +41,22 @@ export type TextDecoration = 'none' | 'underline';
 
 export type ArrowheadType = 'none' | 'triangle' | 'line' | 'circle';
 
+// Resize handle types for element manipulation
+export type ResizeHandleType = 
+  | 'top-left' 
+  | 'top-right' 
+  | 'bottom-left' 
+  | 'bottom-right'
+  | 'start-point' 
+  | 'end-point';
+
+export interface ResizeHandle {
+  type: ResizeHandleType;
+  x: number;
+  y: number;
+  size: number;
+}
+
 export interface StyleClipboard {
   strokeColor: string;
   backgroundColor: string;

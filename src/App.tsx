@@ -11,7 +11,8 @@ import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
 import { snapPointToGridWithDistance } from './utils/grid';
-import type { Point } from './types';
+import { findResizeHandle, applyResize, getResizeCursor } from './utils/resizeHandles';
+import type { Point, ResizeHandleType } from './types';
 import './App.css';
 
 function App() {
@@ -92,6 +93,13 @@ function App() {
   const [isDrawingPen, setIsDrawingPen] = useState(false);
   const [currentPenId, setCurrentPenId] = useState<string | null>(null);
   const [penPoints, setPenPoints] = useState<Point[]>([]);
+  
+  // Resize state
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeElementId, setResizeElementId] = useState<string | null>(null);
+  const [resizeHandle, setResizeHandle] = useState<ResizeHandleType | null>(null);
+  const [resizeStartPoint, setResizeStartPoint] = useState<Point | null>(null);
+  const [resizeStartBounds, setResizeStartBounds] = useState<{x: number, y: number, width: number, height: number} | null>(null);
   
   // Get text editing actions
   const { toggleCursor } = useAppStore();
@@ -526,6 +534,28 @@ function App() {
     
     // Check if we're clicking on an existing element (for selection)
     if (activeTool === 'select') {
+      // First, check if we're clicking on a resize handle of a selected element
+      for (const elementId of selectedElementIds) {
+        const element = elements.find(el => el.id === elementId);
+        if (!element || element.locked) continue;
+        
+        const handle = findResizeHandle(worldPoint, element);
+        if (handle) {
+          // Start resize operation
+          setIsResizing(true);
+          setResizeElementId(elementId);
+          setResizeHandle(handle);
+          setResizeStartPoint(worldPoint);
+          setResizeStartBounds({
+            x: element.x,
+            y: element.y,
+            width: element.width,
+            height: element.height,
+          });
+          return;
+        }
+      }
+      
       const clickedElement = elements
         .filter(element => !element.locked) // Skip locked elements
         .slice() // Create a copy before reversing to avoid mutating the original array
@@ -843,6 +873,27 @@ function App() {
       y: point.y / viewport.zoom + viewport.pan.y,
     };
     
+    // Update cursor based on hover state (only when not in a drag operation)
+    if (!isPanning && !isResizing && !isDraggingElements && !isDragSelecting && activeTool === 'select') {
+      let newCursor = 'default';
+      
+      // Check if hovering over a resize handle
+      for (const elementId of selectedElementIds) {
+        const element = elements.find(el => el.id === elementId);
+        if (!element || element.locked) continue;
+        
+        const handle = findResizeHandle(worldPoint, element);
+        if (handle) {
+          newCursor = getResizeCursor(handle);
+          break;
+        }
+      }
+      
+      // Set cursor on canvas
+      const canvas = event.target as HTMLElement;
+      canvas.style.cursor = newCursor;
+    }
+    
     // DEBUG: Log mouse move events
     
     if (isPanning && panStart && panStartViewport.current) {
@@ -852,6 +903,15 @@ function App() {
         x: panStartViewport.current.x - dx / viewport.zoom,
         y: panStartViewport.current.y - dy / viewport.zoom,
       });
+    }
+    
+    // Handle element resizing
+    if (isResizing && resizeElementId && resizeHandle && resizeStartPoint && resizeStartBounds) {
+      const element = elements.find(el => el.id === resizeElementId);
+      if (element) {
+        const resizeUpdates = applyResize(element, resizeHandle, worldPoint, resizeStartPoint);
+        updateElementSilent(resizeElementId, resizeUpdates);
+      }
     }
     
     // Handle rectangle drawing with world coordinates
@@ -932,6 +992,21 @@ function App() {
       setIsPanning(false);
       setPanStart(null);
       panStartViewport.current = null;
+    }
+    
+    // Handle element resizing completion
+    if (isResizing) {
+      // Save the resized elements to history
+      saveToHistory();
+      setIsResizing(false);
+      setResizeElementId(null);
+      setResizeHandle(null);
+      setResizeStartPoint(null);
+      setResizeStartBounds(null);
+      
+      // Reset cursor
+      const canvas = event.target as HTMLElement;
+      canvas.style.cursor = 'default';
     }
     
     // Handle rectangle drawing completion
