@@ -61,28 +61,26 @@ export function renderGrid(
   const worldRight = worldLeft + bounds.width / zoom;
   const worldBottom = worldTop + bounds.height / zoom;
 
-  // Create an "infinite" grid by using very large bounds
-  // Calculate a large area that extends far beyond the current viewport
-  const infiniteSize = Math.max(bounds.width, bounds.height) / zoom * 10; // Extend 10x the visible area
-  const centerX = (worldLeft + worldRight) / 2;
-  const centerY = (worldTop + worldBottom) / 2;
+  // Create a fixed grid that extends beyond the visible area
+  // Use large fixed bounds centered on world origin (0,0), not viewport center
+  const gridExtent = 10000; // Large fixed extent in world coordinates
   
-  const startX = Math.floor((centerX - infiniteSize) / size) * size;
-  const endX = Math.ceil((centerX + infiniteSize) / size) * size;
-  const startY = Math.floor((centerY - infiniteSize) / size) * size;
-  const endY = Math.ceil((centerY + infiniteSize) / size) * size;
+  const startX = Math.floor(-gridExtent / size) * size;
+  const endX = Math.ceil(gridExtent / size) * size;
+  const startY = Math.floor(-gridExtent / size) * size;
+  const endY = Math.ceil(gridExtent / size) * size;
 
-  // Apply viewport transformations
+  // Apply the same viewport transformations as elements
   ctx.scale(zoom, zoom);
-  ctx.translate(pan.x, pan.y);
+  ctx.translate(-pan.x, -pan.y);
 
   // Set grid line style with improved visibility
   ctx.strokeStyle = color;
   ctx.globalAlpha = Math.max(0.4, opacity); // Ensure minimum visibility
-  ctx.lineWidth = 0.5 / zoom; // Thinner lines that scale with zoom
+  ctx.lineWidth = 1 / zoom; // Scale line width with zoom like elements
   ctx.setLineDash([]);
 
-  // Draw vertical lines
+  // Draw vertical lines in world coordinates (same system as elements)
   ctx.beginPath();
   for (let x = startX; x <= endX; x += size) {
     ctx.moveTo(x, startY);
@@ -90,7 +88,7 @@ export function renderGrid(
   }
   ctx.stroke();
 
-  // Draw horizontal lines
+  // Draw horizontal lines in world coordinates (same system as elements)
   ctx.beginPath();
   for (let y = startY; y <= endY; y += size) {
     ctx.moveTo(startX, y);

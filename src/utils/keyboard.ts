@@ -159,12 +159,6 @@ export class KeyboardManager {
       preventDefault: true,
     });
 
-    // Magnetic grid shortcuts
-    this.addShortcut({
-      key: 'm',
-      action: 'toggleMagnetic',
-      preventDefault: true,
-    });
 
     // Navigation shortcuts
     this.addShortcut({

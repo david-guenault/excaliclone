@@ -48,7 +48,7 @@ function App() {
     startTextEditing,
     updateTextContent,
     finishTextEditing,
-    toggleMagneticGrid
+    toggleGrid
   } = useAppStore();
   
   const [isPanning, setIsPanning] = useState(false);
@@ -1198,7 +1198,7 @@ function App() {
     keyboardManager.on('pasteStyle', pasteStyle);
     keyboardManager.on('resetZoom', resetZoom);
     keyboardManager.on('zoomToFit', zoomToFit);
-    keyboardManager.on('toggleMagnetic', toggleMagneticGrid);
+    keyboardManager.on('toggleGrid', toggleGrid);
 
     return () => {
       keyboardManager.off('setTool');
@@ -1215,9 +1215,9 @@ function App() {
       keyboardManager.off('pasteStyle');
       keyboardManager.off('resetZoom');
       keyboardManager.off('zoomToFit');
-      keyboardManager.off('toggleMagnetic');
+      keyboardManager.off('toggleGrid');
     };
-  }, [setActiveTool, undo, redo, deleteSelectedElements, duplicateSelectedElements, selectAll, selectNext, selectPrevious, copy, paste, copyStyle, pasteStyle, resetZoom, zoomToFit, toggleMagneticGrid]);
+  }, [setActiveTool, undo, redo, deleteSelectedElements, duplicateSelectedElements, selectAll, selectNext, selectPrevious, copy, paste, copyStyle, pasteStyle, resetZoom, zoomToFit, toggleGrid]);
 
   return (
     <div className="excalibox-app">

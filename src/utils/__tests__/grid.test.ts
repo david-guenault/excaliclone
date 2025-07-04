@@ -163,7 +163,7 @@ describe('Grid Utilities', () => {
       expect(mockContext.restore).toHaveBeenCalled();
     });
 
-    it('applies viewport transformations', () => {
+    it('applies viewport transformations correctly', () => {
       const zoomedViewport = {
         zoom: 2,
         pan: { x: 50, y: 30 },
@@ -172,9 +172,14 @@ describe('Grid Utilities', () => {
       
       renderGrid(mockContext, mockGridSettings, zoomedViewport);
       
+      // Grid uses same viewport transformations as elements for synchronization
       expect(mockContext.scale).toHaveBeenCalledWith(2, 2);
-      expect(mockContext.translate).toHaveBeenCalledWith(50, 30);
-      expect(mockContext.lineWidth).toBe(0.25); // 0.5 / zoom
+      expect(mockContext.translate).toHaveBeenCalledWith(-50, -30); // Negative pan values
+      expect(mockContext.lineWidth).toBe(0.5); // 1 / zoom for consistent thickness
+      
+      // Should draw lines in world coordinates
+      expect(mockContext.moveTo).toHaveBeenCalled();
+      expect(mockContext.lineTo).toHaveBeenCalled();
     });
 
     it('optimizes grid line drawing for viewport bounds', () => {
