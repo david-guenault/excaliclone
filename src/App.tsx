@@ -1023,11 +1023,19 @@ function App() {
     // Don't handle double-click if already in text editing mode
     if (textEditing.isEditing) return;
     
-    // Transform canvas coordinates to world coordinates
+    // Transform canvas coordinates to world coordinates (same as handleCanvasMouseDown)
     const worldPoint = {
-      x: (point.x - viewport.pan.x) / viewport.zoom,
-      y: (point.y - viewport.pan.y) / viewport.zoom,
+      x: (point.x / viewport.zoom) + viewport.pan.x,
+      y: (point.y / viewport.zoom) + viewport.pan.y,
     };
+    
+    console.log('Double-click debug:', { 
+      canvasPoint: point, 
+      worldPoint, 
+      viewport, 
+      elementsCount: elements.length,
+      elements: elements.map(el => ({ id: el.id, type: el.type, x: el.x, y: el.y, width: el.width, height: el.height }))
+    });
     
     // Find element at the clicked position (front-to-back search)
     const hitElement = elements

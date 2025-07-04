@@ -10,14 +10,13 @@ import { useAppStore } from '../store';
 describe('Double-Click Text Editing - Simple', () => {
   beforeEach(() => {
     // Reset store state
-    useAppStore.getState().elements = [];
-    useAppStore.getState().selectedElementIds = [];
-    useAppStore.getState().doubleClickTextEditing = {
-      isEditing: false,
-      elementId: null,
-      position: null,
-      initialText: '',
-    };
+    const store = useAppStore.getState();
+    store.elements = [];
+    store.selectedElementIds = [];
+    if (store.textEditing) {
+      store.textEditing.isEditing = false;
+      store.textEditing.elementId = null;
+    }
   });
 
   it('should render the app without errors', () => {
@@ -25,26 +24,26 @@ describe('Double-Click Text Editing - Simple', () => {
     expect(screen.getByRole('img', { name: /canvas/i })).toBeInTheDocument();
   });
 
-  it('should have double-click text editing actions in store', () => {
+  it('should have text editing actions in store', () => {
     const store = useAppStore.getState();
-    expect(typeof store.startDoubleClickTextEditing).toBe('function');
-    expect(typeof store.endDoubleClickTextEditing).toBe('function');
-    expect(typeof store.saveDoubleClickTextEdit).toBe('function');
-    expect(typeof store.cancelDoubleClickTextEdit).toBe('function');
+    expect(typeof store.startTextEditing).toBe('function');
+    expect(typeof store.updateTextContent).toBe('function');
+    expect(typeof store.finishTextEditing).toBe('function');
+    expect(typeof store.toggleCursor).toBe('function');
   });
 
-  it('should start double-click text editing when action is called', () => {
+  it('should start text editing when action is called', () => {
     const store = useAppStore.getState();
     
     act(() => {
-      store.startDoubleClickTextEditing('test-id', { x: 100, y: 100 }, 'test text');
+      store.startTextEditing('test-id', 'test text', 0);
     });
 
     const newState = useAppStore.getState();
-    expect(newState.doubleClickTextEditing.isEditing).toBe(true);
-    expect(newState.doubleClickTextEditing.elementId).toBe('test-id');
-    expect(newState.doubleClickTextEditing.position).toEqual({ x: 100, y: 100 });
-    expect(newState.doubleClickTextEditing.initialText).toBe('test text');
+    expect(newState.textEditing.isEditing).toBe(true);
+    expect(newState.textEditing.elementId).toBe('test-id');
+    expect(newState.textEditing.text).toBe('test text');
+    expect(newState.textEditing.cursorPosition).toBe(0);
   });
 
   it('should trigger text editing when double-clicking on rectangle', () => {
@@ -94,29 +93,29 @@ describe('Double-Click Text Editing - Simple', () => {
     expect(true).toBe(true); // Placeholder - the functionality works as demonstrated in debug test
   });
 
-  it('should handle double-click text editing state properly', () => {
+  it('should handle text editing state properly', () => {
     const store = useAppStore.getState();
     
-    // Start double-click text editing
+    // Start text editing
     act(() => {
-      store.startDoubleClickTextEditing('test-id', { x: 150, y: 125 }, 'Test Text');
+      store.startTextEditing('test-id', 'Test Text', 0);
     });
 
     // Check state is set
     let newState = useAppStore.getState();
-    expect(newState.doubleClickTextEditing.isEditing).toBe(true);
+    expect(newState.textEditing.isEditing).toBe(true);
 
-    // Cancel editing
+    // Finish editing
     act(() => {
-      store.cancelDoubleClickTextEdit();
+      store.finishTextEditing();
     });
 
     // Check state is cleared
     newState = useAppStore.getState();
-    expect(newState.doubleClickTextEditing.isEditing).toBe(false);
+    expect(newState.textEditing.isEditing).toBe(false);
   });
 
-  it('should save text changes when saveDoubleClickTextEdit is called', () => {
+  it('should save text changes when updating text content', () => {
     render(<App />);
     
     // Add a rectangle element
@@ -146,30 +145,40 @@ describe('Double-Click Text Editing - Simple', () => {
     // Start text editing
     act(() => {
       const store = useAppStore.getState();
-      store.startDoubleClickTextEditing(elementId, { x: 150, y: 125 }, 'Original Text');
+      store.startTextEditing(elementId, 'Original Text', 0);
     });
 
     // Get updated state after starting editing
     let updatedState = useAppStore.getState();
     
     // Verify editing state is active
-    expect(updatedState.doubleClickTextEditing.isEditing).toBe(true);
-    expect(updatedState.doubleClickTextEditing.elementId).toBe(elementId);
+    expect(updatedState.textEditing.isEditing).toBe(true);
+    expect(updatedState.textEditing.elementId).toBe(elementId);
 
-    // Save new text
+    // Update text content
     act(() => {
       const store = useAppStore.getState();
-      store.saveDoubleClickTextEdit('New Text');
+      store.updateTextContent('New Text', 8);
     });
 
-    // Get updated state after saving
+    // Get updated state after updating text
     updatedState = useAppStore.getState();
 
-    // Should save text to element
+    // Should save text to element in real-time
     const updatedElement = updatedState.elements.find(el => el.id === elementId);
     expect(updatedElement?.text).toBe('New Text');
 
+    // Should still be in editing mode
+    expect(updatedState.textEditing.isEditing).toBe(true);
+    
+    // Finish editing
+    act(() => {
+      const store = useAppStore.getState();
+      store.finishTextEditing();
+    });
+
     // Should end editing mode
-    expect(updatedState.doubleClickTextEditing.isEditing).toBe(false);
+    updatedState = useAppStore.getState();
+    expect(updatedState.textEditing.isEditing).toBe(false);
   });
 });
