@@ -310,6 +310,21 @@ describe('Magnetic Grid System', () => {
       
       expect(snapPoint).toEqual({ x: 120, y: 120 });
     });
+
+    it('should NOT snap to grid lines themselves, only intersections', () => {
+      // Test point on a grid line but not at an intersection
+      const testPoint = { x: 100, y: 115 }; // On vertical line x=100 but between y=100 and y=120
+      const gridSize = 20;
+      const magneticStrength = 25;
+      
+      // Should not snap to line itself, only to nearest intersection
+      mockGetMagneticSnapPoint.mockReturnValue({ x: 100, y: 120 }); // Snaps to intersection, not line
+      
+      const snapPoint = getMagneticSnapPoint(testPoint, gridSize, magneticStrength, true);
+      
+      // Should snap to intersection (100, 120), not stay on line at (100, 115)
+      expect(snapPoint).toEqual({ x: 100, y: 120 });
+    });
   });
 
   describe('Element-to-Element Magnetism', () => {

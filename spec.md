@@ -223,14 +223,14 @@ interface UIState {
 - **Advanced Text**: Rich text formatting, text boxes
 
 #### Magnetic Grid System
-- **Intelligent Snapping**: Elements are automatically attracted to grid intersections and nearby elements
-- **Magnetic Zones**: Virtual attraction zones around grid points, element edges, and centers
-- **Configurable Magnetism**: Adjustable magnetic strength (10-50px) and detection radius
-- **Visual Indicators**: Real-time visual guides showing magnetic snap points and alignment zones
-- **Smart Alignment**: Automatic alignment assistance when elements approach common positions
+- **Grid Intersection Magnetism**: Elements are automatically attracted ONLY to grid line intersections, not to grid lines themselves
+- **Element Magnetism**: Virtual attraction zones around element edges, centers, and corners for alignment
+- **Configurable Magnetism**: Adjustable magnetic strength (10-50px) and detection radius for precision control
+- **Visual Indicators**: Real-time visual guides showing magnetic snap points at grid intersections and element alignment zones
+- **Smart Alignment**: Automatic alignment assistance when elements approach grid intersections or other elements
 - **Magnetic Toggle**: Quick enable/disable of magnetic behavior (M key shortcut)
 - **Context-Aware**: Different magnetic behavior for drawing vs moving elements
-- **Threshold Control**: Fine-tuned magnetic sensitivity for precision work
+- **Precise Grid Snapping**: Magnetic attraction only occurs at exact grid intersection points, ensuring clean geometric alignment
 
 #### Performance Optimizations
 - **Viewport Culling**: Only render visible elements
