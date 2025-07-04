@@ -58,15 +58,19 @@ export function renderGrid(
   // Calculate the world space bounds of the visible area
   const worldLeft = -pan.x / zoom;
   const worldTop = -pan.y / zoom;
-  const worldRight = (bounds.width - pan.x) / zoom;
-  const worldBottom = (bounds.height - pan.y) / zoom;
+  const worldRight = worldLeft + bounds.width / zoom;
+  const worldBottom = worldTop + bounds.height / zoom;
 
-  // Add generous padding to ensure grid lines extend beyond visible area
-  const padding = size * 10;
-  const startX = Math.floor((worldLeft - padding) / size) * size;
-  const endX = Math.ceil((worldRight + padding) / size) * size;
-  const startY = Math.floor((worldTop - padding) / size) * size;
-  const endY = Math.ceil((worldBottom + padding) / size) * size;
+  // Create an "infinite" grid by using very large bounds
+  // Calculate a large area that extends far beyond the current viewport
+  const infiniteSize = Math.max(bounds.width, bounds.height) / zoom * 10; // Extend 10x the visible area
+  const centerX = (worldLeft + worldRight) / 2;
+  const centerY = (worldTop + worldBottom) / 2;
+  
+  const startX = Math.floor((centerX - infiniteSize) / size) * size;
+  const endX = Math.ceil((centerX + infiniteSize) / size) * size;
+  const startY = Math.floor((centerY - infiniteSize) / size) * size;
+  const endY = Math.ceil((centerY + infiniteSize) / size) * size;
 
   // Apply viewport transformations
   ctx.scale(zoom, zoom);
