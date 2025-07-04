@@ -10,6 +10,7 @@ import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
 import { snapPointToGridWithDistance } from './utils/grid';
+import { applyMagneticSnapping } from './utils/magnetic';
 import type { Point } from './types';
 import './App.css';
 
@@ -17,9 +18,7 @@ function App() {
   const { 
     viewport, 
     elements, 
-    addElement, 
     addElementSilent,
-    updateElement,
     updateElementSilent,
     activeTool, 
     toolOptions,
@@ -28,11 +27,15 @@ function App() {
     setActiveTool,
     selectElement,
     selectElements,
+    toggleSelection,
     clearSelection,
     undo,
     redo,
     deleteSelectedElements,
+    duplicateSelectedElements,
     selectAll,
+    selectNext,
+    selectPrevious,
     copy,
     paste,
     copyStyle,
@@ -41,7 +44,12 @@ function App() {
     zoomToFit,
     setZoom,
     setPan,
-    saveToHistory
+    saveToHistory,
+    textEditing,
+    startTextEditing,
+    updateTextContent,
+    finishTextEditing,
+    toggleMagneticGrid
   } = useAppStore();
   
   const [isPanning, setIsPanning] = useState(false);
@@ -72,6 +80,7 @@ function App() {
   const [isDragSelecting, setIsDragSelecting] = useState(false);
   const [dragSelectionStart, setDragSelectionStart] = useState<Point | null>(null);
   const [dragSelectionEnd, setDragSelectionEnd] = useState<Point | null>(null);
+  const [dragSelectionShiftKey, setDragSelectionShiftKey] = useState(false);
   
   // Element dragging state
   const [isDraggingElements, setIsDraggingElements] = useState(false);
@@ -83,13 +92,36 @@ function App() {
   const [currentPenId, setCurrentPenId] = useState<string | null>(null);
   const [penPoints, setPenPoints] = useState<Point[]>([]);
   
-  // Text editing state
-  const [isEditingText, setIsEditingText] = useState(false);
-  const [currentTextId, setCurrentTextId] = useState<string | null>(null);
-  const [editingTextPosition, setEditingTextPosition] = useState<Point | null>(null);
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const [isEditingExistingElement, setIsEditingExistingElement] = useState(false);
-  const [originalText, setOriginalText] = useState<string>('');
+  // Get text editing actions
+  const { toggleCursor } = useAppStore();
+
+  // Helper function to apply both grid and magnetic snapping
+  const applySnapping = (point: Point, operation: 'drawing' | 'moving' | 'resizing', excludeElementId?: string): Point => {
+    // First apply grid snapping if enabled
+    let snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
+    
+    // Then apply magnetic snapping if enabled
+    if (ui.grid && ui.grid.magneticEnabled) {
+      const magneticConfig = {
+        enabled: ui.grid.magneticEnabled,
+        strength: ui.grid.magneticStrength,
+        radius: ui.grid.magneticRadius,
+        gridEnabled: true,
+        elementEnabled: true,
+      };
+      
+      snappedPoint = applyMagneticSnapping(snappedPoint, {
+        gridSize: ui.grid.size,
+        magneticConfig,
+        elements,
+        viewport,
+        excludeElementId,
+        operation,
+      });
+    }
+    
+    return snappedPoint;
+  };
   
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
@@ -150,8 +182,8 @@ function App() {
     const point = getCanvasPoint(event);
     if (!point) return;
     
-    // Apply grid snapping to end point
-    const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
+    // Apply grid and magnetic snapping to end point
+    const snappedPoint = applySnapping(point, 'drawing');
     
     // Update the line while drawing
     const modifiers = keyboardManager.getModifierState();
@@ -168,8 +200,8 @@ function App() {
     const point = getCanvasPoint(event);
     if (!point) return;
     
-    // Apply grid snapping to end point
-    const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
+    // Apply grid and magnetic snapping to end point
+    const snappedPoint = applySnapping(point, 'drawing');
     
     // Update the arrow while drawing
     const modifiers = keyboardManager.getModifierState();
@@ -187,8 +219,8 @@ function App() {
 
   // New Canvas-based handlers for better coordinate handling
   const handleRectangleDrawingCanvasMove = (point: Point) => {
-    // Apply grid snapping to end point
-    const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
+    // Apply grid and magnetic snapping to end point
+    const snappedPoint = applySnapping(point, 'drawing');
     
     // Calculate rectangle dimensions
     const modifiers = keyboardManager.getModifierState();
@@ -219,8 +251,8 @@ function App() {
   };
 
   const handleCircleDrawingCanvasMove = (point: Point) => {
-    // Apply grid snapping to end point
-    const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
+    // Apply grid and magnetic snapping to end point
+    const snappedPoint = applySnapping(point, 'drawing');
     
     // Calculate circle dimensions
     const modifiers = keyboardManager.getModifierState();
@@ -251,8 +283,8 @@ function App() {
   };
 
   const handleRectangleDrawingCanvasUp = (point: Point) => {
-    // Apply grid snapping to final end point
-    const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
+    // Apply grid and magnetic snapping to final end point
+    const snappedPoint = applySnapping(point, 'drawing');
     
     // Calculate final rectangle dimensions
     const modifiers = keyboardManager.getModifierState();
@@ -292,8 +324,8 @@ function App() {
   };
 
   const handleCircleDrawingCanvasUp = (point: Point) => {
-    // Apply grid snapping to final end point
-    const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
+    // Apply grid and magnetic snapping to final end point
+    const snappedPoint = applySnapping(point, 'drawing');
     
     // Calculate final circle dimensions
     const modifiers = keyboardManager.getModifierState();
@@ -350,8 +382,8 @@ function App() {
     const point = getCanvasPoint(event);
     if (!point) return;
     
-    // Apply grid snapping to final end point
-    const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
+    // Apply grid and magnetic snapping to final end point
+    const snappedPoint = applySnapping(point, 'drawing');
     
     // Finalize the line
     const modifiers = keyboardManager.getModifierState();
@@ -390,8 +422,8 @@ function App() {
     const point = getCanvasPoint(event);
     if (!point) return;
     
-    // Apply grid snapping to final end point
-    const snappedPoint = ui.grid ? snapPointToGridWithDistance(point, ui.grid) : point;
+    // Apply grid and magnetic snapping to final end point
+    const snappedPoint = applySnapping(point, 'drawing');
     
     // Finalize the arrow
     const modifiers = keyboardManager.getModifierState();
@@ -442,7 +474,7 @@ function App() {
     };
     
     // Find elements that intersect with the selection rectangle
-    const selectedElementIds = elements
+    const newSelectedElementIds = elements
       .filter(element => {
         // Check if element intersects with selection rectangle
         const elementRight = element.x + element.width;
@@ -461,15 +493,23 @@ function App() {
       })
       .map(element => element.id);
     
-    // Select the elements
-    if (selectedElementIds.length > 0) {
-      selectElements(selectedElementIds);
+    // Select the elements based on modifier keys
+    if (dragSelectionShiftKey) {
+      // Additive selection: add new elements to existing selection
+      const combinedSelection = [...new Set([...selectedElementIds, ...newSelectedElementIds])];
+      selectElements(combinedSelection);
     } else {
-      clearSelection();
+      // Replace selection
+      if (newSelectedElementIds.length > 0) {
+        selectElements(newSelectedElementIds);
+      } else {
+        clearSelection();
+      }
     }
     
     // Reset drag selection state
     setIsDragSelecting(false);
+    setDragSelectionShiftKey(false);
     setDragSelectionStart(null);
     setDragSelectionEnd(null);
   };
@@ -487,7 +527,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleCanvasMouseDown = (point: Point, _event: MouseEvent) => {
+  const handleCanvasMouseDown = (point: Point, event: MouseEvent) => {
     // Transform canvas coordinates to world coordinates for proper hit testing
     // Inverse transformation of: scale(zoom, zoom) -> translate(-pan.x, -pan.y)
     const worldPoint = {
@@ -597,8 +637,16 @@ function App() {
       });
       
       if (clickedElement) {
-        // If clicking on a selected element, start dragging
-        if (selectedElementIds.includes(clickedElement.id)) {
+        // Check for modifier keys
+        const isShiftClick = event.shiftKey;
+        const isSelectedElement = selectedElementIds.includes(clickedElement.id);
+        
+        if (isShiftClick) {
+          // Shift+Click: Toggle element in selection
+          toggleSelection(clickedElement.id);
+          return;
+        } else if (isSelectedElement) {
+          // If clicking on a selected element without Shift, start dragging
           setIsDraggingElements(true);
           setDragStart(worldPoint); // Use world coordinates for consistent drag calculations
           
@@ -613,24 +661,29 @@ function App() {
           setDragStartPositions(initialPositions);
           return;
         } else {
-          // Single element selection
+          // Single element selection (replace current selection)
           selectElement(clickedElement.id);
           return;
         }
       } else {
         // Start drag selection on empty area
-        const snappedPoint = ui.grid ? snapPointToGridWithDistance(worldPoint, ui.grid) : worldPoint;
+        const snappedPoint = applySnapping(worldPoint, 'drawing');
         setIsDragSelecting(true);
         setDragSelectionStart(snappedPoint);
         setDragSelectionEnd(snappedPoint);
-        clearSelection();
+        setDragSelectionShiftKey(event.shiftKey); // Capture Shift key state
+        
+        // Only clear selection if not holding Shift (allows additive drag selection)
+        if (!event.shiftKey) {
+          clearSelection();
+        }
         return;
       }
     }
     
     if (activeTool === 'rectangle') {
-      // Apply grid snapping to start point
-      const snappedPoint = ui.grid ? snapPointToGridWithDistance(worldPoint, ui.grid) : worldPoint;
+      // Apply grid and magnetic snapping to start point
+      const snappedPoint = applySnapping(worldPoint, 'drawing');
       
       // Start rectangle drawing
       setIsDrawingRectangle(true);
@@ -657,8 +710,8 @@ function App() {
       
       // NOTE: Rectangle drawing uses Canvas events only - no global listeners needed
     } else if (activeTool === 'circle') {
-      // Apply grid snapping to start point
-      const snappedPoint = ui.grid ? snapPointToGridWithDistance(worldPoint, ui.grid) : worldPoint;
+      // Apply grid and magnetic snapping to start point
+      const snappedPoint = applySnapping(worldPoint, 'drawing');
       
       // Start circle drawing
       setIsDrawingCircle(true);
@@ -685,8 +738,8 @@ function App() {
       
       // NOTE: Circle drawing uses Canvas events only - no global listeners needed
     } else if (activeTool === 'line') {
-      // Apply grid snapping to start point
-      const snappedPoint = ui.grid ? snapPointToGridWithDistance(worldPoint, ui.grid) : worldPoint;
+      // Apply grid and magnetic snapping to start point
+      const snappedPoint = applySnapping(worldPoint, 'drawing');
       
       // Start line drawing
       setIsDrawingLine(true);
@@ -717,8 +770,8 @@ function App() {
       document.addEventListener('mousemove', handleGlobalMouseMove);
       document.addEventListener('mouseup', handleGlobalMouseUp);
     } else if (activeTool === 'arrow') {
-      // Apply grid snapping to start point
-      const snappedPoint = ui.grid ? snapPointToGridWithDistance(worldPoint, ui.grid) : worldPoint;
+      // Apply grid and magnetic snapping to start point
+      const snappedPoint = applySnapping(worldPoint, 'drawing');
       
       // Start arrow drawing
       setIsDrawingArrow(true);
@@ -749,7 +802,7 @@ function App() {
       document.addEventListener('mousemove', handleGlobalMouseMove);
       document.addEventListener('mouseup', handleGlobalMouseUp);
     } else if (activeTool === 'pen') {
-      const snappedPoint = snapPointToGridWithDistance(worldPoint, ui.grid);
+      const snappedPoint = applySnapping(worldPoint, 'drawing');
       setIsDrawingPen(true);
       setPenPoints([snappedPoint]);
       
@@ -772,14 +825,9 @@ function App() {
       
       setCurrentPenId(createdElement.id);
     } else if (activeTool === 'text') {
-      const snappedPoint = snapPointToGridWithDistance(worldPoint, ui.grid);
+      const snappedPoint = applySnapping(worldPoint, 'drawing');
       
-      // Start text editing at clicked position
-      setIsEditingText(true);
-      setEditingTextPosition(snappedPoint);
-      setCursorPosition(0);
-      
-      // Create a temporary text element
+      // Create a new text element and start editing it directly
       const createdElement = addElementSilent({
         type: 'text',
         x: snappedPoint.x,
@@ -803,7 +851,8 @@ function App() {
         textDecoration: toolOptions.textDecoration,
       });
       
-      setCurrentTextId(createdElement.id);
+      // Start direct text editing
+      startTextEditing(createdElement.id, '', 0);
     }
   };
 
@@ -838,7 +887,7 @@ function App() {
     
     // Handle pen drawing
     if (isDrawingPen && currentPenId) {
-      const snappedPoint = snapPointToGridWithDistance(worldPoint, ui.grid);
+      const snappedPoint = applySnapping(worldPoint, 'drawing');
       const newPoints = [...penPoints, snappedPoint];
       setPenPoints(newPoints);
       
@@ -860,14 +909,12 @@ function App() {
     
     // Handle element dragging
     if (isDraggingElements && dragStart && dragStartPositions.size > 0) {
-      const deltaX = worldPoint.x - dragStart.x;
-      const deltaY = worldPoint.y - dragStart.y;
-      
-      // Apply grid snapping to drag movement if grid is enabled
-      const finalDelta = ui.grid && ui.grid.snapToGrid ? {
-        x: Math.round(deltaX / ui.grid.size) * ui.grid.size,
-        y: Math.round(deltaY / ui.grid.size) * ui.grid.size
-      } : { x: deltaX, y: deltaY };
+      // Apply grid and magnetic snapping to drag movement
+      const snappedTargetPoint = applySnapping(worldPoint, 'moving', selectedElementIds[0]);
+      const finalDelta = {
+        x: snappedTargetPoint.x - dragStart.x,
+        y: snappedTargetPoint.y - dragStart.y
+      };
       
       // Update all selected elements based on their initial positions
       const { updateElementSilent } = useAppStore.getState();
@@ -884,7 +931,7 @@ function App() {
     
     // Handle drag selection
     if (isDragSelecting && dragSelectionStart) {
-      const snappedPoint = ui.grid ? snapPointToGridWithDistance(worldPoint, ui.grid) : worldPoint;
+      const snappedPoint = applySnapping(worldPoint, 'drawing');
       setDragSelectionEnd(snappedPoint);
     }
     
@@ -993,16 +1040,16 @@ function App() {
   };
 
   // Double-click handler for text editing
-  const handleCanvasDoubleClick = (point: Point, _event: MouseEvent) => {
+  const handleCanvasDoubleClick = (point: Point) => {
     // Don't handle double-click if already in text editing mode
-    if (isEditingText) return;
+    if (textEditing.isEditing) return;
     
     // Transform canvas coordinates to world coordinates
     const worldPoint = {
-      x: (point.x / viewport.zoom) + viewport.pan.x,
-      y: (point.y / viewport.zoom) + viewport.pan.y,
+      x: (point.x - viewport.pan.x) / viewport.zoom,
+      y: (point.y - viewport.pan.y) / viewport.zoom,
     };
-
+    
     // Find element at the clicked position (front-to-back search)
     const hitElement = elements
       .filter((el) => !el.locked) // Skip locked elements
@@ -1018,7 +1065,7 @@ function App() {
               worldPoint.y >= element.y &&
               worldPoint.y <= element.y + element.height
             );
-          case 'circle':
+          case 'circle': {
             const centerX = element.x + element.width / 2;
             const centerY = element.y + element.height / 2;
             const radiusX = element.width / 2;
@@ -1026,57 +1073,25 @@ function App() {
             const dx = (worldPoint.x - centerX) / radiusX;
             const dy = (worldPoint.y - centerY) / radiusY;
             return dx * dx + dy * dy <= 1;
+          }
           case 'line':
-          case 'arrow':
+          case 'arrow': {
             // Simple line hit test with tolerance
             const tolerance = Math.max(element.strokeWidth * 2, 10);
             const lineStart = { x: element.x, y: element.y };
             const lineEnd = { x: element.x + element.width, y: element.y + element.height };
             const distance = pointToLineDistance(worldPoint, lineStart, lineEnd);
             return distance <= tolerance;
+          }
           default:
             return false;
         }
       });
 
     if (hitElement) {
-      // Calculate text position based on element type
-      let textPosition: Point;
-      
-      switch (hitElement.type) {
-        case 'rectangle':
-          // Center of rectangle
-          textPosition = {
-            x: hitElement.x + hitElement.width / 2,
-            y: hitElement.y + hitElement.height / 2,
-          };
-          break;
-        case 'circle':
-          // Center of circle
-          textPosition = {
-            x: hitElement.x + hitElement.width / 2,
-            y: hitElement.y + hitElement.height / 2,
-          };
-          break;
-        case 'line':
-        case 'arrow':
-          // Midpoint of line/arrow
-          textPosition = {
-            x: hitElement.x + hitElement.width / 2,
-            y: hitElement.y + hitElement.height / 2,
-          };
-          break;
-        default:
-          textPosition = worldPoint;
-      }
 
-      // Start direct canvas text editing using existing system
-      setIsEditingText(true);
-      setCurrentTextId(hitElement.id);
-      setEditingTextPosition(textPosition);
-      setCursorPosition(hitElement.text ? hitElement.text.length : 0);
-      setIsEditingExistingElement(true);
-      setOriginalText(hitElement.text || '');
+      // Start direct text editing within the shape
+      startTextEditing(hitElement.id, hitElement.text || '', hitElement.text ? hitElement.text.length : 0);
     }
   };
 
@@ -1092,7 +1107,7 @@ function App() {
     
     if (lenSq === 0) return Math.sqrt(A * A + B * B);
     
-    let param = dot / lenSq;
+    const param = dot / lenSq;
     
     let xx: number, yy: number;
     
@@ -1112,138 +1127,83 @@ function App() {
     return Math.sqrt(dx * dx + dy * dy);
   };
 
-  // Text editing handlers
-  const handleTextInput = (text: string) => {
-    if (currentTextId) {
-      updateElementSilent(currentTextId, { text });
-    }
-  };
-
-  const handleTextFinish = () => {
-    if (currentTextId) {
-      const { elements, deleteElement } = useAppStore.getState();
-      const textElement = elements.find(el => el.id === currentTextId);
-      
-      if (isEditingExistingElement) {
-        // For existing elements, always save changes to history
-        saveToHistory();
-      } else {
-        // For new text elements, check if empty and remove if so
-        if (textElement && (!textElement.text || textElement.text.trim() === '')) {
-          deleteElement(currentTextId);
-        } else {
-          // Save final text to history
-          saveToHistory();
-        }
-      }
-    }
-    
-    setIsEditingText(false);
-    setCurrentTextId(null);
-    setEditingTextPosition(null);
-    setCursorPosition(0);
-    setIsEditingExistingElement(false);
-    setOriginalText('');
-  };
-
-  const handleTextCancel = () => {
-    if (currentTextId) {
-      if (isEditingExistingElement) {
-        // For existing elements, restore original text
-        updateElementSilent(currentTextId, { text: originalText });
-      } else {
-        // Only remove text element on cancel if it's a new element
-        const { deleteElement } = useAppStore.getState();
-        deleteElement(currentTextId);
-      }
-    }
-    
-    setIsEditingText(false);
-    setCurrentTextId(null);
-    setEditingTextPosition(null);
-    setCursorPosition(0);
-    setIsEditingExistingElement(false);
-    setOriginalText('');
-    setOriginalText('');
-  };
-
-  // Handle cursor blinking for text editing
+  // Handle cursor blinking for direct text editing
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: number | null = null;
     
-    if (isEditingText) {
-      // Force re-render every 500ms to make cursor blink
+    if (textEditing.isEditing) {
+      // Toggle cursor visibility every 500ms
       interval = setInterval(() => {
-        // Force re-render by updating the canvas
-        const canvas = canvasRef.current;
-        if (canvas && canvas.dispatchEvent) {
-          // This triggers a re-render to show cursor blinking
-          setEditingTextPosition(prev => prev ? { ...prev } : null);
-        }
+        toggleCursor();
       }, 500);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isEditingText]);
+  }, [textEditing.isEditing, toggleCursor]);
 
-  // Handle keyboard input for text editing
+  // Handle keyboard input for direct text editing
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isEditingText && currentTextId) {
-        const { elements } = useAppStore.getState();
-        const textElement = elements.find(el => el.id === currentTextId);
-        
-        if (!textElement) return;
-        
-        const currentText = textElement.text || '';
-        
-        // Prevent default behavior for text editing keys
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          handleTextCancel();
-        } else if (event.key === 'Enter' && !event.shiftKey) {
-          event.preventDefault();
-          handleTextFinish();
-        } else if (event.key === 'Enter' && event.shiftKey) {
-          // Allow new line with Shift+Enter
-          event.preventDefault();
-          const newText = currentText.slice(0, cursorPosition) + '\n' + currentText.slice(cursorPosition);
-          handleTextInput(newText);
-          setCursorPosition(cursorPosition + 1);
-        } else if (event.key === 'Backspace') {
-          event.preventDefault();
-          if (cursorPosition > 0) {
-            const newText = currentText.slice(0, cursorPosition - 1) + currentText.slice(cursorPosition);
-            handleTextInput(newText);
-            setCursorPosition(cursorPosition - 1);
-          }
-        } else if (event.key === 'Delete') {
-          event.preventDefault();
-          if (cursorPosition < currentText.length) {
-            const newText = currentText.slice(0, cursorPosition) + currentText.slice(cursorPosition + 1);
-            handleTextInput(newText);
-          }
-        } else if (event.key === 'ArrowLeft') {
-          event.preventDefault();
-          setCursorPosition(Math.max(0, cursorPosition - 1));
-        } else if (event.key === 'ArrowRight') {
-          event.preventDefault();
-          setCursorPosition(Math.min(currentText.length, cursorPosition + 1));
-        } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
-          // Regular character input
-          event.preventDefault();
-          const newText = currentText.slice(0, cursorPosition) + event.key + currentText.slice(cursorPosition);
-          handleTextInput(newText);
-          setCursorPosition(cursorPosition + 1);
+      if (!textEditing.isEditing || !textEditing.elementId) return;
+      
+      const currentText = textEditing.text;
+      const cursorPos = textEditing.cursorPosition;
+      
+      // Prevent default behavior for text editing keys
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        finishTextEditing();
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        // Add line break at cursor position
+        const newText = currentText.slice(0, cursorPos) + '\n' + currentText.slice(cursorPos);
+        updateTextContent(newText, cursorPos + 1);
+      } else if (event.key === 'Backspace') {
+        event.preventDefault();
+        if (cursorPos > 0) {
+          const newText = currentText.slice(0, cursorPos - 1) + currentText.slice(cursorPos);
+          updateTextContent(newText, cursorPos - 1);
         }
+      } else if (event.key === 'Delete') {
+        event.preventDefault();
+        if (cursorPos < currentText.length) {
+          const newText = currentText.slice(0, cursorPos) + currentText.slice(cursorPos + 1);
+          updateTextContent(newText, cursorPos);
+        }
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        updateTextContent(currentText, Math.max(0, cursorPos - 1));
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        updateTextContent(currentText, Math.min(currentText.length, cursorPos + 1));
+      } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        // Regular character input
+        event.preventDefault();
+        const newText = currentText.slice(0, cursorPos) + event.key + currentText.slice(cursorPos);
+        updateTextContent(newText, cursorPos + 1);
+      }
+    };
+
+    // Handle clicks outside to finish editing
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!textEditing.isEditing) return;
+      
+      const canvas = canvasRef.current;
+      if (canvas && !canvas.contains(event.target as Node)) {
+        finishTextEditing();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isEditingText, currentTextId, cursorPosition]);
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [textEditing, updateTextContent, finishTextEditing]);
 
   // Set up keyboard shortcuts
   useEffect(() => {
@@ -1251,28 +1211,36 @@ function App() {
     keyboardManager.on('undo', undo);
     keyboardManager.on('redo', redo);
     keyboardManager.on('delete', deleteSelectedElements);
+    keyboardManager.on('duplicate', duplicateSelectedElements);
     keyboardManager.on('selectAll', selectAll);
+    keyboardManager.on('selectNext', selectNext);
+    keyboardManager.on('selectPrevious', selectPrevious);
     keyboardManager.on('copy', copy);
     keyboardManager.on('paste', paste);
     keyboardManager.on('copyStyle', copyStyle);
     keyboardManager.on('pasteStyle', pasteStyle);
     keyboardManager.on('resetZoom', resetZoom);
     keyboardManager.on('zoomToFit', zoomToFit);
+    keyboardManager.on('toggleMagnetic', toggleMagneticGrid);
 
     return () => {
       keyboardManager.off('setTool');
       keyboardManager.off('undo');
       keyboardManager.off('redo');
       keyboardManager.off('delete');
+      keyboardManager.off('duplicate');
       keyboardManager.off('selectAll');
+      keyboardManager.off('selectNext');
+      keyboardManager.off('selectPrevious');
       keyboardManager.off('copy');
       keyboardManager.off('paste');
       keyboardManager.off('copyStyle');
       keyboardManager.off('pasteStyle');
       keyboardManager.off('resetZoom');
       keyboardManager.off('zoomToFit');
+      keyboardManager.off('toggleMagnetic');
     };
-  }, [setActiveTool, undo, redo, deleteSelectedElements, selectAll, copy, paste, copyStyle, pasteStyle, resetZoom, zoomToFit]);
+  }, [setActiveTool, undo, redo, deleteSelectedElements, duplicateSelectedElements, selectAll, selectNext, selectPrevious, copy, paste, copyStyle, pasteStyle, resetZoom, zoomToFit, toggleMagneticGrid]);
 
   return (
     <div className="excalibox-app">
@@ -1302,11 +1270,7 @@ function App() {
               ? { start: dragSelectionStart, end: dragSelectionEnd }
               : null
           }
-          textEditing={isEditingText ? {
-            elementId: currentTextId,
-            position: editingTextPosition,
-            cursorPosition: cursorPosition
-          } : null}
+          textEditing={textEditing.isEditing ? textEditing : null}
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleCanvasMouseMove}
           onMouseUp={handleCanvasMouseUp}
@@ -1315,6 +1279,7 @@ function App() {
         />
         
       </main>
+      
     </div>
   );
 }

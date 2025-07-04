@@ -12,11 +12,12 @@ export interface TextEditingState {
   cursorPosition: number;
 }
 
-export interface DoubleClickTextEditingState {
+export interface DirectTextEditingState {
   isEditing: boolean;
   elementId: string | null;
-  position: Point | null;
-  initialText: string;
+  text: string;
+  cursorPosition: number;
+  cursorVisible: boolean;
 }
 
 export interface Rect {
@@ -127,6 +128,9 @@ export interface GridSettings {
   showGrid: boolean;
   color: string;
   opacity: number;
+  magneticEnabled: boolean; // Enable/disable magnetic snapping
+  magneticStrength: number; // Magnetic attraction strength (10-50px)
+  magneticRadius: number; // Detection radius for magnetic fields (20-100px)
 }
 
 export interface UIState {
@@ -154,5 +158,5 @@ export interface AppState {
   clipboard: Element[] | null;
   styleClipboard: StyleClipboard | null;
   recentColors: string[];
-  doubleClickTextEditing: DoubleClickTextEditingState;
+  textEditing: DirectTextEditingState;
 }

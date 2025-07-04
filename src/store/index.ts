@@ -2,7 +2,7 @@
 // ABOUTME: Centralized state for elements, tools, viewport, and UI settings
 
 import { create } from 'zustand';
-import type { AppState, Element, ToolType, Point, StyleClipboard, DoubleClickTextEditingState } from '../types';
+import type { AppState, Element, ToolType, Point, StyleClipboard } from '../types';
 import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG, RECENT_COLORS_STORAGE_KEY, MAX_RECENT_COLORS, GRID_CONFIG } from '../constants';
 import { generateId } from '../utils';
 
@@ -16,7 +16,12 @@ interface AppStore extends AppState {
   deleteSelectedElements: () => void;
   selectElement: (id: string) => void;
   selectElements: (ids: string[]) => void;
+  addToSelection: (id: string) => void;
+  removeFromSelection: (id: string) => void;
+  toggleSelection: (id: string) => void;
   selectAll: () => void;
+  selectNext: () => void;
+  selectPrevious: () => void;
   clearSelection: () => void;
   setActiveTool: (tool: ToolType) => void;
   setZoom: (zoom: number) => void;
@@ -48,8 +53,14 @@ interface AppStore extends AppState {
   setGridSnapDistance: (distance: number) => void;
   toggleGrid: () => void;
   snapToGrid: (point: Point) => Point;
+  // Magnetic Grid Actions
+  setGridMagneticEnabled: (enabled: boolean) => void;
+  setGridMagneticStrength: (strength: number) => void;
+  setGridMagneticRadius: (radius: number) => void;
+  toggleMagneticGrid: () => void;
   // Element Management Actions
   duplicateElement: (id: string) => void;
+  duplicateSelectedElements: () => void;
   bringForward: (id: string) => void;
   sendBackward: (id: string) => void;
   bringToFront: (id: string) => void;
@@ -60,11 +71,11 @@ interface AppStore extends AppState {
   pasteStyle: () => void;
   // History Actions
   saveToHistory: () => void;
-  // Double-Click Text Editing Actions
-  startDoubleClickTextEditing: (elementId: string, position: Point, initialText: string) => void;
-  endDoubleClickTextEditing: () => void;
-  saveDoubleClickTextEdit: (text: string) => void;
-  cancelDoubleClickTextEdit: () => void;
+  // Direct Text Editing Actions
+  startTextEditing: (elementId: string, text: string, cursorPosition: number) => void;
+  updateTextContent: (text: string, cursorPosition: number) => void;
+  finishTextEditing: () => void;
+  toggleCursor: () => void;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -96,6 +107,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       showGrid: false, // Hidden by default, can be toggled
       color: GRID_CONFIG.COLOR,
       opacity: GRID_CONFIG.OPACITY,
+      magneticEnabled: GRID_CONFIG.DEFAULT_MAGNETIC_ENABLED,
+      magneticStrength: GRID_CONFIG.DEFAULT_MAGNETIC_STRENGTH,
+      magneticRadius: GRID_CONFIG.DEFAULT_MAGNETIC_RADIUS,
     },
   },
   history: [[]],
@@ -103,19 +117,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
   clipboard: null,
   styleClipboard: null,
   recentColors: JSON.parse(localStorage.getItem(RECENT_COLORS_STORAGE_KEY) || '[]'),
-  doubleClickTextEditing: {
+  textEditing: {
     isEditing: false,
     elementId: null,
-    position: null,
-    initialText: '',
+    text: '',
+    cursorPosition: 0,
+    cursorVisible: true,
   },
 
   // Actions
   addElement: (elementData) => {
-    let createdElement: Element;
-    
     // Create element first
-    createdElement = {
+    const createdElement: Element = {
       // Apply provided data first, then defaults for missing properties
       ...elementData,
       // Default properties for new elements (only if not provided)
@@ -148,10 +161,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   addElementSilent: (elementData) => {
-    let createdElement: Element;
-    
     // Create element first
-    createdElement = {
+    const createdElement: Element = {
       // Apply provided data first, then defaults for missing properties
       ...elementData,
       // Default properties for new elements (only if not provided)
@@ -339,6 +350,129 @@ export const useAppStore = create<AppStore>((set, get) => ({
         },
       },
     }));
+  },
+
+  addToSelection: (id) => {
+    set((state) => {
+      // Don't add if already selected or element doesn't exist
+      if (state.selectedElementIds.includes(id) || 
+          !state.elements.some(el => el.id === id)) {
+        return state;
+      }
+      
+      const newSelectedIds = [...state.selectedElementIds, id];
+      return {
+        selectedElementIds: newSelectedIds,
+        ui: {
+          ...state.ui,
+          propertiesPanel: {
+            ...state.ui.propertiesPanel,
+            visible: true, // Show properties panel when adding to selection
+          },
+        },
+      };
+    });
+  },
+
+  removeFromSelection: (id) => {
+    set((state) => {
+      const newSelectedIds = state.selectedElementIds.filter(selId => selId !== id);
+      return {
+        selectedElementIds: newSelectedIds,
+        ui: {
+          ...state.ui,
+          propertiesPanel: {
+            ...state.ui.propertiesPanel,
+            visible: newSelectedIds.length > 0, // Hide panel if no selection
+          },
+        },
+      };
+    });
+  },
+
+  toggleSelection: (id) => {
+    set((state) => {
+      // Don't toggle if element doesn't exist
+      if (!state.elements.some(el => el.id === id)) {
+        return state;
+      }
+      
+      const isSelected = state.selectedElementIds.includes(id);
+      const newSelectedIds = isSelected
+        ? state.selectedElementIds.filter(selId => selId !== id)
+        : [...state.selectedElementIds, id];
+      
+      return {
+        selectedElementIds: newSelectedIds,
+        ui: {
+          ...state.ui,
+          propertiesPanel: {
+            ...state.ui.propertiesPanel,
+            visible: newSelectedIds.length > 0, // Show/hide panel based on selection
+          },
+        },
+      };
+    });
+  },
+
+  selectNext: () => {
+    set((state) => {
+      if (state.elements.length === 0) return state;
+      
+      let nextIndex = 0;
+      
+      if (state.selectedElementIds.length === 1) {
+        // Find current element index and select next
+        const currentIndex = state.elements.findIndex(el => el.id === state.selectedElementIds[0]);
+        nextIndex = (currentIndex + 1) % state.elements.length;
+      } else {
+        // If multiple or no selection, start from beginning
+        nextIndex = 0;
+      }
+      
+      const nextElementId = state.elements[nextIndex].id;
+      
+      return {
+        selectedElementIds: [nextElementId],
+        ui: {
+          ...state.ui,
+          propertiesPanel: {
+            ...state.ui.propertiesPanel,
+            visible: true,
+          },
+        },
+      };
+    });
+  },
+
+  selectPrevious: () => {
+    set((state) => {
+      if (state.elements.length === 0) return state;
+      
+      let prevIndex = state.elements.length - 1;
+      
+      if (state.selectedElementIds.length === 1) {
+        // Find current element index and select previous
+        const currentIndex = state.elements.findIndex(el => el.id === state.selectedElementIds[0]);
+        prevIndex = currentIndex === 0 ? state.elements.length - 1 : currentIndex - 1;
+      } else {
+        // If multiple or no selection, start from end
+        prevIndex = state.elements.length - 1;
+      }
+      
+      const prevElementId = state.elements[prevIndex].id;
+      
+      return {
+        selectedElementIds: [prevElementId],
+        ui: {
+          ...state.ui,
+          propertiesPanel: {
+            ...state.ui.propertiesPanel,
+            visible: true,
+          },
+        },
+      };
+    });
   },
 
   resetZoom: () => {
@@ -718,6 +852,61 @@ export const useAppStore = create<AppStore>((set, get) => ({
       : point;
   },
 
+  // Magnetic Grid Actions
+  setGridMagneticEnabled: (magneticEnabled: boolean) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          magneticEnabled,
+        },
+      },
+    }));
+  },
+
+  setGridMagneticStrength: (magneticStrength: number) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          magneticStrength: Math.max(
+            GRID_CONFIG.MIN_MAGNETIC_STRENGTH, 
+            Math.min(GRID_CONFIG.MAX_MAGNETIC_STRENGTH, magneticStrength)
+          ),
+        },
+      },
+    }));
+  },
+
+  setGridMagneticRadius: (magneticRadius: number) => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          magneticRadius: Math.max(
+            GRID_CONFIG.MIN_MAGNETIC_RADIUS, 
+            Math.min(GRID_CONFIG.MAX_MAGNETIC_RADIUS, magneticRadius)
+          ),
+        },
+      },
+    }));
+  },
+
+  toggleMagneticGrid: () => {
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        grid: {
+          ...state.ui.grid,
+          magneticEnabled: !state.ui.grid.magneticEnabled,
+        },
+      },
+    }));
+  },
+
   // Element Management Actions
   duplicateElement: (id: string) => {
     set((state) => {
@@ -738,6 +927,41 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return {
         elements: newElements,
         selectedElementIds: [duplicated.id],
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  duplicateSelectedElements: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      const duplicatedElements: Element[] = [];
+      
+      // Create duplicates for all selected elements
+      state.selectedElementIds.forEach(id => {
+        const element = state.elements.find(el => el.id === id);
+        if (element) {
+          const duplicated: Element = {
+            ...element,
+            id: generateId(),
+            x: element.x + 20,
+            y: element.y + 20,
+          };
+          duplicatedElements.push(duplicated);
+        }
+      });
+      
+      if (duplicatedElements.length === 0) return state;
+      
+      const newElements = [...state.elements, ...duplicatedElements];
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      return {
+        elements: newElements,
+        selectedElementIds: duplicatedElements.map(el => el.id),
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };
@@ -858,65 +1082,67 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
-  // Double-Click Text Editing Actions
-  startDoubleClickTextEditing: (elementId: string, position: Point, initialText: string) => {
+  // Direct Text Editing Actions
+  startTextEditing: (elementId: string, text: string, cursorPosition: number) => {
     set({
-      doubleClickTextEditing: {
+      textEditing: {
         isEditing: true,
         elementId,
-        position,
-        initialText,
+        text,
+        cursorPosition,
+        cursorVisible: true,
       },
     });
   },
 
-  endDoubleClickTextEditing: () => {
-    set({
-      doubleClickTextEditing: {
-        isEditing: false,
-        elementId: null,
-        position: null,
-        initialText: '',
-      },
-    });
-  },
-
-  saveDoubleClickTextEdit: (text: string) => {
+  updateTextContent: (text: string, cursorPosition: number) => {
     set((state) => {
-      if (!state.doubleClickTextEditing.elementId) return state;
+      if (!state.textEditing.isEditing || !state.textEditing.elementId) return state;
 
+      // Update the element in real-time
       const newElements = state.elements.map((el) =>
-        el.id === state.doubleClickTextEditing.elementId 
+        el.id === state.textEditing.elementId 
           ? { ...el, text }
           : el
       );
 
-      // Save to history for proper state management
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(newElements);
-
       return {
         elements: newElements,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-        doubleClickTextEditing: {
-          isEditing: false,
-          elementId: null,
-          position: null,
-          initialText: '',
+        textEditing: {
+          ...state.textEditing,
+          text,
+          cursorPosition,
         },
       };
     });
   },
 
-  cancelDoubleClickTextEdit: () => {
-    set({
-      doubleClickTextEditing: {
-        isEditing: false,
-        elementId: null,
-        position: null,
-        initialText: '',
-      },
+  finishTextEditing: () => {
+    set((state) => {
+      // Save to history when finishing text editing
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push([...state.elements]);
+
+      return {
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+        textEditing: {
+          isEditing: false,
+          elementId: null,
+          text: '',
+          cursorPosition: 0,
+          cursorVisible: true,
+        },
+      };
     });
+  },
+
+  toggleCursor: () => {
+    set((state) => ({
+      textEditing: {
+        ...state.textEditing,
+        cursorVisible: !state.textEditing.cursorVisible,
+      },
+    }));
   },
 }));

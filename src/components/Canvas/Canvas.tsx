@@ -2,7 +2,7 @@
 // ABOUTME: Handles canvas setup, event management, and element rendering
 
 import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
-import type { Point, Element, Viewport, GridSettings, TextEditingState } from '../../types';
+import type { Point, Element, Viewport, GridSettings, DirectTextEditingState } from '../../types';
 import { CanvasRenderer } from './CanvasRenderer';
 import './Canvas.css';
 
@@ -14,7 +14,7 @@ interface CanvasProps {
   gridSettings?: GridSettings;
   selectedElementIds?: string[];
   dragSelectionRect?: { start: Point; end: Point } | null;
-  textEditing?: TextEditingState | null;
+  textEditing?: DirectTextEditingState | null;
   onMouseDown?: (point: Point, event: MouseEvent) => void;
   onMouseMove?: (point: Point, event: MouseEvent) => void;
   onMouseUp?: (point: Point, event: MouseEvent) => void;
@@ -100,6 +100,26 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     renderer.updateViewport(viewport);
     renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing);
   }, [elements, viewport, gridSettings, selectedElementIds, dragSelectionRect, textEditing]);
+
+  // Animation loop for blinking cursor when text editing is active
+  useEffect(() => {
+    if (!textEditing) return;
+
+    const animate = () => {
+      const renderer = rendererRef.current;
+      if (renderer) {
+        renderer.updateViewport(viewport);
+        renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing);
+      }
+    };
+
+    // Start animation loop for cursor blinking
+    const intervalId = setInterval(animate, 100); // Update every 100ms for smooth blinking
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [textEditing, elements, viewport, gridSettings, selectedElementIds, dragSelectionRect]);
 
   // Event handlers
   useEffect(() => {

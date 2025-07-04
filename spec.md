@@ -92,6 +92,9 @@ interface GridState {
   enabled: boolean;
   size: number;
   snapEnabled: boolean;
+  magneticEnabled: boolean;    // Enable/disable magnetic snapping
+  magneticStrength: number;    // Attraction strength (10-50px)
+  magneticRadius: number;      // Detection radius for magnetic fields
 }
 
 interface UIState {
@@ -130,6 +133,7 @@ interface UIState {
 - **Infinite Canvas**: Dynamically expanding drawing surface
 - **Viewport Management**: Smooth pan and zoom (10% to 500%) with cursor-centered zooming
 - **Grid System**: Configurable grid with snap-to-grid functionality
+- **Magnetic Grid**: Intelligent magnetic snapping that assists element placement and alignment
 - **Visual Feedback**: Real-time guides during drawing operations
 - **Selection Indicators**: Visual selection feedback with proper zoom scaling
 - **Coordinate Transformation**: Consistent world-to-screen coordinate conversion for all interactions
@@ -168,18 +172,30 @@ interface UIState {
 #### Tool Modifiers
 - **Shift**: Constrain proportions (squares, circles, 45° angles)
 - **Alt**: Draw from center point
-- **Double-click**: Enter text editing mode for any shape
+- **Double-click**: Enter direct in-shape text editing mode for any shape
 
-#### Text Tool Behavior
-- **Click to Create**: Click on canvas to create new text element and enter editing mode
-- **Direct Canvas Editing**: Text editing happens directly on the canvas with visible cursor
-- **Keyboard Input**: Type directly to add text, use arrow keys for cursor movement
-- **Real-time Rendering**: Text appears immediately as typed with current font settings
-- **Cursor Blinking**: Visual cursor indicator showing current editing position
-- **Auto-sizing**: Text elements automatically adjust width and height based on content
+#### Direct In-Shape Text Editing Behavior
+- **Double-click Any Shape**: Double-click on rectangles, circles, lines, or arrows to start text editing directly within the shape
+- **No Overlay Interface**: Text editing happens directly on the canvas inside the shape boundaries - NO separate text input boxes or overlays
+- **Blinking Cursor**: Visual text cursor rendered directly on the canvas showing current editing position within the shape
+- **Automatic Centering**: Text is automatically centered horizontally and vertically within the shape bounds
+- **Automatic Line Wrapping**: Text automatically wraps to new lines when exceeding shape width, creating multiple lines as needed
+- **Real-time Rendering**: Text and cursor appear immediately as typed, rendered directly on the canvas within the shape
+- **Keyboard Input**: Type directly to add text, use arrow keys for cursor movement between characters and lines
+- **Word Boundaries**: Cursor movement respects word boundaries and line breaks for natural text navigation
+- **Multi-line Support**: Full support for multi-line text with proper line spacing and vertical centering of the entire text block
+- **Shape-Constrained**: Text is constrained to fit within shape boundaries with appropriate padding
+- **Escape to Finish**: Press Escape or click outside the shape to complete text editing
+- **Enter for Line Breaks**: Press Enter to manually create line breaks within the text
+- **Shift+Enter Alternative**: Press Shift+Enter as alternative method to add line breaks within the text
+- **Backspace/Delete**: Full text editing capabilities including character deletion
+- **Font Integration**: Text uses current font settings from properties panel (family, size, weight, style, color)
+
+#### Text Tool Behavior  
+- **Click to Create**: Click on canvas to create new standalone text element and enter editing mode
+- **Direct Canvas Editing**: Text editing happens directly on the canvas with visible cursor (same as in-shape editing)
+- **Auto-sizing**: Standalone text elements automatically adjust width and height based on content
 - **Font Controls**: Full typography control via properties panel (family, size, weight, style, decoration, alignment)
-- **Escape to Finish**: Press Escape or click outside to complete text editing
-- **Empty Text Removal**: Empty text elements are automatically removed
 - **Moveable Text**: Text elements can be selected and dragged like other elements
 - **Selection Support**: Text elements show selection indicators and can be styled via properties panel
 
@@ -205,6 +221,16 @@ interface UIState {
 - **Connectors**: Smart lines that attach to shapes
 - **Image Support**: Import and embed images
 - **Advanced Text**: Rich text formatting, text boxes
+
+#### Magnetic Grid System
+- **Intelligent Snapping**: Elements are automatically attracted to grid intersections and nearby elements
+- **Magnetic Zones**: Virtual attraction zones around grid points, element edges, and centers
+- **Configurable Magnetism**: Adjustable magnetic strength (10-50px) and detection radius
+- **Visual Indicators**: Real-time visual guides showing magnetic snap points and alignment zones
+- **Smart Alignment**: Automatic alignment assistance when elements approach common positions
+- **Magnetic Toggle**: Quick enable/disable of magnetic behavior (M key shortcut)
+- **Context-Aware**: Different magnetic behavior for drawing vs moving elements
+- **Threshold Control**: Fine-tuned magnetic sensitivity for precision work
 
 #### Performance Optimizations
 - **Viewport Culling**: Only render visible elements
@@ -283,6 +309,32 @@ interface UIState {
 - **Layout**: Centered or left-aligned toolbar
 - **Behavior**: Always visible, compact design
 - **Style**: Clean, minimalist design matching Excalidraw
+
+#### **Toolbar Options Menu**
+- **Position**: Right side of toolbar with three-dot menu icon
+- **Trigger**: Click to open dropdown menu with application-level settings
+- **Menu Contents**:
+  
+##### **Grid Controls Section**
+- **Grid Toggle**: Toggle button for grid visibility with grid icon (⊞) and G keyboard shortcut
+- **Grid Size**: Number input for grid spacing (5-100px, default 20px) with px unit display
+- **Snap to Grid**: Toggle button for grid snapping behavior with snap icon (⊡)
+- **Layout**: Vertical menu items with clear French labels and icons
+- **Visual**: Toggle buttons with active state highlighting, keyboard shortcuts displayed
+
+##### **Magnetic Grid Controls Section**
+- **Magnetic Toggle**: Toggle button for magnetic grid functionality with magnetic field icon (🧲) and M keyboard shortcut
+- **Magnetic Strength**: Horizontal slider for attraction strength (10-50px, default 25px) with real-time value display
+- **Magnetic Radius**: Horizontal slider for detection radius (20-100px, default 30px) with real-time value display
+- **Help Text**: Explanatory text when magnetic mode is enabled describing functionality
+- **Visual Feedback**: 
+  - Magnetic toggle with distinctive magnetic field icon and active state
+  - Animated status indicator showing when magnetic mode is active
+  - Strength and radius sliders with real-time numeric value display (disabled when magnetic is off)
+  - Help text explaining magnetic attraction behavior
+- **Integration**: Works seamlessly with existing grid snapping system
+- **Performance**: Throttled slider updates for smooth interaction
+- **Accessibility**: ARIA labels, keyboard navigation, and proper menu semantics
 
 ### Left Properties Panel
 - **Position**: Left side of screen, vertical panel
@@ -408,6 +460,7 @@ interface UIState {
   - Link element (🔗) - linking functionality placeholder
 - **Visual**: Emoji icons for clear visual recognition
 - **Interaction**: Single click for immediate action with visual state feedback
+
 
 #### **Advanced Color Picker Interface (based on design_examples/COLOR_PICKER_PERSONALISE.png)**
 

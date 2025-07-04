@@ -119,6 +119,13 @@ export class KeyboardManager {
     });
 
     this.addShortcut({
+      key: 'd',
+      ctrlKey: true,
+      action: 'duplicate',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
       key: 'Delete',
       action: 'delete',
       preventDefault: true,
@@ -149,6 +156,39 @@ export class KeyboardManager {
     this.addShortcut({
       key: 'g',
       action: 'toggleGrid',
+      preventDefault: true,
+    });
+
+    // Magnetic grid shortcuts
+    this.addShortcut({
+      key: 'm',
+      action: 'toggleMagnetic',
+      preventDefault: true,
+    });
+
+    // Navigation shortcuts
+    this.addShortcut({
+      key: 'Tab',
+      action: 'selectNext',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'Tab',
+      shiftKey: true,
+      action: 'selectPrevious',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'ArrowRight',
+      action: 'selectNext',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'ArrowLeft',
+      action: 'selectPrevious',
       preventDefault: true,
     });
   }

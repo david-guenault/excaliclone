@@ -2,7 +2,7 @@
 // ABOUTME: Handles the actual drawing operations for all element types using Rough.js
 
 import rough from 'roughjs';
-import type { Element, Viewport, GridSettings, ArrowheadType, Point, TextEditingState } from '../../types';
+import type { Element, Viewport, GridSettings, ArrowheadType, Point, DirectTextEditingState } from '../../types';
 import { renderGrid } from '../../utils/grid';
 import { ARROW_CONFIG, ARROWHEAD_CONFIG } from '../../constants';
 
@@ -68,7 +68,7 @@ export class CanvasRenderer {
     }
   }
 
-  renderElement(element: Element) {
+  renderElement(element: Element, textEditing?: { elementId: string | null; cursorPosition: number; cursorVisible: boolean }) {
     if (!this.ctx || !this.rough) return;
     
     // Validate element has required properties
@@ -88,19 +88,26 @@ export class CanvasRenderer {
     // Set global opacity for Rough.js elements
     this.ctx.globalAlpha = element.opacity;
 
+    // Determine if this element is being edited
+    const isBeingEdited = textEditing && textEditing.elementId === element.id;
+    const editingInfo = isBeingEdited ? {
+      cursorPosition: textEditing.cursorPosition,
+      cursorVisible: textEditing.cursorVisible
+    } : undefined;
+
     // Draw based on element type
     switch (element.type) {
       case 'rectangle':
-        this.drawRectangle(element);
+        this.drawRectangle(element, editingInfo);
         break;
       case 'circle':
-        this.drawCircle(element);
+        this.drawCircle(element, editingInfo);
         break;
       case 'line':
-        this.drawLine(element);
+        this.drawLine(element, editingInfo);
         break;
       case 'arrow':
-        this.drawArrow(element);
+        this.drawArrow(element, editingInfo);
         break;
       case 'text':
         this.drawText(element);
@@ -113,7 +120,7 @@ export class CanvasRenderer {
     this.ctx.restore();
   }
 
-  renderElements(elements: Element[], gridSettings?: GridSettings, selectedElementIds: string[] = [], dragSelectionRect?: { start: Point; end: Point } | null, textEditing?: TextEditingState | null) {
+  renderElements(elements: Element[], gridSettings?: GridSettings, selectedElementIds: string[] = [], dragSelectionRect?: { start: Point; end: Point } | null, textEditing?: DirectTextEditingState | null) {
     this.clear();
     
     // Render grid first (background layer)
@@ -123,7 +130,7 @@ export class CanvasRenderer {
     
     // Render elements on top, filtering out invalid elements
     if (elements && Array.isArray(elements)) {
-      elements.filter(Boolean).forEach(element => this.renderElement(element));
+      elements.filter(Boolean).forEach(element => this.renderElement(element, textEditing));
     }
     
     // Render selection indicators on top
@@ -136,13 +143,9 @@ export class CanvasRenderer {
       this.renderDragSelectionRect(dragSelectionRect);
     }
     
-    // Render text editing cursor on top
-    if (textEditing && textEditing.elementId && textEditing.position) {
-      this.renderTextCursor(elements, textEditing);
-    }
   }
 
-  private drawRectangle(element: Element) {
+  private drawRectangle(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
     if (!this.rough || !this.rough.generator) return;
     
     // Build Rough.js options
@@ -182,11 +185,11 @@ export class CanvasRenderer {
     
     // Draw text if present
     if (element.text && element.text.trim() !== '') {
-      this.drawTextInShape(element);
+      this.drawTextInShape(element, textEditing);
     }
   }
 
-  private drawCircle(element: Element) {
+  private drawCircle(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
     if (!this.rough || !this.rough.generator) return;
     const centerX = element.width / 2;
     const centerY = element.height / 2;
@@ -236,11 +239,11 @@ export class CanvasRenderer {
     
     // Draw text if present
     if (element.text && element.text.trim() !== '') {
-      this.drawTextInShape(element);
+      this.drawTextInShape(element, textEditing);
     }
   }
 
-  private drawLine(element: Element) {
+  private drawLine(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
     if (!this.rough || !this.rough.generator) return;
     
     // Use Rough.js for line rendering
@@ -296,7 +299,7 @@ export class CanvasRenderer {
     }
   }
 
-  private drawArrow(element: Element) {
+  private drawArrow(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
     if (!this.rough || !this.rough.generator) return;
     
     // Use Rough.js for arrow line rendering
@@ -716,18 +719,71 @@ export class CanvasRenderer {
     const width = Math.abs(dragSelectionRect.end.x - dragSelectionRect.start.x);
     const height = Math.abs(dragSelectionRect.end.y - dragSelectionRect.start.y);
     
-    // Selection rectangle styles
-    this.ctx.strokeStyle = '#007acc'; // Blue color
-    this.ctx.fillStyle = 'rgba(0, 122, 204, 0.1)'; // Light blue fill
-    this.ctx.lineWidth = 1 / this.viewport.zoom; // Scale line width
-    this.ctx.setLineDash([3 / this.viewport.zoom, 3 / this.viewport.zoom]); // Scale dash
-    this.ctx.globalAlpha = 0.8;
+    // Enhanced selection rectangle styles with modern appearance
+    const baseStrokeColor = '#0066cc'; // Slightly darker blue for better visibility
+    const fillColor = 'rgba(0, 102, 204, 0.08)'; // More subtle fill
+    const borderColor = 'rgba(0, 102, 204, 0.6)'; // Semi-transparent border
     
-    // Fill the rectangle with light blue
+    // Scale-aware line width (minimum 1px on screen)
+    const lineWidth = Math.max(1 / this.viewport.zoom, 0.5);
+    
+    // Animated dashed border using time-based offset
+    const dashLength = 4 / this.viewport.zoom;
+    const time = Date.now() * 0.003; // Slow animation
+    const dashOffset = (time * dashLength) % (dashLength * 2);
+    
+    // First pass: Fill with subtle background
+    this.ctx.fillStyle = fillColor;
+    this.ctx.globalAlpha = 1;
     this.ctx.fillRect(x, y, width, height);
     
-    // Stroke the rectangle border
+    // Second pass: Animated dashed border
+    this.ctx.strokeStyle = baseStrokeColor;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.setLineDash([dashLength, dashLength]);
+    this.ctx.lineDashOffset = -dashOffset; // Animate the dash pattern
+    this.ctx.globalAlpha = 0.8;
     this.ctx.strokeRect(x, y, width, height);
+    
+    // Third pass: Corner indicators for better visual feedback
+    if (width > 10 / this.viewport.zoom && height > 10 / this.viewport.zoom) {
+      const cornerSize = Math.min(8 / this.viewport.zoom, Math.min(width, height) / 4);
+      this.ctx.strokeStyle = baseStrokeColor;
+      this.ctx.lineWidth = lineWidth * 1.5;
+      this.ctx.setLineDash([]); // Solid lines for corners
+      this.ctx.globalAlpha = 0.9;
+      
+      // Draw corner indicators (L-shaped marks at each corner)
+      const corners = [
+        { x: x, y: y }, // Top-left
+        { x: x + width, y: y }, // Top-right
+        { x: x, y: y + height }, // Bottom-left
+        { x: x + width, y: y + height }, // Bottom-right
+      ];
+      
+      corners.forEach((corner, index) => {
+        this.ctx.beginPath();
+        // Draw L-shaped corner indicator
+        if (index === 0) { // Top-left
+          this.ctx.moveTo(corner.x, corner.y + cornerSize);
+          this.ctx.lineTo(corner.x, corner.y);
+          this.ctx.lineTo(corner.x + cornerSize, corner.y);
+        } else if (index === 1) { // Top-right
+          this.ctx.moveTo(corner.x - cornerSize, corner.y);
+          this.ctx.lineTo(corner.x, corner.y);
+          this.ctx.lineTo(corner.x, corner.y + cornerSize);
+        } else if (index === 2) { // Bottom-left
+          this.ctx.moveTo(corner.x, corner.y - cornerSize);
+          this.ctx.lineTo(corner.x, corner.y);
+          this.ctx.lineTo(corner.x + cornerSize, corner.y);
+        } else { // Bottom-right
+          this.ctx.moveTo(corner.x - cornerSize, corner.y);
+          this.ctx.lineTo(corner.x, corner.y);
+          this.ctx.lineTo(corner.x, corner.y - cornerSize);
+        }
+        this.ctx.stroke();
+      });
+    }
     
     // Restore context state
     this.ctx.restore();
@@ -735,8 +791,18 @@ export class CanvasRenderer {
 
   private renderTextCursor(elements: Element[], textEditing: TextEditingState) {
     const element = elements.find(el => el.id === textEditing.elementId);
-    if (!element || element.type !== 'text') return;
+    if (!element) return;
+    
+    // Handle cursor rendering for different element types
+    if (element.type === 'text') {
+      this.renderTextElementCursor(element, textEditing);
+    } else {
+      // For other element types (rectangle, circle, line, arrow), render cursor in element center
+      this.renderInlineTextCursor(element, textEditing);
+    }
+  }
 
+  private renderTextElementCursor(element: Element, textEditing: TextEditingState) {
     // Save current context state
     this.ctx.save();
     
@@ -817,7 +883,94 @@ export class CanvasRenderer {
     this.ctx.restore();
   }
 
-  private drawTextInShape(element: Element) {
+  private renderInlineTextCursor(element: Element, textEditing: TextEditingState) {
+    // Save current context state
+    this.ctx.save();
+    
+    // Apply viewport transformations
+    this.ctx.scale(this.viewport.zoom, this.viewport.zoom);
+    this.ctx.translate(-this.viewport.pan.x, -this.viewport.pan.y);
+    
+    // Calculate text position based on element type
+    let textX: number, textY: number;
+    
+    switch (element.type) {
+      case 'rectangle':
+      case 'circle':
+        // Center of shape
+        textX = element.x + element.width / 2;
+        textY = element.y + element.height / 2;
+        break;
+      case 'line':
+      case 'arrow':
+        // Midpoint of line/arrow
+        textX = element.x + element.width / 2;
+        textY = element.y + element.height / 2;
+        break;
+      default:
+        textX = element.x;
+        textY = element.y;
+    }
+    
+    // Set font properties
+    const fontSize = element.fontSize || 16;
+    const fontFamily = element.fontFamily || 'Inter';
+    const fontWeight = element.fontWeight || 'normal';
+    const fontStyle = element.fontStyle || 'normal';
+    
+    this.ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+    this.ctx.textBaseline = 'middle';
+    this.ctx.textAlign = 'center';
+    
+    // Calculate cursor position based on text content and cursor position
+    const text = element.text || '';
+    const lines = text.split('\n');
+    const lineHeight = fontSize * 1.2;
+    
+    // Find which line the cursor is on
+    let currentLine = 0;
+    let charCount = 0;
+    let cursorX = textX;
+    let cursorY = textY;
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (charCount + lines[i].length >= textEditing.cursorPosition) {
+        currentLine = i;
+        const charIndexInLine = textEditing.cursorPosition - charCount;
+        const textBeforeCursor = lines[i].substring(0, charIndexInLine);
+        
+        // Calculate cursor position within the line
+        const lineWidth = this.ctx.measureText(lines[i]).width;
+        const textBeforeCursorWidth = this.ctx.measureText(textBeforeCursor).width;
+        
+        // Position cursor relative to center-aligned text
+        cursorX = textX - (lineWidth / 2) + textBeforeCursorWidth;
+        cursorY = textY - ((lines.length - 1) * lineHeight / 2) + (currentLine * lineHeight);
+        break;
+      }
+      charCount += lines[i].length + 1; // +1 for newline character
+    }
+    
+    // Draw blinking cursor
+    const time = Date.now();
+    const blink = Math.floor(time / 500) % 2; // Blink every 500ms
+    
+    if (blink === 0) {
+      this.ctx.strokeStyle = element.strokeColor || '#000000';
+      this.ctx.lineWidth = 2 / this.viewport.zoom; // Slightly thicker for visibility
+      this.ctx.setLineDash([]);
+      
+      this.ctx.beginPath();
+      this.ctx.moveTo(cursorX, cursorY - lineHeight / 2);
+      this.ctx.lineTo(cursorX, cursorY + lineHeight / 2);
+      this.ctx.stroke();
+    }
+    
+    // Restore context state
+    this.ctx.restore();
+  }
+
+  private drawTextInShape(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
     if (!element.text || element.text.trim() === '') return;
     
     this.ctx.save();
@@ -832,54 +985,129 @@ export class CanvasRenderer {
     this.ctx.fillStyle = element.strokeColor || '#000000';
     this.ctx.textBaseline = 'middle';
     
-    // Calculate text position based on element shape and alignment
-    let x: number;
-    let y: number;
+    // Calculate available space for text
+    const padding = 8; // Padding inside the shape
+    let maxWidth: number;
+    let centerX: number;
+    let centerY: number;
     
     if (element.type === 'rectangle') {
-      // Center text in rectangle
-      x = element.width / 2;
-      y = element.height / 2;
-      
-      // Apply text alignment
-      switch (element.textAlign || 'center') {
-        case 'left':
-          x = 10; // 10px padding from left
-          this.ctx.textAlign = 'left';
-          break;
-        case 'right':
-          x = element.width - 10; // 10px padding from right
-          this.ctx.textAlign = 'right';
-          break;
-        case 'center':
-        default:
-          this.ctx.textAlign = 'center';
-          break;
-      }
+      maxWidth = Math.max(element.width - (padding * 2), 20); // Minimum 20px width
+      centerX = element.width / 2;
+      centerY = element.height / 2;
     } else if (element.type === 'circle') {
-      // Center text in circle
-      x = element.width / 2;
-      y = element.height / 2;
-      this.ctx.textAlign = 'center';
+      // For circles, use inscribed rectangle (width and height reduced by ~30%)
+      const inscribedSize = Math.min(element.width, element.height) * 0.7;
+      maxWidth = Math.max(inscribedSize - (padding * 2), 20);
+      centerX = element.width / 2;
+      centerY = element.height / 2;
+    } else {
+      // For lines and arrows, use a reasonable width
+      maxWidth = Math.max(Math.min(element.width, 200) - (padding * 2), 20);
+      centerX = element.width / 2;
+      centerY = element.height / 2;
     }
     
-    // Draw text
-    this.ctx.fillText(element.text, x, y);
+    // Break text into lines with automatic word wrapping
+    const lines = this.wrapTextToLines(element.text, maxWidth);
+    const lineHeight = fontSize * 1.2;
+    const totalTextHeight = lines.length * lineHeight;
     
-    // Draw text decoration if specified
-    if (element.textDecoration === 'underline') {
-      const textMetrics = this.ctx.measureText(element.text);
-      const underlineY = y + fontSize * 0.1;
+    // Calculate starting Y position to center text vertically
+    const startY = centerY - (totalTextHeight / 2) + (lineHeight / 2);
+    
+    // Always center text horizontally
+    this.ctx.textAlign = 'center';
+    
+    // Draw each line and cursor if editing
+    let charCount = 0;
+    lines.forEach((line, index) => {
+      const y = startY + (index * lineHeight);
+      this.ctx.fillText(line, centerX, y);
       
-      this.ctx.strokeStyle = element.strokeColor || '#000000';
-      this.ctx.lineWidth = 1;
-      this.ctx.beginPath();
-      this.ctx.moveTo(x - textMetrics.width / 2, underlineY);
-      this.ctx.lineTo(x + textMetrics.width / 2, underlineY);
-      this.ctx.stroke();
-    }
+      // Draw cursor if this element is being edited
+      if (textEditing && textEditing.cursorVisible) {
+        const lineStart = charCount;
+        const lineEnd = charCount + line.length;
+        
+        // Check if cursor is in this line
+        if (textEditing.cursorPosition >= lineStart && textEditing.cursorPosition <= lineEnd) {
+          const cursorPosInLine = textEditing.cursorPosition - lineStart;
+          
+          // Measure text up to cursor position
+          const textToCursor = line.slice(0, cursorPosInLine);
+          const textMetrics = this.ctx.measureText(textToCursor);
+          const lineMetrics = this.ctx.measureText(line);
+          
+          // Calculate cursor X position (centered text)
+          const cursorX = centerX - lineMetrics.width / 2 + textMetrics.width;
+          
+          // Draw cursor line
+          this.ctx.strokeStyle = element.strokeColor || '#000000';
+          this.ctx.lineWidth = 1;
+          this.ctx.beginPath();
+          this.ctx.moveTo(cursorX, y - fontSize / 2);
+          this.ctx.lineTo(cursorX, y + fontSize / 2);
+          this.ctx.stroke();
+        }
+      }
+      
+      // Draw underline decoration if specified
+      if (element.textDecoration === 'underline') {
+        const textMetrics = this.ctx.measureText(line);
+        const underlineY = y + fontSize * 0.1;
+        
+        this.ctx.strokeStyle = element.strokeColor || '#000000';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(centerX - textMetrics.width / 2, underlineY);
+        this.ctx.lineTo(centerX + textMetrics.width / 2, underlineY);
+        this.ctx.stroke();
+      }
+      
+      // Add line length plus newline character (except for last line)
+      charCount += line.length;
+      if (index < lines.length - 1) {
+        charCount += 1; // For the newline character
+      }
+    });
     
     this.ctx.restore();
+  }
+
+  // Helper function to wrap text into lines that fit within maxWidth
+  private wrapTextToLines(text: string, maxWidth: number): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testWidth = this.ctx.measureText(testLine).width;
+      
+      if (testWidth <= maxWidth || currentLine === '') {
+        // Word fits on current line, or it's the first word
+        currentLine = testLine;
+      } else {
+        // Word doesn't fit, start new line
+        if (currentLine) {
+          lines.push(currentLine);
+        }
+        currentLine = word;
+      }
+    }
+    
+    // Add the last line if it has content
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    
+    // Handle case where no words were added (empty text)
+    if (lines.length === 0) {
+      lines.push('');
+    }
+    
+    return lines;
   }
 
   private drawTextOnLine(element: Element) {

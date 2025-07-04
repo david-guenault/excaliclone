@@ -22,6 +22,7 @@ import {
   MenuIcon,
   ChevronDownIcon,
 } from '../UI/Icons';
+import { ToolbarMenu } from './ToolbarMenu';
 import './TopToolbar.css';
 
 interface ToolDefinition {
@@ -164,13 +165,7 @@ export const TopToolbar: React.FC = () => {
       </div>
 
       <div className="top-toolbar__actions">
-        <button
-          className="top-toolbar__menu"
-          title="More options"
-          aria-label="Menu"
-        >
-          <MenuIcon />
-        </button>
+        <ToolbarMenu />
       </div>
     </div>
   );
