@@ -1482,6 +1482,14 @@ export class CanvasRenderer {
     if (!imageElement) {
       // Create new image element
       imageElement = new Image();
+      imageElement.onload = () => {
+        // Force a re-render when the image loads
+        // This will cause the canvas to update and show the actual image instead of placeholder
+        if (this.ctx && this.ctx.canvas) {
+          const event = new CustomEvent('imageLoaded');
+          this.ctx.canvas.dispatchEvent(event);
+        }
+      };
       imageElement.src = element.imageUrl;
       
       // Cache the image element

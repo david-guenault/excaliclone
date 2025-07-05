@@ -129,11 +129,21 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const handleImageLoaded = () => {
+      // Force re-render when an image finishes loading
+      const renderer = rendererRef.current;
+      if (renderer) {
+        renderer.updateViewport(viewport);
+        renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing);
+      }
+    };
+
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('dblclick', handleDoubleClick);
     canvas.addEventListener('wheel', handleWheel);
+    canvas.addEventListener('imageLoaded', handleImageLoaded);
 
     return () => {
       canvas.removeEventListener('mousedown', handleMouseDown);
@@ -141,8 +151,9 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
       canvas.removeEventListener('mouseup', handleMouseUp);
       canvas.removeEventListener('dblclick', handleDoubleClick);
       canvas.removeEventListener('wheel', handleWheel);
+      canvas.removeEventListener('imageLoaded', handleImageLoaded);
     };
-  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleDoubleClick, handleWheel]);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp, handleDoubleClick, handleWheel, viewport, elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing]);
 
   return (
     <canvas
