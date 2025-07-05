@@ -689,7 +689,7 @@ export class CanvasRenderer {
       const element = elements.find(el => el.id === elementId);
       if (!element) return;
       
-      console.log('Rendering selection for:', element.type, element.id);
+      console.log('Rendering selection for:', element.type, element.id, 'size:', element.width, 'x', element.height);
       
       // Apply element transformations EXACTLY LIKE in renderElement
       this.ctx.save();
