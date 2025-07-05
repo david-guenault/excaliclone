@@ -748,6 +748,7 @@ function App() {
       });
       
       if (clickedElement) {
+        console.log('Element clicked:', clickedElement.type, clickedElement.id);
         // Check for modifier keys
         const isShiftClick = event.shiftKey;
         const isSelectedElement = selectedElementIds.includes(clickedElement.id);
