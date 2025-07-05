@@ -732,7 +732,7 @@ export class CanvasRenderer {
       const handleSize = HANDLE_SIZE / this.viewport.zoom; // Scale with zoom like original
       const halfHandle = handleSize / 2;
       
-      if (element.type === 'rectangle' || element.type === 'circle' || element.type === 'image') {
+      if (element.type === 'rectangle' || element.type === 'circle') {
         // Corner handles
         const positions = [
           [-halfHandle, -halfHandle], // Top-left
