@@ -689,8 +689,6 @@ export class CanvasRenderer {
       const element = elements.find(el => el.id === elementId);
       if (!element) return;
       
-      console.log('Rendering selection for:', element.type, element.id, 'size:', element.width, 'x', element.height);
-      
       // Apply element transformations EXACTLY LIKE in renderElement
       this.ctx.save();
       this.ctx.translate(element.x + element.width / 2, element.y + element.height / 2);
@@ -720,14 +718,8 @@ export class CanvasRenderer {
         // For text elements, use simple bounding box
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
       } else if (element.type === 'image') {
-        // For image elements, use simple bounding box - DEBUG VERSION
-        console.log('Drawing outline for image:', element.width, element.height);
-        this.ctx.strokeStyle = '#ff0000'; // Bright red for debugging
-        this.ctx.lineWidth = 4 / this.viewport.zoom; // Thicker line for debugging
-        this.ctx.setLineDash([]); // Solid line for debugging
-        this.ctx.globalAlpha = 1.0; // Full opacity for debugging
+        // For image elements, use simple bounding box
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
-        console.log('Stroke rect called with:', -2, -2, element.width + 4, element.height + 4);
       }
       
       // Draw resize handles (back to original element-space coordinates)
