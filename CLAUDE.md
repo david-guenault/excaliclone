@@ -108,3 +108,8 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
 ## Miscellaneous Reminders
 
 - Rappelle-toi de ne pas oublier de commiter après des corrections ou des ajouts de fonctionalités.
+
+## Version Control and Commit Practices
+
+- When making modifications, additions, or deletions, always remember to commit
+- Gather files to commit consistently and don't forget to push to the upstream repository
