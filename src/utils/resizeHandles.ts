@@ -38,7 +38,7 @@ export function getResizeHandles(element: Element): ResizeHandle[] {
   const handles: ResizeHandle[] = [];
   const halfHandle = HANDLE_SIZE / 2;
 
-  if (element.type === 'rectangle' || element.type === 'circle' || element.type === 'text' || element.type === 'pen') {
+  if (element.type === 'rectangle' || element.type === 'circle' || element.type === 'text' || element.type === 'pen' || element.type === 'image') {
     // Corner handles for shapes (in local coordinates, then transformed)
     const localHandles = [
       { type: 'top-left' as const, x: -halfHandle, y: -halfHandle },
@@ -216,7 +216,7 @@ export function applyResize(
       };
     }
   } else {
-    // For rectangles, circles, text, and pen strokes
+    // For rectangles, circles, text, pen strokes, and images
     const updates: Partial<Element> = {};
     
     switch (handleType) {
