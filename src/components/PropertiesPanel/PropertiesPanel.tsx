@@ -320,14 +320,23 @@ export const PropertiesPanel: React.FC = () => {
               min="0"
               max="3"
               step="0.1"
-              value={getCurrentValue('roughness') as number || 1}
+              value={(() => {
+                const roughness = getCurrentValue('roughness');
+                return typeof roughness === 'number' ? roughness : 1;
+              })()}
               onChange={(e) => updateElementProperty('roughness', parseFloat(e.target.value))}
               className="properties-panel__slider"
             />
             <span className="opacity-label">Rugueux</span>
           </div>
           <div className="properties-panel__value-display">
-            Rugosité: {((getCurrentValue('roughness') as number) || 1).toFixed(1)}
+            Rugosité: {(() => {
+              const roughness = getCurrentValue('roughness');
+              if (typeof roughness === 'number') {
+                return roughness.toFixed(1);
+              }
+              return roughness === 'mixed' ? 'Mixte' : '1.0';
+            })()}
           </div>
         </div>
 
@@ -366,14 +375,23 @@ export const PropertiesPanel: React.FC = () => {
                     min="0"
                     max="20"
                     step="1"
-                    value={getCurrentValue('cornerRadius') as number || 0}
+                    value={(() => {
+                      const radius = getCurrentValue('cornerRadius');
+                      return typeof radius === 'number' ? radius : 0;
+                    })()}
                     onChange={(e) => updateElementProperty('cornerRadius', parseInt(e.target.value))}
                     className="properties-panel__slider"
                   />
                   <span className="opacity-label">20</span>
                 </div>
                 <div className="properties-panel__value-display">
-                  Rayon: {getCurrentValue('cornerRadius') as number || 0}px
+                  Rayon: {(() => {
+                    const radius = getCurrentValue('cornerRadius');
+                    if (typeof radius === 'number') {
+                      return `${radius}px`;
+                    }
+                    return radius === 'mixed' ? 'Mixte' : '0px';
+                  })()}
                 </div>
               </div>
             )}
@@ -514,7 +532,10 @@ export const PropertiesPanel: React.FC = () => {
               type="range"
               min="0"
               max="100"
-              value={(getCurrentValue('opacity') as number) * 100}
+              value={(() => {
+                const opacity = getCurrentValue('opacity');
+                return typeof opacity === 'number' ? opacity * 100 : 100;
+              })()}
               onChange={(e) => updateElementProperty('opacity', parseFloat(e.target.value) / 100)}
               className="properties-panel__slider"
             />
