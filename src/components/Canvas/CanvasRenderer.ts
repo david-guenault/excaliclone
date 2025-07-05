@@ -31,6 +31,11 @@ export class CanvasRenderer {
     // Include element ID to ensure each element has its own cache entry
     let key = `${element.id}-${element.type}-${element.width}-${element.height}-${element.roughness || 1}-${element.strokeWidth}-${element.strokeColor || '#000000'}-${element.strokeStyle || 'solid'}-${element.fillStyle || 'solid'}-${element.backgroundColor || 'transparent'}`;
     
+    // Include corner properties for rectangles
+    if (element.type === 'rectangle') {
+      key += `-${element.cornerStyle || 'sharp'}-${element.cornerRadius || 0}`;
+    }
+    
     // Include arrowhead properties for arrows and lines
     if (element.type === 'arrow' || element.type === 'line') {
       key += `-${element.startArrowhead || 'none'}-${element.endArrowhead || 'none'}`;
@@ -151,8 +156,10 @@ export class CanvasRenderer {
   }
 
   private drawRectangle(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
-    if (this.useRoughJs) {
-      // Original Rough.js implementation
+    const hasRoundedCorners = element.cornerStyle === 'rounded' && element.cornerRadius && element.cornerRadius > 0;
+    
+    if (this.useRoughJs && !hasRoundedCorners) {
+      // Original Rough.js implementation for sharp corners
       if (!this.rough || !this.rough.generator) return;
       
       const options: any = {
@@ -186,7 +193,7 @@ export class CanvasRenderer {
       
       this.rough.draw(shape);
     } else {
-      // Canvas native fallback (not used when Rough.js is enabled)
+      // Canvas native implementation for rounded corners or fallback
       this.ctx.save();
       
       // Set stroke style
@@ -203,15 +210,25 @@ export class CanvasRenderer {
         }
       }
       
+      // Draw rounded rectangle if needed
+      if (hasRoundedCorners) {
+        const radius = Math.min(element.cornerRadius!, element.width / 2, element.height / 2);
+        this.drawRoundedRect(0, 0, element.width, element.height, radius);
+      } else {
+        // Draw regular rectangle
+        this.ctx.beginPath();
+        this.ctx.rect(0, 0, element.width, element.height);
+      }
+      
       // Fill rectangle
       if (element.backgroundColor !== 'transparent') {
         this.ctx.fillStyle = element.backgroundColor;
-        this.ctx.fillRect(0, 0, element.width, element.height);
+        this.ctx.fill();
       }
       
       // Stroke rectangle  
       if (element.strokeColor && element.strokeColor !== 'transparent') {
-        this.ctx.strokeRect(0, 0, element.width, element.height);
+        this.ctx.stroke();
       }
       
       this.ctx.restore();
@@ -221,6 +238,20 @@ export class CanvasRenderer {
     if (element.text && element.text.trim() !== '') {
       this.drawTextInShape(element, textEditing);
     }
+  }
+
+  private drawRoundedRect(x: number, y: number, width: number, height: number, radius: number) {
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + radius, y);
+    this.ctx.lineTo(x + width - radius, y);
+    this.ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    this.ctx.lineTo(x + width, y + height - radius);
+    this.ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    this.ctx.lineTo(x + radius, y + height);
+    this.ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    this.ctx.lineTo(x, y + radius);
+    this.ctx.quadraticCurveTo(x, y, x + radius, y);
+    this.ctx.closePath();
   }
 
   private drawCircle(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {

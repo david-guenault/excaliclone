@@ -20,7 +20,7 @@ import {
   applyGroupResize,
   applyGroupRotation
 } from './utils/multiSelection';
-import type { Point, ResizeHandleType } from './types';
+import type { Point, ResizeHandleType, Element } from './types';
 import './App.css';
 
 function App() {
@@ -610,7 +610,7 @@ function App() {
                 worldPoint.x - multiSelectionBounds.center.x
               );
               setGroupRotationStartAngle(initialAngle);
-              setGroupRotationStartElements([...selectedElements]);
+              setGroupRotationStartElements(selectedElements.slice());
               
               const canvas = event.target as HTMLElement;
               canvas.style.cursor = 'grabbing';
@@ -815,6 +815,8 @@ function App() {
         fillStyle: toolOptions.fillStyle,
         roughness: toolOptions.roughness,
         opacity: toolOptions.opacity,
+        cornerStyle: toolOptions.cornerStyle,
+        cornerRadius: toolOptions.cornerRadius,
       });
       
       setCurrentRectangleId(createdElement.id);

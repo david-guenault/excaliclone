@@ -17,6 +17,7 @@ export const DEFAULT_TOOL_OPTIONS = {
   roughness: 1,
   opacity: 1,
   cornerStyle: 'sharp' as const,
+  cornerRadius: 0,
   fontFamily: 'Inter',
   fontSize: 16,
   fontWeight: 'normal' as const,
@@ -185,6 +186,9 @@ export const CORNER_STYLE_PRESETS = [
   { type: 'sharp' as const, icon: '⬜', label: 'Sharp' },
   { type: 'rounded' as const, icon: '▢', label: 'Rounded' },
 ] as const;
+
+// Corner Radius Presets (Rayon des angles)
+export const CORNER_RADIUS_PRESETS = [0, 4, 8, 12, 16, 20] as const;
 
 // Font Size Presets (Taille de la police)
 export const FONT_SIZE_PRESETS = [

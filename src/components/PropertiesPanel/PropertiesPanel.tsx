@@ -12,6 +12,7 @@ import {
   STROKE_STYLE_PRESETS,
   ROUGHNESS_SIMPLE_PRESETS,
   CORNER_STYLE_PRESETS,
+  CORNER_RADIUS_PRESETS,
   FONT_SIZE_PRESETS,
   FONT_FAMILY_PRESETS,
   SYSTEM_FONTS,
@@ -341,13 +342,41 @@ export const PropertiesPanel: React.FC = () => {
                   className={`properties-panel__preset-button ${
                     getCurrentValue('cornerStyle') === corner.type ? 'active' : ''
                   }`}
-                  onClick={() => updateElementProperty('cornerStyle', corner.type)}
+                  onClick={() => {
+                    updateElementProperty('cornerStyle', corner.type);
+                    // Set default corner radius when switching to rounded
+                    if (corner.type === 'rounded' && !getCurrentValue('cornerRadius')) {
+                      updateElementProperty('cornerRadius', 8);
+                    }
+                  }}
                   title={corner.label}
                 >
                   <span className="corner-icon">{corner.icon}</span>
                 </button>
               ))}
             </div>
+            
+            {/* Corner Radius Slider - Only shown when cornerStyle is rounded */}
+            {getCurrentValue('cornerStyle') === 'rounded' && (
+              <div className="properties-panel__corner-radius">
+                <div className="properties-panel__opacity-slider">
+                  <span className="opacity-label">0</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    step="1"
+                    value={getCurrentValue('cornerRadius') as number || 0}
+                    onChange={(e) => updateElementProperty('cornerRadius', parseInt(e.target.value))}
+                    className="properties-panel__slider"
+                  />
+                  <span className="opacity-label">20</span>
+                </div>
+                <div className="properties-panel__value-display">
+                  Rayon: {getCurrentValue('cornerRadius') as number || 0}px
+                </div>
+              </div>
+            )}
           </div>
         )}
 
