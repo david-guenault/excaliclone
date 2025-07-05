@@ -1722,6 +1722,98 @@ function App() {
     keyboardManager.setTextEditingActive(textEditing.isEditing);
   }, [textEditing.isEditing]);
 
+  // Handle clipboard paste events for images
+  useEffect(() => {
+    const handlePaste = async (event: ClipboardEvent) => {
+      // Don't handle paste if text editing is active or if it's not the main paste shortcut
+      if (textEditing.isEditing) return;
+      
+      const clipboardData = event.clipboardData;
+      if (!clipboardData) return;
+      
+      // Check for image data in clipboard
+      const items = Array.from(clipboardData.items);
+      const imageItem = items.find(item => item.type.startsWith('image/'));
+      
+      if (imageItem) {
+        event.preventDefault();
+        
+        const file = imageItem.getAsFile();
+        if (!file) return;
+        
+        try {
+          // Create object URL for the image
+          const imageUrl = URL.createObjectURL(file);
+          
+          // Create a temporary image to get dimensions
+          const img = new Image();
+          img.onload = () => {
+            // Calculate position (center of viewport)
+            const centerX = viewport.pan.x + (viewport.bounds.width / viewport.zoom) / 2;
+            const centerY = viewport.pan.y + (viewport.bounds.height / viewport.zoom) / 2;
+            
+            // Scale image if too large (max 400px on any side)
+            const MAX_SIZE = 400;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > MAX_SIZE || height > MAX_SIZE) {
+              const aspectRatio = width / height;
+              if (width > height) {
+                width = MAX_SIZE;
+                height = MAX_SIZE / aspectRatio;
+              } else {
+                height = MAX_SIZE;
+                width = MAX_SIZE * aspectRatio;
+              }
+            }
+            
+            // Create image element
+            const imageElement = addElementSilent({
+              type: 'image',
+              x: centerX - width / 2,
+              y: centerY - height / 2,
+              width: width,
+              height: height,
+              angle: 0,
+              strokeColor: toolOptions.strokeColor,
+              backgroundColor: 'transparent',
+              strokeWidth: toolOptions.strokeWidth,
+              strokeStyle: toolOptions.strokeStyle,
+              fillStyle: toolOptions.fillStyle,
+              roughness: toolOptions.roughness,
+              opacity: toolOptions.opacity,
+              imageUrl: imageUrl,
+            });
+            
+            // Select the new image and switch to select tool
+            selectElements([imageElement.id]);
+            setActiveTool('select');
+            
+            // Save to history
+            saveToHistory();
+          };
+          
+          img.onerror = () => {
+            console.error('Failed to load pasted image');
+            URL.revokeObjectURL(imageUrl);
+          };
+          
+          img.src = imageUrl;
+        } catch (error) {
+          console.error('Error handling pasted image:', error);
+        }
+      }
+    };
+    
+    // Add paste event listener to document
+    document.addEventListener('paste', handlePaste);
+    
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [textEditing.isEditing, viewport, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory]);
+
   // Set up keyboard shortcuts
   useEffect(() => {
     keyboardManager.on('setTool', setActiveTool);
