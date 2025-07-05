@@ -252,8 +252,23 @@ export function applyMultiSelectionResize(
   startPoint: Point,
   currentPoint: Point
 ): BoundingBox {
-  const deltaX = currentPoint.x - startPoint.x;
-  const deltaY = currentPoint.y - startPoint.y;
+  let deltaX = currentPoint.x - startPoint.x;
+  let deltaY = currentPoint.y - startPoint.y;
+  
+  // Add minimum movement threshold to reduce sensitivity
+  const MIN_RESIZE_THRESHOLD = 3; // pixels
+  const absX = Math.abs(deltaX);
+  const absY = Math.abs(deltaY);
+  
+  // If movement is too small, return original bounds
+  if (absX < MIN_RESIZE_THRESHOLD && absY < MIN_RESIZE_THRESHOLD) {
+    return originalBounds;
+  }
+  
+  // Apply sensitivity scaling to make resize less aggressive
+  const RESIZE_SENSITIVITY = 0.8; // Reduce sensitivity by 20%
+  deltaX *= RESIZE_SENSITIVITY;
+  deltaY *= RESIZE_SENSITIVITY;
 
   const newBounds = { ...originalBounds };
 
