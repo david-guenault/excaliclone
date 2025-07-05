@@ -725,7 +725,9 @@ export class CanvasRenderer {
         this.ctx.strokeStyle = '#ff0000'; // Bright red for debugging
         this.ctx.lineWidth = 4 / this.viewport.zoom; // Thicker line for debugging
         this.ctx.setLineDash([]); // Solid line for debugging
+        this.ctx.globalAlpha = 1.0; // Full opacity for debugging
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
+        console.log('Stroke rect called with:', -2, -2, element.width + 4, element.height + 4);
       }
       
       // Draw resize handles (back to original element-space coordinates)
