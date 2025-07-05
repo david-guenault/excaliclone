@@ -113,6 +113,9 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
       }
     };
 
+    // Render immediately when text editing starts to show cursor right away
+    animate();
+
     // Start animation loop for cursor blinking
     const intervalId = setInterval(animate, 100); // Update every 100ms for smooth blinking
 

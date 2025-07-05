@@ -1270,30 +1270,6 @@ export class CanvasRenderer {
     
     // Draw each line and cursor if editing
     let charCount = 0;
-    
-    // Handle empty text case - still need to draw cursor if editing
-    if (lines.length === 0 && textEditing && textEditing.cursorVisible) {
-      const y = startY;
-      
-      // Calculate cursor X position based on alignment
-      let cursorX: number;
-      if (textAlign === 'left') {
-        cursorX = padding;
-      } else if (textAlign === 'right') {
-        cursorX = element.width - padding;
-      } else {
-        cursorX = centerX;
-      }
-      
-      // Draw cursor line
-      this.ctx.strokeStyle = element.strokeColor || '#000000';
-      this.ctx.lineWidth = 1;
-      this.ctx.beginPath();
-      this.ctx.moveTo(cursorX, y - fontSize / 2);
-      this.ctx.lineTo(cursorX, y + fontSize / 2);
-      this.ctx.stroke();
-    }
-    
     lines.forEach((line, index) => {
       const y = startY + (index * lineHeight);
       
@@ -1313,6 +1289,7 @@ export class CanvasRenderer {
       if (textEditing && textEditing.cursorVisible) {
         const lineStart = charCount;
         const lineEnd = charCount + line.length;
+        console.log('Drawing cursor for element:', textEditing.elementId, 'cursor pos:', textEditing.cursorPosition, 'line:', line, 'line start:', lineStart, 'line end:', lineEnd);
         
         // Check if cursor is in this line
         if (textEditing.cursorPosition >= lineStart && textEditing.cursorPosition <= lineEnd) {

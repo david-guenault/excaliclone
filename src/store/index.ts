@@ -1037,6 +1037,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // Direct Text Editing Actions
   startTextEditing: (elementId: string, text: string, cursorPosition: number) => {
+    console.log('Starting text editing for element:', elementId, 'text:', text, 'cursor pos:', cursorPosition);
     set({
       textEditing: {
         isEditing: true,
