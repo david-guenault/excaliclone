@@ -1505,14 +1505,6 @@ function App() {
       y: (point.y / viewport.zoom) + viewport.pan.y,
     };
     
-    console.log('Double-click debug:', { 
-      canvasPoint: point, 
-      worldPoint, 
-      viewport, 
-      elementsCount: elements.length,
-      elements: elements.map(el => ({ id: el.id, type: el.type, x: el.x, y: el.y, width: el.width, height: el.height }))
-    });
-    
     // Find element at the clicked position (front-to-back search)
     const hitElement = elements
       .filter((el) => !el.locked) // Skip locked elements
@@ -1522,6 +1514,8 @@ function App() {
         // Hit test for different element types
         switch (element.type) {
           case 'rectangle':
+          case 'text':
+          case 'image':
             return (
               worldPoint.x >= element.x &&
               worldPoint.x <= element.x + element.width &&
@@ -1546,15 +1540,33 @@ function App() {
             const distance = pointToLineDistance(worldPoint, lineStart, lineEnd);
             return distance <= tolerance;
           }
+          case 'pen': {
+            // Check if click is near any segment of the pen stroke
+            if (!element.points || element.points.length < 2) return false;
+            const tolerance = Math.max(element.strokeWidth * 2, 8) / viewport.zoom;
+            
+            for (let i = 0; i < element.points.length - 1; i++) {
+              const p1 = element.points[i];
+              const p2 = element.points[i + 1];
+              const distance = pointToLineDistance(worldPoint, p1, p2);
+              if (distance <= tolerance) return true;
+            }
+            return false;
+          }
           default:
             return false;
         }
       });
 
     if (hitElement) {
-
+      // Select the element first
+      selectElements([hitElement.id]);
+      
       // Start direct text editing within the shape
       startTextEditing(hitElement.id, hitElement.text || '', hitElement.text ? hitElement.text.length : 0);
+      
+      // Auto-activate selection tool for consistency
+      setActiveTool('select');
     }
   };
 
