@@ -1217,7 +1217,8 @@ export class CanvasRenderer {
   }
 
   private drawTextInShape(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
-    if (!element.text || element.text.trim() === '') return;
+    // Don't return early if text is empty but we're editing - we need to show the cursor
+    if ((!element.text || element.text.trim() === '') && !textEditing) return;
     
     this.ctx.save();
     
@@ -1255,7 +1256,8 @@ export class CanvasRenderer {
     }
     
     // Break text into lines with automatic word wrapping
-    const lines = this.wrapTextToLines(element.text, maxWidth);
+    const text = element.text || '';
+    const lines = this.wrapTextToLines(text, maxWidth);
     const lineHeight = fontSize * 1.2;
     const totalTextHeight = lines.length * lineHeight;
     
@@ -1268,6 +1270,30 @@ export class CanvasRenderer {
     
     // Draw each line and cursor if editing
     let charCount = 0;
+    
+    // Handle empty text case - still need to draw cursor if editing
+    if (lines.length === 0 && textEditing && textEditing.cursorVisible) {
+      const y = startY;
+      
+      // Calculate cursor X position based on alignment
+      let cursorX: number;
+      if (textAlign === 'left') {
+        cursorX = padding;
+      } else if (textAlign === 'right') {
+        cursorX = element.width - padding;
+      } else {
+        cursorX = centerX;
+      }
+      
+      // Draw cursor line
+      this.ctx.strokeStyle = element.strokeColor || '#000000';
+      this.ctx.lineWidth = 1;
+      this.ctx.beginPath();
+      this.ctx.moveTo(cursorX, y - fontSize / 2);
+      this.ctx.lineTo(cursorX, y + fontSize / 2);
+      this.ctx.stroke();
+    }
+    
     lines.forEach((line, index) => {
       const y = startY + (index * lineHeight);
       
