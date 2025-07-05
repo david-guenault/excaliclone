@@ -2,6 +2,7 @@
 // ABOUTME: Orchestrates the Canvas, Toolbar, and manages global application state
 
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Canvas } from './components/Canvas';
 import { TopToolbar } from './components/TopToolbar';
 import { PropertiesPanel } from './components/PropertiesPanel';
@@ -1563,7 +1564,9 @@ function App() {
       selectElements([hitElement.id]);
       
       // Start direct text editing within the shape
-      startTextEditing(hitElement.id, hitElement.text || '', hitElement.text ? hitElement.text.length : 0);
+      flushSync(() => {
+        startTextEditing(hitElement.id, hitElement.text || '', hitElement.text ? hitElement.text.length : 0);
+      });
       
       // Auto-activate selection tool for consistency
       setActiveTool('select');
