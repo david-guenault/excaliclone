@@ -717,6 +717,9 @@ export class CanvasRenderer {
       } else if (element.type === 'text') {
         // For text elements, use simple bounding box
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
+      } else if (element.type === 'image') {
+        // For image elements, use simple bounding box
+        this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
       }
       
       // Draw resize handles (back to original element-space coordinates)
@@ -727,7 +730,7 @@ export class CanvasRenderer {
       const handleSize = HANDLE_SIZE / this.viewport.zoom; // Scale with zoom like original
       const halfHandle = handleSize / 2;
       
-      if (element.type === 'rectangle' || element.type === 'circle') {
+      if (element.type === 'rectangle' || element.type === 'circle' || element.type === 'image') {
         // Corner handles
         const positions = [
           [-halfHandle, -halfHandle], // Top-left
@@ -848,8 +851,8 @@ export class CanvasRenderer {
         this.ctx.fill();
         this.ctx.stroke();
 
-      } else if (element.type === 'text') {
-        // Corner handles for text elements
+      } else if (element.type === 'text' || element.type === 'image') {
+        // Corner handles for text and image elements
         const positions = [
           [-halfHandle, -halfHandle], // Top-left
           [element.width - halfHandle, -halfHandle], // Top-right

@@ -187,11 +187,17 @@ function App() {
   };
 
   const handleLineDrawingMouseMove = (event: MouseEvent) => {
-    const point = getCanvasPoint(event);
-    if (!point) return;
+    const canvasPoint = getCanvasPoint(event);
+    if (!canvasPoint) return;
+    
+    // Transform canvas coordinates to world coordinates
+    const worldPoint = {
+      x: canvasPoint.x / viewport.zoom + viewport.pan.x,
+      y: canvasPoint.y / viewport.zoom + viewport.pan.y,
+    };
     
     // Apply grid and magnetic snapping to end point
-    const snappedPoint = applySnapping(point);
+    const snappedPoint = applySnapping(worldPoint);
     
     // Update the line while drawing
     const modifiers = keyboardManager.getModifierState();
@@ -205,11 +211,17 @@ function App() {
   };
 
   const handleArrowDrawingMouseMove = (event: MouseEvent) => {
-    const point = getCanvasPoint(event);
-    if (!point) return;
+    const canvasPoint = getCanvasPoint(event);
+    if (!canvasPoint) return;
+    
+    // Transform canvas coordinates to world coordinates
+    const worldPoint = {
+      x: canvasPoint.x / viewport.zoom + viewport.pan.x,
+      y: canvasPoint.y / viewport.zoom + viewport.pan.y,
+    };
     
     // Apply grid and magnetic snapping to end point
-    const snappedPoint = applySnapping(point);
+    const snappedPoint = applySnapping(worldPoint);
     
     // Update the arrow while drawing
     const modifiers = keyboardManager.getModifierState();
