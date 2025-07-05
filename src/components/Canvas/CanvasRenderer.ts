@@ -92,7 +92,6 @@ export class CanvasRenderer {
 
     // Determine if this element is being edited
     const isBeingEdited = textEditing && textEditing.elementId === element.id;
-    console.log('renderElement for:', element.id, 'textEditing:', textEditing, 'isBeingEdited:', isBeingEdited);
     const editingInfo = isBeingEdited ? {
       cursorPosition: textEditing.cursorPosition,
       cursorVisible: textEditing.cursorVisible
@@ -1218,7 +1217,6 @@ export class CanvasRenderer {
   }
 
   private drawTextInShape(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
-    console.log('drawTextInShape called for element:', element.id, 'text:', element.text, 'textEditing:', textEditing);
     // Don't return early if text is empty but we're editing - we need to show the cursor
     if ((!element.text || element.text.trim() === '') && !textEditing) return;
     
@@ -1291,7 +1289,6 @@ export class CanvasRenderer {
       if (textEditing && textEditing.cursorVisible) {
         const lineStart = charCount;
         const lineEnd = charCount + line.length;
-        console.log('Drawing cursor for element:', textEditing.elementId, 'cursor pos:', textEditing.cursorPosition, 'line:', line, 'line start:', lineStart, 'line end:', lineEnd);
         
         // Check if cursor is in this line
         if (textEditing.cursorPosition >= lineStart && textEditing.cursorPosition <= lineEnd) {
