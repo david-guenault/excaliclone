@@ -188,7 +188,8 @@ export function applyResize(
   let deltaY = snappedCurrentPoint.y - startPoint.y;
   
   // For rotated elements, transform deltas to local coordinate space
-  if (element.angle && element.angle !== 0) {
+  // Exception: for images, skip coordinate transformation to allow more direct control
+  if (element.angle && element.angle !== 0 && element.type !== 'image') {
     const cos = Math.cos(-element.angle);
     const sin = Math.sin(-element.angle);
     
@@ -198,6 +199,8 @@ export function applyResize(
     deltaX = localDeltaX;
     deltaY = localDeltaY;
   }
+  // For images: use deltaX and deltaY directly without transformation
+  // This allows independent width/height control even when rotated
   
 
   if (element.type === 'line' || element.type === 'arrow') {
