@@ -12,6 +12,6 @@
 ✅ BUG: en mode édition de texte, entrée rajoute un espace (ou autre chose mais ça ressemble a un espace).
 ✅ EVOLUTION: en mode édition de texte SHIFT+ENTER provoque un retour a la ligne. 
 ✅ BUG: les images importée ne peux pas être redimensionnée ou rotatée 
-- BUG: les lignes et les flèche ont un comportement étrange. déjà le bout de la ligne fleche n'est pas collée au curseur. Les déplacement sont étrange par exemple au premier click le dessin de la flèche par directement vers le bas a gauche. 
-- BUG: les images comme les autres formes devrait avoir un rectangle visuel autour de celles ci. 
+✅ BUG: les lignes et les flèche ont un comportement étrange. déjà le bout de la ligne fleche n'est pas collée au curseur. Les déplacement sont étrange par exemple au premier click le dessin de la flèche par directement vers le bas a gauche. 
+✅ BUG: les images comme les autres formes devrait avoir un rectangle visuel autour de celles ci. 
   
