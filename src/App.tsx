@@ -1650,9 +1650,14 @@ function App() {
         finishTextEditingAndActivateSelect();
       } else if (event.key === 'Enter') {
         event.preventDefault();
-        // Add line break at cursor position
-        const newText = currentText.slice(0, cursorPos) + '\n' + currentText.slice(cursorPos);
-        updateTextContent(newText, cursorPos + 1);
+        if (event.shiftKey) {
+          // Shift+Enter: Add line break at cursor position
+          const newText = currentText.slice(0, cursorPos) + '\n' + currentText.slice(cursorPos);
+          updateTextContent(newText, cursorPos + 1);
+        } else {
+          // Enter: Finish text editing
+          finishTextEditingAndActivateSelect();
+        }
       } else if (event.key === 'Backspace') {
         event.preventDefault();
         if (cursorPos > 0) {
@@ -1703,7 +1708,12 @@ function App() {
     keyboardManager.on('setTool', setActiveTool);
     keyboardManager.on('undo', undo);
     keyboardManager.on('redo', redo);
-    keyboardManager.on('delete', deleteSelectedElements);
+    keyboardManager.on('delete', () => {
+      // Don't delete elements if we're editing text
+      if (!textEditing.isEditing) {
+        deleteSelectedElements();
+      }
+    });
     keyboardManager.on('duplicate', duplicateSelectedElements);
     keyboardManager.on('selectAll', selectAll);
     keyboardManager.on('selectNext', selectNext);

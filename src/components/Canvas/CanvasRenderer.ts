@@ -1360,32 +1360,44 @@ export class CanvasRenderer {
 
   // Helper function to wrap text into lines that fit within maxWidth
   private wrapTextToLines(text: string, maxWidth: number): string[] {
-    const words = text.split(' ');
+    // First split by explicit line breaks (\n)
+    const paragraphs = text.split('\n');
     const lines: string[] = [];
-    let currentLine = '';
     
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const testWidth = this.ctx.measureText(testLine).width;
+    for (const paragraph of paragraphs) {
+      if (paragraph === '') {
+        // Empty line from explicit line break
+        lines.push('');
+        continue;
+      }
       
-      if (testWidth <= maxWidth || currentLine === '') {
-        // Word fits on current line, or it's the first word
-        currentLine = testLine;
-      } else {
-        // Word doesn't fit, start new line
-        if (currentLine) {
-          lines.push(currentLine);
+      // For each paragraph, wrap words within maxWidth
+      const words = paragraph.split(' ');
+      let currentLine = '';
+      
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const testWidth = this.ctx.measureText(testLine).width;
+        
+        if (testWidth <= maxWidth || currentLine === '') {
+          // Word fits on current line, or it's the first word
+          currentLine = testLine;
+        } else {
+          // Word doesn't fit, start new line
+          if (currentLine) {
+            lines.push(currentLine);
+          }
+          currentLine = word;
         }
-        currentLine = word;
+      }
+      
+      // Add the last line of this paragraph if it has content
+      if (currentLine) {
+        lines.push(currentLine);
       }
     }
     
-    // Add the last line if it has content
-    if (currentLine) {
-      lines.push(currentLine);
-    }
-    
-    // Handle case where no words were added (empty text)
+    // Handle case where no lines were added (empty text)
     if (lines.length === 0) {
       lines.push('');
     }
