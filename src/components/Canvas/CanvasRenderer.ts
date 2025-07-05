@@ -720,7 +720,11 @@ export class CanvasRenderer {
         // For text elements, use simple bounding box
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
       } else if (element.type === 'image') {
-        // For image elements, use simple bounding box
+        // For image elements, use simple bounding box - DEBUG VERSION
+        console.log('Drawing outline for image:', element.width, element.height);
+        this.ctx.strokeStyle = '#ff0000'; // Bright red for debugging
+        this.ctx.lineWidth = 4 / this.viewport.zoom; // Thicker line for debugging
+        this.ctx.setLineDash([]); // Solid line for debugging
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
       }
       
