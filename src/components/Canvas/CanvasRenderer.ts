@@ -158,8 +158,8 @@ export class CanvasRenderer {
   private drawRectangle(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
     const hasRoundedCorners = element.cornerStyle === 'rounded' && element.cornerRadius && element.cornerRadius > 0;
     
-    if (this.useRoughJs && !hasRoundedCorners) {
-      // Original Rough.js implementation for sharp corners
+    if (this.useRoughJs) {
+      // Use Rough.js for both sharp and rounded corners to maintain hand-drawn style
       if (!this.rough || !this.rough.generator) return;
       
       const options: any = {
@@ -187,13 +187,24 @@ export class CanvasRenderer {
         options.stroke = 'none';
       }
 
-      const shape = this.getCachedShape(element, () => 
-        this.rough.generator.rectangle(0, 0, element.width, element.height, options)
-      );
+      let shape;
+      if (hasRoundedCorners) {
+        // Create rounded rectangle path for Rough.js
+        const radius = Math.min(element.cornerRadius!, element.width / 2, element.height / 2);
+        const pathData = this.createRoundedRectPath(0, 0, element.width, element.height, radius);
+        shape = this.getCachedShape(element, () => 
+          this.rough.generator.path(pathData, options)
+        );
+      } else {
+        // Regular rectangle
+        shape = this.getCachedShape(element, () => 
+          this.rough.generator.rectangle(0, 0, element.width, element.height, options)
+        );
+      }
       
       this.rough.draw(shape);
     } else {
-      // Canvas native implementation for rounded corners or fallback
+      // Canvas native fallback (not used when Rough.js is enabled)
       this.ctx.save();
       
       // Set stroke style
@@ -238,6 +249,19 @@ export class CanvasRenderer {
     if (element.text && element.text.trim() !== '') {
       this.drawTextInShape(element, textEditing);
     }
+  }
+
+  private createRoundedRectPath(x: number, y: number, width: number, height: number, radius: number): string {
+    // Create SVG path string for rounded rectangle
+    return `M ${x + radius} ${y} ` +
+           `L ${x + width - radius} ${y} ` +
+           `Q ${x + width} ${y} ${x + width} ${y + radius} ` +
+           `L ${x + width} ${y + height - radius} ` +
+           `Q ${x + width} ${y + height} ${x + width - radius} ${y + height} ` +
+           `L ${x + radius} ${y + height} ` +
+           `Q ${x} ${y + height} ${x} ${y + height - radius} ` +
+           `L ${x} ${y + radius} ` +
+           `Q ${x} ${y} ${x + radius} ${y} Z`;
   }
 
   private drawRoundedRect(x: number, y: number, width: number, height: number, radius: number) {
