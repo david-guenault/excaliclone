@@ -203,6 +203,9 @@ export const FONT_FAMILY_PRESETS = [
   { name: 'Georgia', value: 'Georgia' },
 ] as const;
 
+// System fonts for easy reference
+export const SYSTEM_FONTS = FONT_FAMILY_PRESETS.map(font => font.value);
+
 export const FONT_WEIGHT_PRESETS = [
   { name: 'Normal', value: 'normal' as const },
   { name: 'Bold', value: 'bold' as const },

@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2025-07-04T22:15:00Z",
+  "fonts": [
+    {
+      "family": "excalifont",
+      "displayName": "excalifont",
+      "category": "sans-serif",
+      "designer": "Excalidraw",
+      "license": "MIT",
+      "variants": [
+        {
+          "style": "normal",
+          "weight": 400,
+          "file": "families/excalifont/excalifont-regular.woff2",
+          "loaded": false
+        }
+      ]
+    },
+    {
+      "family": "Test Roboto",
+      "displayName": "Test Roboto",
+      "category": "sans-serif",
+      "designer": "Google",
+      "license": "Apache 2.0",
+      "variants": [
+        {
+          "style": "normal",
+          "weight": 400,
+          "file": "families/excalifont/test-roboto.woff2",
+          "loaded": false
+        }
+      ]
+    }
+  ]
+}

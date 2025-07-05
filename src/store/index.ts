@@ -151,8 +151,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       
       return {
         elements: newElements,
+        selectedElementIds: [createdElement.id], // Auto-select the created element
         history: newHistory,
         historyIndex: newHistory.length - 1,
+        ui: {
+          ...state.ui,
+          propertiesPanel: {
+            ...state.ui.propertiesPanel,
+            visible: true, // Show properties panel for the new element
+          },
+        },
       };
     });
     

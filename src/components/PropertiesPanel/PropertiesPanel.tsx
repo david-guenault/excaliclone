@@ -1,7 +1,7 @@
 // ABOUTME: Redesigned properties panel based on design_examples/properties1.png + properties2.png
 // ABOUTME: Fixed 200px width with dual color palettes and preset-only controls
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../../store';
 import { 
   PROPERTIES_PANEL_CONFIG,
@@ -14,6 +14,7 @@ import {
   CORNER_STYLE_PRESETS,
   FONT_SIZE_PRESETS,
   FONT_FAMILY_PRESETS,
+  SYSTEM_FONTS,
   FONT_WEIGHT_PRESETS,
   FONT_STYLE_PRESETS,
   TEXT_DECORATION_PRESETS,
@@ -22,6 +23,7 @@ import {
 } from '../../constants';
 import type { StrokeStyle, FillStyle, CornerStyle, TextAlign, FontWeight, FontStyle, TextDecoration, ArrowheadType } from '../../types';
 import { SimpleColorPalette } from './SimpleColorPalette';
+import { fontManager } from '../../utils/fontManager';
 import './PropertiesPanel.css';
 import './SimpleColorPalette.css';
 
@@ -42,6 +44,57 @@ export const PropertiesPanel: React.FC = () => {
     copyStyle,
     pasteStyle
   } = useAppStore();
+
+  // Font management state
+  const [availableFonts, setAvailableFonts] = useState<Array<{name: string, value: string, isCustom: boolean}>>([]);
+  const [fontsLoading, setFontsLoading] = useState(false);
+
+  // Load available fonts on component mount
+  useEffect(() => {
+    const loadFonts = async () => {
+      setFontsLoading(true);
+      try {
+        // Load custom fonts manifest
+        await fontManager.loadManifest();
+        
+        // Get system fonts
+        const systemFonts = FONT_FAMILY_PRESETS.map(font => ({
+          name: font.name,
+          value: font.value,
+          isCustom: false
+        }));
+        
+        // Get custom fonts
+        const customFontFamilies = fontManager.getAvailableFontFamilies();
+        const customFonts = customFontFamilies.map(family => {
+          const details = fontManager.getFontDetails(family);
+          return {
+            name: details?.displayName || family,
+            value: family,
+            isCustom: true
+          };
+        });
+        
+        // Combine system and custom fonts
+        setAvailableFonts([...systemFonts, ...customFonts]);
+        
+        // Preload regular variants of custom fonts for better performance
+        await fontManager.preloadRegularVariants();
+      } catch (error) {
+        console.warn('Error loading fonts:', error);
+        // Fallback to system fonts only
+        setAvailableFonts(FONT_FAMILY_PRESETS.map(font => ({
+          name: font.name,
+          value: font.value,
+          isCustom: false
+        })));
+      } finally {
+        setFontsLoading(false);
+      }
+    };
+    
+    loadFonts();
+  }, []);
 
   const selectedElements = elements.filter(el => 
     selectedElementIds.includes(el.id)
@@ -73,6 +126,23 @@ export const PropertiesPanel: React.FC = () => {
       return values.every(v => v === firstValue) ? firstValue : 'mixed';
     }
     return singleElement ? singleElement[property as keyof typeof singleElement] : undefined;
+  };
+
+  // Font change handler with lazy loading
+  const handleFontFamilyChange = async (fontFamily: string) => {
+    const customFont = availableFonts.find(font => font.value === fontFamily && font.isCustom);
+    
+    if (customFont) {
+      // Ensure the font is loaded before applying
+      const loaded = await fontManager.ensureFontLoaded(fontFamily);
+      if (!loaded) {
+        console.warn(`Failed to load font: ${fontFamily}`);
+        return;
+      }
+    }
+    
+    // Apply the font to selected elements
+    updateElementProperty('fontFamily', fontFamily);
   };
 
   return (
@@ -271,21 +341,41 @@ export const PropertiesPanel: React.FC = () => {
           <>
             {/* 8. Famille de police */}
             <div className="properties-panel__section">
-              <h4 className="properties-panel__section-title">Famille de police</h4>
+              <h4 className="properties-panel__section-title">
+                Famille de police
+                {fontsLoading && <span className="loading-indicator"> ⟳</span>}
+              </h4>
               <select 
                 className="properties-panel__select"
                 value={getCurrentValue('fontFamily')}
-                onChange={(e) => updateElementProperty('fontFamily', e.target.value)}
+                onChange={(e) => handleFontFamilyChange(e.target.value)}
+                disabled={fontsLoading}
               >
-                {FONT_FAMILY_PRESETS.map((font) => (
-                  <option
-                    key={font.name}
-                    value={font.value}
-                    style={{ fontFamily: font.value }}
-                  >
-                    {font.name}
-                  </option>
-                ))}
+                <optgroup label="Fontes Système">
+                  {availableFonts.filter(font => !font.isCustom).map((font) => (
+                    <option
+                      key={font.name}
+                      value={font.value}
+                      style={{ fontFamily: font.value }}
+                    >
+                      {font.name}
+                    </option>
+                  ))}
+                </optgroup>
+                
+                {availableFonts.filter(font => font.isCustom).length > 0 && (
+                  <optgroup label="Fontes Personnalisées">
+                    {availableFonts.filter(font => font.isCustom).map((font) => (
+                      <option
+                        key={font.name}
+                        value={font.value}
+                        style={{ fontFamily: font.value }}
+                      >
+                        {font.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
 

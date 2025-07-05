@@ -11,7 +11,14 @@ import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
 import { snapPointToGridWithDistance } from './utils/grid';
-import { findResizeHandle, applyResize, getResizeCursor } from './utils/resizeHandles';
+import { findResizeHandle, applyResize, applyRotation, getResizeCursor } from './utils/resizeHandles';
+import { 
+  getMultiSelectionBounds, 
+  findMultiSelectionHandle, 
+  applyMultiSelectionResize,
+  applyGroupResize,
+  applyGroupRotation
+} from './utils/multiSelection';
 import type { Point, ResizeHandleType } from './types';
 import './App.css';
 
@@ -100,6 +107,20 @@ function App() {
   const [resizeHandle, setResizeHandle] = useState<ResizeHandleType | null>(null);
   const [resizeStartPoint, setResizeStartPoint] = useState<Point | null>(null);
   const [resizeStartBounds, setResizeStartBounds] = useState<{x: number, y: number, width: number, height: number} | null>(null);
+  
+  // Rotation state
+  const [isRotating, setIsRotating] = useState(false);
+  const [rotationElementId, setRotationElementId] = useState<string | null>(null);
+  
+  // Multi-selection group operations state
+  const [isGroupResizing, setIsGroupResizing] = useState(false);
+  const [isGroupRotating, setIsGroupRotating] = useState(false);
+  const [groupResizeHandle, setGroupResizeHandle] = useState<string | null>(null);
+  const [groupResizeStartPoint, setGroupResizeStartPoint] = useState<Point | null>(null);
+  const [groupResizeStartBounds, setGroupResizeStartBounds] = useState<{x: number, y: number, width: number, height: number, center: Point} | null>(null);
+  const [groupRotationCenter, setGroupRotationCenter] = useState<Point | null>(null);
+  const [groupRotationStartAngle, setGroupRotationStartAngle] = useState<number>(0);
+  const [groupRotationStartElements, setGroupRotationStartElements] = useState<Element[]>([]);
   
   // Get text editing actions
   const { toggleCursor } = useAppStore();
@@ -295,13 +316,16 @@ function App() {
       deleteElement(currentRectangleId!);
     } else {
       // Update final position and size
-      const { updateElement } = useAppStore.getState();
+      const { updateElement, selectElements } = useAppStore.getState();
       updateElement(currentRectangleId!, {
         width: finalWidth,
         height: finalHeight,
         x: width >= 0 ? rectangleStart!.x : rectangleStart!.x + width,
         y: height >= 0 ? rectangleStart!.y : rectangleStart!.y + height,
       });
+      
+      // Auto-select the created rectangle
+      selectElements([currentRectangleId!]);
     }
     
     // Reset rectangle drawing state
@@ -336,13 +360,16 @@ function App() {
       deleteElement(currentCircleId!);
     } else {
       // Update final position and size
-      const { updateElement } = useAppStore.getState();
+      const { updateElement, selectElements } = useAppStore.getState();
       updateElement(currentCircleId!, {
         width: finalWidth,
         height: finalHeight,
         x: width >= 0 ? circleStart!.x : circleStart!.x + width,
         y: height >= 0 ? circleStart!.y : circleStart!.y + height,
       });
+      
+      // Auto-select the created circle
+      selectElements([currentCircleId!]);
     }
     
     // Reset circle drawing state
@@ -386,11 +413,14 @@ function App() {
       deleteElement(currentLineId!);
     } else {
       // Update final position
-      const { updateElement } = useAppStore.getState();
+      const { updateElement, selectElements } = useAppStore.getState();
       updateElement(currentLineId!, {
         width: deltaX,
         height: deltaY,
       });
+      
+      // Auto-select the created line
+      selectElements([currentLineId!]);
     }
     
     // Reset line drawing state
@@ -426,11 +456,14 @@ function App() {
       deleteElement(currentArrowId!);
     } else {
       // Update final position
-      const { updateElement } = useAppStore.getState();
+      const { updateElement, selectElements } = useAppStore.getState();
       updateElement(currentArrowId!, {
         width: deltaX,
         height: deltaY,
       });
+      
+      // Auto-select the created arrow
+      selectElements([currentArrowId!]);
     }
     
     // Reset arrow drawing state
@@ -534,24 +567,69 @@ function App() {
     
     // Check if we're clicking on an existing element (for selection)
     if (activeTool === 'select') {
-      // First, check if we're clicking on a resize handle of a selected element
+      // Check for multi-selection group operations first
+      if (selectedElementIds.length > 1) {
+        const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
+        const multiSelectionBounds = getMultiSelectionBounds(selectedElements);
+        
+        if (multiSelectionBounds) {
+          const groupHandle = findMultiSelectionHandle(worldPoint, multiSelectionBounds);
+          if (groupHandle) {
+            if (groupHandle === 'rotation') {
+              // Start group rotation
+              setIsGroupRotating(true);
+              setGroupRotationCenter(multiSelectionBounds.center);
+              
+              // Store initial rotation angle and element states
+              const initialAngle = Math.atan2(
+                worldPoint.y - multiSelectionBounds.center.y,
+                worldPoint.x - multiSelectionBounds.center.x
+              );
+              setGroupRotationStartAngle(initialAngle);
+              setGroupRotationStartElements([...selectedElements]);
+              
+              const canvas = event.target as HTMLElement;
+              canvas.style.cursor = 'grabbing';
+            } else {
+              // Start group resize
+              setIsGroupResizing(true);
+              setGroupResizeHandle(groupHandle);
+              setGroupResizeStartPoint(worldPoint);
+              setGroupResizeStartBounds(multiSelectionBounds);
+            }
+            return;
+          }
+        }
+      }
+      
+      // Check if we're clicking on a resize handle of a selected element (single selection)
       for (const elementId of selectedElementIds) {
         const element = elements.find(el => el.id === elementId);
         if (!element || element.locked) continue;
         
         const handle = findResizeHandle(worldPoint, element);
         if (handle) {
-          // Start resize operation
-          setIsResizing(true);
-          setResizeElementId(elementId);
-          setResizeHandle(handle);
-          setResizeStartPoint(worldPoint);
-          setResizeStartBounds({
-            x: element.x,
-            y: element.y,
-            width: element.width,
-            height: element.height,
-          });
+          if (handle === 'rotation') {
+            // Start rotation operation
+            setIsRotating(true);
+            setRotationElementId(elementId);
+            
+            // Change cursor to grabbing for rotation
+            const canvas = event.target as HTMLElement;
+            canvas.style.cursor = 'grabbing';
+          } else {
+            // Start resize operation
+            setIsResizing(true);
+            setResizeElementId(elementId);
+            setResizeHandle(handle);
+            setResizeStartPoint(worldPoint);
+            setResizeStartBounds({
+              x: element.x,
+              y: element.y,
+              width: element.width,
+              height: element.height,
+            });
+          }
           return;
         }
       }
@@ -874,7 +952,7 @@ function App() {
     };
     
     // Update cursor based on hover state (only when not in a drag operation)
-    if (!isPanning && !isResizing && !isDraggingElements && !isDragSelecting && activeTool === 'select') {
+    if (!isPanning && !isResizing && !isRotating && !isDraggingElements && !isDragSelecting && activeTool === 'select') {
       let newCursor = 'default';
       
       // Check if hovering over a resize handle
@@ -905,6 +983,50 @@ function App() {
       });
     }
     
+    // Handle group resize
+    if (isGroupResizing && groupResizeStartPoint && groupResizeHandle && groupResizeStartBounds) {
+      const snappedCurrentPoint = applySnapping(worldPoint);
+      const newBounds = applyMultiSelectionResize(
+        groupResizeStartBounds,
+        groupResizeHandle,
+        groupResizeStartPoint,
+        snappedCurrentPoint
+      );
+      
+      const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
+      const updates = applyGroupResize(selectedElements, groupResizeStartBounds, newBounds);
+      
+      selectedElementIds.forEach((elementId, index) => {
+        if (updates[index]) {
+          updateElementSilent(elementId, updates[index]);
+        }
+      });
+    }
+    
+    // Handle group rotation
+    if (isGroupRotating && groupRotationCenter && groupRotationStartElements.length > 0) {
+      const currentAngle = Math.atan2(
+        worldPoint.y - groupRotationCenter.y,
+        worldPoint.x - groupRotationCenter.x
+      );
+      
+      // Calculate delta angle from start
+      let deltaAngle = currentAngle - groupRotationStartAngle;
+      
+      // Apply rotation snapping (15-degree increments)
+      const snapIncrement = Math.PI / 12; // 15 degrees
+      deltaAngle = Math.round(deltaAngle / snapIncrement) * snapIncrement;
+      
+      // Apply rotation to all elements based on their initial state
+      const updates = applyGroupRotation(groupRotationStartElements, groupRotationCenter, deltaAngle);
+      
+      selectedElementIds.forEach((elementId, index) => {
+        if (updates[index]) {
+          updateElementSilent(elementId, updates[index]);
+        }
+      });
+    }
+    
     // Handle element resizing
     if (isResizing && resizeElementId && resizeHandle && resizeStartPoint && resizeStartBounds) {
       const element = elements.find(el => el.id === resizeElementId);
@@ -918,6 +1040,15 @@ function App() {
           applySnapping // Pass the snapping function
         );
         updateElementSilent(resizeElementId, resizeUpdates);
+      }
+    }
+    
+    // Handle element rotation
+    if (isRotating && rotationElementId) {
+      const element = elements.find(el => el.id === rotationElementId);
+      if (element) {
+        const rotationUpdates = applyRotation(element, worldPoint);
+        updateElementSilent(rotationElementId, rotationUpdates);
       }
     }
     
@@ -1001,6 +1132,34 @@ function App() {
       panStartViewport.current = null;
     }
     
+    // Handle group resize completion
+    if (isGroupResizing) {
+      // Save the resized group to history
+      saveToHistory();
+      setIsGroupResizing(false);
+      setGroupResizeHandle(null);
+      setGroupResizeStartPoint(null);
+      setGroupResizeStartBounds(null);
+      
+      // Reset cursor
+      const canvas = event.target as HTMLElement;
+      canvas.style.cursor = 'default';
+    }
+    
+    // Handle group rotation completion
+    if (isGroupRotating) {
+      // Save the rotated group to history
+      saveToHistory();
+      setIsGroupRotating(false);
+      setGroupRotationCenter(null);
+      setGroupRotationStartAngle(0);
+      setGroupRotationStartElements([]);
+      
+      // Reset cursor
+      const canvas = event.target as HTMLElement;
+      canvas.style.cursor = 'default';
+    }
+    
     // Handle element resizing completion
     if (isResizing) {
       // Save the resized elements to history
@@ -1010,6 +1169,18 @@ function App() {
       setResizeHandle(null);
       setResizeStartPoint(null);
       setResizeStartBounds(null);
+      
+      // Reset cursor
+      const canvas = event.target as HTMLElement;
+      canvas.style.cursor = 'default';
+    }
+    
+    // Handle element rotation completion
+    if (isRotating) {
+      // Save the rotated element to history
+      saveToHistory();
+      setIsRotating(false);
+      setRotationElementId(null);
       
       // Reset cursor
       const canvas = event.target as HTMLElement;
@@ -1030,6 +1201,11 @@ function App() {
     if (isDrawingPen && currentPenId) {
       // Save final pen drawing to history
       saveToHistory();
+      
+      // Auto-select the created pen drawing
+      const { selectElements } = useAppStore.getState();
+      selectElements([currentPenId]);
+      
       setIsDrawingPen(false);
       setCurrentPenId(null);
       setPenPoints([]);

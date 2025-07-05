@@ -37,13 +37,14 @@ describe('Resize Handles', () => {
       };
 
       const handles = getResizeHandles(rectangle);
-      expect(handles).toHaveLength(4);
+      expect(handles).toHaveLength(5); // 4 corner handles + 1 rotation handle
       
       const handleTypes = handles.map(h => h.type);
       expect(handleTypes).toContain('top-left');
       expect(handleTypes).toContain('top-right');
       expect(handleTypes).toContain('bottom-left');
       expect(handleTypes).toContain('bottom-right');
+      expect(handleTypes).toContain('rotation');
     });
 
     it('should detect resize handles for lines', () => {
@@ -65,11 +66,12 @@ describe('Resize Handles', () => {
       };
 
       const handles = getResizeHandles(line);
-      expect(handles).toHaveLength(2);
+      expect(handles).toHaveLength(3); // 2 endpoint handles + 1 rotation handle
       
       const handleTypes = handles.map(h => h.type);
       expect(handleTypes).toContain('start-point');
       expect(handleTypes).toContain('end-point');
+      expect(handleTypes).toContain('rotation');
     });
 
     it('should find correct handle when point is over it', () => {

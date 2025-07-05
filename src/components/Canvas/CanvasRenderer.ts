@@ -5,6 +5,7 @@ import rough from 'roughjs';
 import type { Element, Viewport, GridSettings, ArrowheadType, Point, DirectTextEditingState } from '../../types';
 import { renderGrid } from '../../utils/grid';
 import { ARROW_CONFIG, ARROWHEAD_CONFIG } from '../../constants';
+import { getMultiSelectionBounds, getMultiSelectionHandles } from '../../utils/multiSelection';
 
 export class CanvasRenderer {
   private ctx: CanvasRenderingContext2D;
@@ -676,6 +677,11 @@ export class CanvasRenderer {
     const SELECTION_STROKE_WIDTH = 2;
     const HANDLE_SIZE = 8;
     
+    // Handle multi-selection group indicators
+    if (selectedElementIds.length > 1) {
+      this.renderMultiSelectionIndicators(elements, selectedElementIds, SELECTION_COLOR, HANDLE_SIZE);
+    }
+    
     selectedElementIds.forEach(elementId => {
       const element = elements.find(el => el.id === elementId);
       if (!element) return;
@@ -731,12 +737,78 @@ export class CanvasRenderer {
           this.ctx.fillRect(x, y, handleSize, handleSize);
           this.ctx.strokeRect(x, y, handleSize, handleSize);
         });
+
+        // Rotation handle above the element
+        const rotationDistance = 20 / this.viewport.zoom;
+        const rotationX = element.width / 2 - halfHandle;
+        const rotationY = -rotationDistance - halfHandle;
+        
+        // Draw connection line to rotation handle
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.lineWidth = 1 / this.viewport.zoom;
+        this.ctx.setLineDash([]);
+        this.ctx.beginPath();
+        this.ctx.moveTo(element.width / 2, -2);
+        this.ctx.lineTo(element.width / 2, rotationY + halfHandle);
+        this.ctx.stroke();
+        
+        // Draw rotation handle as a circle
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.beginPath();
+        this.ctx.arc(rotationX + halfHandle, rotationY + halfHandle, halfHandle, 0, 2 * Math.PI);
+        this.ctx.fill();
+        this.ctx.stroke();
+        
+        // Draw rotation icon inside the circle
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.lineWidth = 1.5 / this.viewport.zoom;
+        const iconRadius = halfHandle * 0.6;
+        this.ctx.beginPath();
+        this.ctx.arc(rotationX + halfHandle, rotationY + halfHandle, iconRadius, 0, 1.5 * Math.PI);
+        this.ctx.stroke();
+        // Arrow tip
+        const arrowSize = 2 / this.viewport.zoom;
+        this.ctx.beginPath();
+        this.ctx.moveTo(rotationX + halfHandle - iconRadius, rotationY + halfHandle - arrowSize);
+        this.ctx.lineTo(rotationX + halfHandle - iconRadius + arrowSize, rotationY + halfHandle);
+        this.ctx.lineTo(rotationX + halfHandle - iconRadius, rotationY + halfHandle + arrowSize);
+        this.ctx.stroke();
+
       } else if (element.type === 'line' || element.type === 'arrow') {
         // End point handles for lines/arrows
         this.ctx.fillRect(-halfHandle, -halfHandle, handleSize, handleSize);
         this.ctx.strokeRect(-halfHandle, -halfHandle, handleSize, handleSize);
         this.ctx.fillRect(element.width - halfHandle, element.height - halfHandle, handleSize, handleSize);
         this.ctx.strokeRect(element.width - halfHandle, element.height - halfHandle, handleSize, handleSize);
+
+        // Rotation handle perpendicular to the line
+        const rotationDistance = 15 / this.viewport.zoom;
+        const midX = element.width / 2;
+        const midY = element.height / 2;
+        const length = Math.sqrt(element.width * element.width + element.height * element.height);
+        const offsetX = (-element.height / length) * rotationDistance;
+        const offsetY = (element.width / length) * rotationDistance;
+        const rotationX = midX + offsetX - halfHandle;
+        const rotationY = midY + offsetY - halfHandle;
+        
+        // Draw connection line to rotation handle
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.lineWidth = 1 / this.viewport.zoom;
+        this.ctx.setLineDash([]);
+        this.ctx.beginPath();
+        this.ctx.moveTo(midX, midY);
+        this.ctx.lineTo(rotationX + halfHandle, rotationY + halfHandle);
+        this.ctx.stroke();
+        
+        // Draw rotation handle as a circle
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.beginPath();
+        this.ctx.arc(rotationX + halfHandle, rotationY + halfHandle, halfHandle, 0, 2 * Math.PI);
+        this.ctx.fill();
+        this.ctx.stroke();
+
       } else if (element.type === 'pen') {
         // Corner handles for pen strokes
         const positions = [
@@ -750,6 +822,29 @@ export class CanvasRenderer {
           this.ctx.fillRect(x, y, handleSize, handleSize);
           this.ctx.strokeRect(x, y, handleSize, handleSize);
         });
+
+        // Rotation handle above the element
+        const rotationDistance = 20 / this.viewport.zoom;
+        const rotationX = element.width / 2 - halfHandle;
+        const rotationY = -rotationDistance - halfHandle;
+        
+        // Draw connection line to rotation handle
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.lineWidth = 1 / this.viewport.zoom;
+        this.ctx.setLineDash([]);
+        this.ctx.beginPath();
+        this.ctx.moveTo(element.width / 2, -2);
+        this.ctx.lineTo(element.width / 2, rotationY + halfHandle);
+        this.ctx.stroke();
+        
+        // Draw rotation handle as a circle
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.beginPath();
+        this.ctx.arc(rotationX + halfHandle, rotationY + halfHandle, halfHandle, 0, 2 * Math.PI);
+        this.ctx.fill();
+        this.ctx.stroke();
+
       } else if (element.type === 'text') {
         // Corner handles for text elements
         const positions = [
@@ -763,12 +858,93 @@ export class CanvasRenderer {
           this.ctx.fillRect(x, y, handleSize, handleSize);
           this.ctx.strokeRect(x, y, handleSize, handleSize);
         });
+
+        // Rotation handle above the element
+        const rotationDistance = 20 / this.viewport.zoom;
+        const rotationX = element.width / 2 - halfHandle;
+        const rotationY = -rotationDistance - halfHandle;
+        
+        // Draw connection line to rotation handle
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.lineWidth = 1 / this.viewport.zoom;
+        this.ctx.setLineDash([]);
+        this.ctx.beginPath();
+        this.ctx.moveTo(element.width / 2, -2);
+        this.ctx.lineTo(element.width / 2, rotationY + halfHandle);
+        this.ctx.stroke();
+        
+        // Draw rotation handle as a circle
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.beginPath();
+        this.ctx.arc(rotationX + halfHandle, rotationY + halfHandle, halfHandle, 0, 2 * Math.PI);
+        this.ctx.fill();
+        this.ctx.stroke();
       }
       
       this.ctx.restore(); // Restore element transformations
     });
     
     // Restore context state
+    this.ctx.restore();
+  }
+
+  private renderMultiSelectionIndicators(elements: Element[], selectedElementIds: string[], SELECTION_COLOR: string, HANDLE_SIZE: number) {
+    const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
+    const bounds = getMultiSelectionBounds(selectedElements);
+    
+    if (!bounds) return;
+    
+    // Draw group selection outline
+    this.ctx.save();
+    this.ctx.strokeStyle = SELECTION_COLOR;
+    this.ctx.lineWidth = 2 / this.viewport.zoom;
+    this.ctx.setLineDash([8 / this.viewport.zoom, 4 / this.viewport.zoom]); // Different dash pattern for group
+    this.ctx.globalAlpha = 0.6;
+    
+    // Draw group bounding box
+    this.ctx.strokeRect(bounds.x - 5, bounds.y - 5, bounds.width + 10, bounds.height + 10);
+    
+    this.ctx.restore();
+    
+    // Draw group resize handles
+    const handles = getMultiSelectionHandles(bounds);
+    
+    this.ctx.save();
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.strokeStyle = SELECTION_COLOR;
+    this.ctx.lineWidth = 2 / this.viewport.zoom;
+    this.ctx.setLineDash([]);
+    this.ctx.globalAlpha = 1;
+    
+    handles.forEach(handle => {
+      if (handle.type === 'rotation') {
+        // Draw connection line to rotation handle
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.lineWidth = 1 / this.viewport.zoom;
+        this.ctx.beginPath();
+        this.ctx.moveTo(bounds.x + bounds.width / 2, bounds.y - 5);
+        this.ctx.lineTo(handle.x + handle.size / 2, handle.y + handle.size / 2);
+        this.ctx.stroke();
+        
+        // Draw rotation handle as a circle
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.lineWidth = 2 / this.viewport.zoom;
+        this.ctx.beginPath();
+        this.ctx.arc(handle.x + handle.size / 2, handle.y + handle.size / 2, handle.size / 2, 0, 2 * Math.PI);
+        this.ctx.fill();
+        this.ctx.stroke();
+      } else {
+        // Draw corner resize handles as squares
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.strokeStyle = SELECTION_COLOR;
+        this.ctx.lineWidth = 2 / this.viewport.zoom;
+        this.ctx.fillRect(handle.x, handle.y, handle.size, handle.size);
+        this.ctx.strokeRect(handle.x, handle.y, handle.size, handle.size);
+      }
+    });
+    
     this.ctx.restore();
   }
 

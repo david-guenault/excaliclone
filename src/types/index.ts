@@ -48,7 +48,8 @@ export type ResizeHandleType =
   | 'bottom-left' 
   | 'bottom-right'
   | 'start-point' 
-  | 'end-point';
+  | 'end-point'
+  | 'rotation';
 
 export interface ResizeHandle {
   type: ResizeHandleType;

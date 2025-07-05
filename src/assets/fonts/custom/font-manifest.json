@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2025-07-04T21:00:00Z",
+  "fonts": [
+    {
+      "family": "excalifont",
+      "displayName": "excalifont",
+      "category": "sans-serif",
+      "designer": "Excalidraw",
+      "license": "MIT",
+      "variants": [
+        {
+          "style": "normal",
+          "weight": 400,
+          "file": "families/excalifont/excalifont-regular.woff2",
+          "loaded": false
+        }
+      ]
+    }
+  ]
+}
