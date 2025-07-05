@@ -117,6 +117,9 @@ export class CanvasRenderer {
       case 'pen':
         this.drawPen(element);
         break;
+      case 'image':
+        this.drawImage(element);
+        break;
     }
 
     this.ctx.restore();
@@ -1450,5 +1453,71 @@ export class CanvasRenderer {
     }
     
     this.ctx.restore();
+  }
+
+  private drawImage(element: Element) {
+    if (!element.imageUrl) return;
+    
+    // Check if image is already cached
+    const cacheKey = `image-${element.imageUrl}`;
+    let imageElement = this.shapeCache.get(cacheKey);
+    
+    if (!imageElement) {
+      // Create new image element
+      imageElement = new Image();
+      imageElement.src = element.imageUrl;
+      
+      // Cache the image element
+      this.shapeCache.set(cacheKey, imageElement);
+    }
+    
+    // Draw the image if it's loaded
+    if (imageElement.complete && imageElement.naturalHeight !== 0) {
+      this.ctx.save();
+      
+      // Apply opacity
+      this.ctx.globalAlpha = element.opacity;
+      
+      // Draw the image
+      this.ctx.drawImage(
+        imageElement,
+        0,
+        0,
+        element.width,
+        element.height
+      );
+      
+      this.ctx.restore();
+    } else {
+      // Image not loaded yet, draw a placeholder rectangle
+      this.ctx.save();
+      
+      // Draw placeholder background
+      this.ctx.fillStyle = '#f0f0f0';
+      this.ctx.fillRect(0, 0, element.width, element.height);
+      
+      // Draw border
+      this.ctx.strokeStyle = '#ccc';
+      this.ctx.lineWidth = 1;
+      this.ctx.strokeRect(0, 0, element.width, element.height);
+      
+      // Draw loading indicator
+      this.ctx.fillStyle = '#999';
+      this.ctx.font = '14px Inter';
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      this.ctx.fillText('Loading...', element.width / 2, element.height / 2);
+      
+      this.ctx.restore();
+      
+      // Set up load event listener to redraw when image loads
+      if (!imageElement.onload) {
+        imageElement.onload = () => {
+          // Force a redraw when image loads
+          // This will be handled by the main render loop
+          this.shapeCache.set(cacheKey, imageElement);
+        };
+      }
+    }
   }
 }

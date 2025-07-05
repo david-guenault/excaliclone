@@ -326,6 +326,9 @@ function App() {
       
       // Auto-select the created rectangle
       selectElements([currentRectangleId!]);
+      
+      // Auto-activate selection tool for immediate manipulation
+      setActiveTool('select');
     }
     
     // Reset rectangle drawing state
@@ -370,6 +373,9 @@ function App() {
       
       // Auto-select the created circle
       selectElements([currentCircleId!]);
+      
+      // Auto-activate selection tool for immediate manipulation
+      setActiveTool('select');
     }
     
     // Reset circle drawing state
@@ -421,6 +427,9 @@ function App() {
       
       // Auto-select the created line
       selectElements([currentLineId!]);
+      
+      // Auto-activate selection tool for immediate manipulation
+      setActiveTool('select');
     }
     
     // Reset line drawing state
@@ -464,6 +473,9 @@ function App() {
       
       // Auto-select the created arrow
       selectElements([currentArrowId!]);
+      
+      // Auto-activate selection tool for immediate manipulation
+      setActiveTool('select');
     }
     
     // Reset arrow drawing state
@@ -940,7 +952,211 @@ function App() {
       
       // Start direct text editing
       startTextEditing(createdElement.id, '', 0);
+    } else if (activeTool === 'image') {
+      // Handle image import
+      handleImageImport(worldPoint);
+    } else if (activeTool === 'eraser') {
+      // Handle eraser tool - delete element on click
+      handleEraserClick(worldPoint);
     }
+  };
+
+  // Handle eraser tool functionality
+  const handleEraserClick = (worldPoint: Point) => {
+    // Find the element to erase (front-to-back search like selection)
+    const clickedElement = elements
+      .filter(element => !element.locked) // Skip locked elements
+      .slice() // Create a copy before reversing
+      .reverse() // Search from front to back (newest to oldest)
+      .find(element => {
+        // Use the same hit testing logic as selection
+        // Special hit testing for pen strokes
+        if (element.type === 'pen' && element.points && element.points.length > 1) {
+          const tolerance = Math.max(element.strokeWidth * 2, 8) / viewport.zoom;
+          
+          for (let i = 0; i < element.points.length - 1; i++) {
+            const p1 = element.points[i];
+            const p2 = element.points[i + 1];
+            
+            const A = worldPoint.x - p1.x;
+            const B = worldPoint.y - p1.y;
+            const C = p2.x - p1.x;
+            const D = p2.y - p1.y;
+            
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            
+            if (lenSq === 0) continue;
+            
+            let param = dot / lenSq;
+            param = Math.max(0, Math.min(1, param));
+            
+            const closestX = p1.x + param * C;
+            const closestY = p1.y + param * D;
+            
+            const distance = Math.sqrt(
+              (worldPoint.x - closestX) * (worldPoint.x - closestX) + 
+              (worldPoint.y - closestY) * (worldPoint.y - closestY)
+            );
+            
+            if (distance <= tolerance) {
+              return true;
+            }
+          }
+          return false;
+        }
+        
+        // Special hit testing for lines and arrows
+        if (element.type === 'line' || element.type === 'arrow') {
+          const tolerance = Math.max(element.strokeWidth * 2, 12) / viewport.zoom;
+          
+          const startX = element.x;
+          const startY = element.y;
+          const endX = element.x + element.width;
+          const endY = element.y + element.height;
+          
+          const A = worldPoint.x - startX;
+          const B = worldPoint.y - startY;
+          const C = endX - startX;
+          const D = endY - startY;
+          
+          const dot = A * C + B * D;
+          const lenSq = C * C + D * D;
+          
+          if (lenSq === 0) return Math.sqrt(A * A + B * B) <= tolerance;
+          
+          let param = dot / lenSq;
+          param = Math.max(0, Math.min(1, param));
+          
+          const closestX = startX + param * C;
+          const closestY = startY + param * D;
+          
+          const distance = Math.sqrt(
+            (worldPoint.x - closestX) * (worldPoint.x - closestX) + 
+            (worldPoint.y - closestY) * (worldPoint.y - closestY)
+          );
+          
+          return distance <= tolerance;
+        }
+        
+        // Standard bounding box hit testing for other shapes
+        const isInsideBounds = (
+          worldPoint.x >= element.x &&
+          worldPoint.x <= element.x + element.width &&
+          worldPoint.y >= element.y &&
+          worldPoint.y <= element.y + element.height
+        );
+        
+        if (!isInsideBounds) return false;
+        
+        // Special hit testing for circles
+        if (element.type === 'circle') {
+          const centerX = element.x + element.width / 2;
+          const centerY = element.y + element.height / 2;
+          const radiusX = element.width / 2;
+          const radiusY = element.height / 2;
+          const dx = (worldPoint.x - centerX) / radiusX;
+          const dy = (worldPoint.y - centerY) / radiusY;
+          return dx * dx + dy * dy <= 1;
+        }
+        
+        // For rectangles, text, and images, bounding box test is sufficient
+        return true;
+      });
+    
+    if (clickedElement) {
+      // Delete the clicked element
+      const { deleteElement } = useAppStore.getState();
+      deleteElement(clickedElement.id);
+      
+      // Save deletion to history
+      saveToHistory();
+      
+      // Clear selection if the deleted element was selected
+      if (selectedElementIds.includes(clickedElement.id)) {
+        const newSelection = selectedElementIds.filter(id => id !== clickedElement.id);
+        selectElements(newSelection);
+      }
+    }
+  };
+
+  // Handle image import functionality
+  const handleImageImport = (point: Point) => {
+    // Create a file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*'; // Accept all image formats
+    fileInput.style.display = 'none';
+    
+    fileInput.onchange = (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
+      
+      // Create a FileReader to convert the image to base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string;
+        if (!imageUrl) return;
+        
+        // Create an Image object to get dimensions
+        const img = new Image();
+        img.onload = () => {
+          // Calculate appropriate size (max 400px width/height, maintain aspect ratio)
+          const maxSize = 400;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > maxSize || height > maxSize) {
+            const ratio = Math.min(maxSize / width, maxSize / height);
+            width = width * ratio;
+            height = height * ratio;
+          }
+          
+          // Apply grid snapping to insertion point
+          const snappedPoint = applySnapping(point);
+          
+          // Create the image element
+          const createdElement = addElementSilent({
+            type: 'image',
+            x: snappedPoint.x,
+            y: snappedPoint.y,
+            width,
+            height,
+            angle: 0,
+            strokeColor: toolOptions.strokeColor,
+            backgroundColor: 'transparent', // Images don't use background
+            strokeWidth: 0, // Images don't use stroke by default
+            strokeStyle: toolOptions.strokeStyle,
+            fillStyle: 'solid',
+            roughness: 0, // Images should be crisp
+            opacity: toolOptions.opacity,
+            imageUrl,
+          });
+          
+          // Auto-select the created image
+          selectElements([createdElement.id]);
+          
+          // Auto-activate selection tool for immediate manipulation
+          setActiveTool('select');
+        };
+        img.src = imageUrl;
+      };
+      
+      reader.readAsDataURL(file);
+      
+      // Clean up the file input
+      document.body.removeChild(fileInput);
+    };
+    
+    // Add to DOM and click
+    document.body.appendChild(fileInput);
+    fileInput.click();
   };
 
 
@@ -1206,6 +1422,9 @@ function App() {
       const { selectElements } = useAppStore.getState();
       selectElements([currentPenId]);
       
+      // Auto-activate selection tool for immediate manipulation
+      setActiveTool('select');
+      
       setIsDrawingPen(false);
       setCurrentPenId(null);
       setPenPoints([]);
@@ -1375,18 +1594,33 @@ function App() {
   // Handle cursor blinking for direct text editing
   useEffect(() => {
     let interval: number | null = null;
+    let timeout: number | null = null;
     
     if (textEditing.isEditing) {
-      // Toggle cursor visibility every 500ms
-      interval = setInterval(() => {
-        toggleCursor();
-      }, 500);
+      // Ensure cursor is visible initially (it starts as true from startTextEditing)
+      // Start blinking after a delay so cursor is visible immediately for 500ms
+      timeout = setTimeout(() => {
+        if (textEditing.isEditing) { // Check if still editing after delay
+          // Toggle cursor visibility every 500ms
+          interval = setInterval(() => {
+            toggleCursor();
+          }, 500);
+        }
+      }, 500); // Wait 500ms before starting the blink cycle
     }
     
     return () => {
       if (interval) clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
     };
   }, [textEditing.isEditing, toggleCursor]);
+
+  // Helper function to finish text editing and activate selection tool
+  const finishTextEditingAndActivateSelect = () => {
+    finishTextEditing();
+    // Auto-activate selection tool for immediate manipulation
+    setActiveTool('select');
+  };
 
   // Handle keyboard input for direct text editing
   useEffect(() => {
@@ -1399,7 +1633,7 @@ function App() {
       // Prevent default behavior for text editing keys
       if (event.key === 'Escape') {
         event.preventDefault();
-        finishTextEditing();
+        finishTextEditingAndActivateSelect();
       } else if (event.key === 'Enter') {
         event.preventDefault();
         // Add line break at cursor position
@@ -1437,7 +1671,7 @@ function App() {
       
       const canvas = canvasRef.current;
       if (canvas && !canvas.contains(event.target as Node)) {
-        finishTextEditing();
+        finishTextEditingAndActivateSelect();
       }
     };
 
@@ -1448,7 +1682,7 @@ function App() {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [textEditing, updateTextContent, finishTextEditing]);
+  }, [textEditing, updateTextContent, finishTextEditing, setActiveTool]);
 
   // Set up keyboard shortcuts
   useEffect(() => {
