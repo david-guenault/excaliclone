@@ -101,17 +101,16 @@ function App() {
   const [currentPenId, setCurrentPenId] = useState<string | null>(null);
   const [penPoints, setPenPoints] = useState<Point[]>([]);
   
-  // Resize state
+  // Element resizing and rotation state
   const [isResizing, setIsResizing] = useState(false);
   const [resizeElementId, setResizeElementId] = useState<string | null>(null);
   const [resizeHandle, setResizeHandle] = useState<ResizeHandleType | null>(null);
   const [resizeStartPoint, setResizeStartPoint] = useState<Point | null>(null);
   const [resizeStartBounds, setResizeStartBounds] = useState<{x: number, y: number, width: number, height: number} | null>(null);
   
-  // Rotation state
   const [isRotating, setIsRotating] = useState(false);
   const [rotationElementId, setRotationElementId] = useState<string | null>(null);
-  
+
   // Multi-selection group operations state
   const [isGroupResizing, setIsGroupResizing] = useState(false);
   const [isGroupRotating, setIsGroupRotating] = useState(false);

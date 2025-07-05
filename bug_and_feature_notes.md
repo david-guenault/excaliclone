@@ -7,3 +7,5 @@
 - BUG: la propriété angle ne fonctionne pas
 - FEATURE: il manque des outils d'alignement sur selection multiples comme dans excalidraw. Pour le design voir l'image alignement dans design_examples. alignement horizontal (a gauche a droite centré répartit horizontalement) et alignement vertical (en haut en bas au centre repartit verticalement)
 - EVOLUTION: harmoniser la taille des icones de fenêtre de propriétés. Boutons carrés tous de la même taille.
+- BUG: l'onglet affiche VITE + REACT + TS en titre. Change cela pour le nom de l'application
+  
