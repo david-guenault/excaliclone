@@ -31,6 +31,7 @@ export class KeyboardManager {
   private listeners: Map<string, (data?: any) => void> = new Map();
   private isSpacePressed = false;
   private isInputFocused = false;
+  private isTextEditingActive = false;
 
   constructor() {
     this.initializeShortcuts();
@@ -219,8 +220,8 @@ export class KeyboardManager {
       this.emit('spaceDown');
     }
 
-    // Don't process shortcuts when input is focused
-    if (this.isInputFocused) return;
+    // Don't process shortcuts when input is focused or text editing is active
+    if (this.isInputFocused || this.isTextEditingActive) return;
 
     const shortcutKey = this.createShortcutKey({
       key: event.key,
@@ -302,6 +303,14 @@ export class KeyboardManager {
 
   public isSpacePressedNow(): boolean {
     return this.isSpacePressed;
+  }
+
+  public setTextEditingActive(active: boolean): void {
+    this.isTextEditingActive = active;
+  }
+
+  public isTextEditingActiveNow(): boolean {
+    return this.isTextEditingActive;
   }
 
   public destroy() {

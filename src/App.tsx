@@ -1717,17 +1717,17 @@ function App() {
     };
   }, [textEditing, updateTextContent, finishTextEditing, setActiveTool]);
 
+  // Sync text editing state with keyboard manager
+  useEffect(() => {
+    keyboardManager.setTextEditingActive(textEditing.isEditing);
+  }, [textEditing.isEditing]);
+
   // Set up keyboard shortcuts
   useEffect(() => {
     keyboardManager.on('setTool', setActiveTool);
     keyboardManager.on('undo', undo);
     keyboardManager.on('redo', redo);
-    keyboardManager.on('delete', () => {
-      // Don't delete elements if we're editing text
-      if (!textEditing.isEditing) {
-        deleteSelectedElements();
-      }
-    });
+    keyboardManager.on('delete', deleteSelectedElements);
     keyboardManager.on('duplicate', duplicateSelectedElements);
     keyboardManager.on('selectAll', selectAll);
     keyboardManager.on('selectNext', selectNext);
