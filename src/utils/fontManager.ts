@@ -33,9 +33,20 @@ export class FontManager {
    */
   async loadManifest(): Promise<FontManifest> {
     try {
-      // Check if we're in a test environment or if fetch is not available
-      if (typeof window === 'undefined' || !window.fetch) {
-        throw new Error('Fetch not available in test environment');
+      // Check if we're in a test environment
+      const isTestEnv = typeof window === 'undefined' || 
+                       !window.fetch || 
+                       (typeof globalThis !== 'undefined' && (globalThis as any).process?.env?.NODE_ENV === 'test') ||
+                       (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test');
+      
+      if (isTestEnv) {
+        // Return a mock manifest for tests
+        this.manifest = { 
+          version: '1.0', 
+          lastUpdated: new Date().toISOString(), 
+          fonts: [] 
+        };
+        return this.manifest;
       }
       
       const response = await fetch(this.manifestPath);
@@ -44,8 +55,8 @@ export class FontManager {
       }
       const manifest = await response.json();
       this.manifest = manifest;
-      console.log(`Manifeste de fontes chargé: ${this.manifest.fonts.length} famille(s) disponible(s)`);
-      return this.manifest;
+      console.log(`Manifeste de fontes chargé: ${manifest.fonts.length} famille(s) disponible(s)`);
+      return manifest;
     } catch (error) {
       console.warn('Impossible de charger le manifeste des fontes:', error);
       // Retourner un manifeste vide par défaut

@@ -8,8 +8,6 @@ import { PropertiesPanel } from '../PropertiesPanel';
 import { useAppStore } from '../../../store';
 import type { Element } from '../../../types';
 import { 
-  STROKE_COLORS,
-  BACKGROUND_COLORS,
   FILL_PATTERNS,
   STROKE_WIDTH_PRESETS,
   STROKE_STYLE_PRESETS,
@@ -27,8 +25,8 @@ const mockRectangleElement: Element = {
   width: 200,
   height: 100,
   angle: 0,
-  strokeColor: '#ff0000',
-  backgroundColor: '#FFFFFF', // Use a color that exists in BACKGROUND_COLORS
+  strokeColor: '#e03131',
+  backgroundColor: '#ffc9c9', // Use a color that exists in PANEL_BACKGROUND_COLORS
   strokeWidth: 2,
   strokeStyle: 'solid',
   fillStyle: 'solid',
@@ -198,7 +196,7 @@ describe('PropertiesPanel', () => {
       render(<PropertiesPanel />);
       
       const panel = screen.getByText('rectangle').closest('.properties-panel');
-      expect(panel).toHaveStyle({ width: '200px' });
+      expect(panel).toHaveStyle({ width: '280px' });
     });
 
     it('calls clearSelection when close button is clicked', async () => {
@@ -233,8 +231,8 @@ describe('PropertiesPanel', () => {
     it('displays all stroke color swatches', () => {
       render(<PropertiesPanel />);
       
-      STROKE_COLORS.forEach(color => {
-        const colorButton = screen.getByLabelText(`Stroke color ${color}`);
+      ['#000000', '#e03131', '#2f9e44', '#1971c2', '#f08c00'].forEach(color => {
+        const colorButton = screen.getByLabelText(`Select ${color} color`);
         expect(colorButton).toBeInTheDocument();
         expect(colorButton).toHaveStyle({ backgroundColor: color });
       });
@@ -254,7 +252,7 @@ describe('PropertiesPanel', () => {
       const user = userEvent.setup();
       render(<PropertiesPanel />);
       
-      const blackColorButton = screen.getByLabelText('Stroke color #000000');
+      const blackColorButton = screen.getByLabelText('Select #000000 color');
       await user.click(blackColorButton);
       
       expect(mockStoreActions.updateElement).toHaveBeenCalledWith('test-rectangle-1', {
@@ -284,17 +282,19 @@ describe('PropertiesPanel', () => {
     it('displays all background color swatches in grid layout', () => {
       render(<PropertiesPanel />);
       
-      BACKGROUND_COLORS.forEach(color => {
-        const colorButton = screen.getByLabelText(`Background color ${color}`);
+      ['transparent', '#ffc9c9', '#b2f2bb', '#a5d8ff', '#ffec99'].forEach(color => {
+        const colorButton = screen.getByLabelText(`Select ${color} color`);
         expect(colorButton).toBeInTheDocument();
-        expect(colorButton).toHaveStyle({ backgroundColor: color });
+        if (color !== 'transparent') {
+          expect(colorButton).toHaveStyle({ backgroundColor: color });
+        }
       });
     });
 
     it('shows active state for current background color', () => {
       render(<PropertiesPanel />);
       
-      const currentBackgroundButton = screen.getByLabelText(`Background color ${mockRectangleElement.backgroundColor}`);
+      const currentBackgroundButton = screen.getByLabelText(`Select ${mockRectangleElement.backgroundColor} color`);
       expect(currentBackgroundButton).toHaveClass('active');
     });
 
@@ -302,11 +302,11 @@ describe('PropertiesPanel', () => {
       const user = userEvent.setup();
       render(<PropertiesPanel />);
       
-      const whiteColorButton = screen.getByLabelText('Background color #FFFFFF');
-      await user.click(whiteColorButton);
+      const lightRedColorButton = screen.getByLabelText('Select #ffc9c9 color');
+      await user.click(lightRedColorButton);
       
       expect(mockStoreActions.updateElement).toHaveBeenCalledWith('test-rectangle-1', {
-        backgroundColor: '#FFFFFF'
+        backgroundColor: '#ffc9c9'
       });
     });
   });
@@ -815,7 +815,7 @@ describe('PropertiesPanel', () => {
       const user = userEvent.setup();
       render(<PropertiesPanel />);
       
-      const blackColorButton = screen.getByLabelText('Stroke color #000000');
+      const blackColorButton = screen.getByLabelText('Select #000000 color');
       await user.click(blackColorButton);
       
       expect(mockStoreActions.updateElement).toHaveBeenCalledWith('test-rectangle-1', {

@@ -190,7 +190,7 @@ describe('TopToolbar - Modern Icon-Based Design', () => {
     it('shows "More options" tooltip for menu button', () => {
       render(<TopToolbar />);
       
-      const menuButton = screen.getByRole('button', { name: 'Menu' });
+      const menuButton = screen.getByRole('button', { name: 'Menu des options' });
       expect(menuButton).toHaveAttribute('title', 'More options');
     });
   });
@@ -272,7 +272,7 @@ describe('TopToolbar - Modern Icon-Based Design', () => {
     it('renders menu icon in actions section', () => {
       render(<TopToolbar />);
       
-      const menuButton = screen.getByRole('button', { name: 'Menu' });
+      const menuButton = screen.getByRole('button', { name: 'Menu des options' });
       expect(menuButton.querySelector('svg')).toBeInTheDocument();
     });
   });

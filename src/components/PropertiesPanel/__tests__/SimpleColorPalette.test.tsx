@@ -67,8 +67,9 @@ describe('SimpleColorPalette', () => {
         />
       );
       
-      // Should render transparent indicator
-      expect(screen.getByText('∅')).toBeInTheDocument();
+      // Should render transparent indicator - use getAllByText since current color also shows ∅
+      const transparentIndicators = screen.getAllByText('∅');
+      expect(transparentIndicators.length).toBeGreaterThan(0);
     });
   });
 
@@ -122,10 +123,10 @@ describe('SimpleColorPalette', () => {
       const currentColorButton = screen.getByLabelText('Open advanced color picker');
       await user.click(currentColorButton);
       
-      expect(screen.getByDisplayValue('#000000')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('ffec99')).toBeInTheDocument();
     });
 
-    it('applies custom color when apply button is clicked', async () => {
+    it('applies custom color when submitting hex input', async () => {
       const user = userEvent.setup();
       
       render(
@@ -140,17 +141,20 @@ describe('SimpleColorPalette', () => {
       const currentColorButton = screen.getByLabelText('Open advanced color picker');
       await user.click(currentColorButton);
       
-      const hexInput = screen.getByDisplayValue('#000000');
+      // Look for hex input field
+      const hexInput = screen.getByPlaceholderText('ffec99');
       await user.clear(hexInput);
-      await user.type(hexInput, '#ff6600');
+      await user.type(hexInput, '1a2b3c');
       
-      const applyButton = screen.getByTitle('Apply color');
-      await user.click(applyButton);
+      // Submit the hex input (pressing Enter)
+      await user.keyboard('{Enter}');
       
-      expect(mockOnColorChange).toHaveBeenCalledWith('#ff6600');
+      // Color should be applied and picker closed
+      expect(mockOnColorChange).toHaveBeenCalledWith('#1a2b3c');
+      expect(screen.queryByPlaceholderText('ffec99')).not.toBeInTheDocument();
     });
 
-    it('cancels color picker when cancel button is clicked', async () => {
+    it('closes color picker when clicking outside', async () => {
       const user = userEvent.setup();
       
       render(
@@ -165,10 +169,14 @@ describe('SimpleColorPalette', () => {
       const currentColorButton = screen.getByLabelText('Open advanced color picker');
       await user.click(currentColorButton);
       
-      const cancelButton = screen.getByTitle('Cancel');
-      await user.click(cancelButton);
+      // Verify picker is open
+      expect(screen.getByPlaceholderText('ffec99')).toBeInTheDocument();
       
-      expect(screen.queryByDisplayValue('#000000')).not.toBeInTheDocument();
+      // Click outside the picker (on the document body)
+      await user.click(document.body);
+      
+      // Picker should be closed
+      expect(screen.queryByPlaceholderText('ffec99')).not.toBeInTheDocument();
     });
   });
 
