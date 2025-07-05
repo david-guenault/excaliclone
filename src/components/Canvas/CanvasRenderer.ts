@@ -738,8 +738,12 @@ export class CanvasRenderer {
     // Handle multi-selection group indicators
     if (selectedElementIds.length > 1) {
       this.renderMultiSelectionIndicators(elements, selectedElementIds, SELECTION_COLOR, HANDLE_SIZE);
+      // For multi-selection, only show group indicators, not individual ones
+      this.ctx.restore();
+      return;
     }
     
+    // Single selection: show individual indicators
     selectedElementIds.forEach(elementId => {
       const element = elements.find(el => el.id === elementId);
       if (!element) return;
