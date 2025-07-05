@@ -7,9 +7,9 @@
 ✅ BUG: la propriété angle ne fonctionne pas
 - FEATURE: il manque des outils d'alignement sur selection multiples comme dans excalidraw. Pour le design voir l'image alignement dans design_examples. alignement horizontal (a gauche a droite centré répartit horizontalement) et alignement vertical (en haut en bas au centre repartit verticalement)
 - EVOLUTION: harmoniser la taille des icones de fenêtre de propriétés. Boutons carrés tous de la même taille.
-- BUG: l'onglet affiche VITE + REACT + TS en titre. Change cela pour le nom de l'application
-- BUG: en mode édition de texte les touches SUPR et BACKSPACE ne doivent pas supprimer la forme. Dans ce contexte ces touches servent a supprimer du texte édité. 
-- BUG: en mode édition de texte, entrée rajoute un espace (ou autre chose mais ça ressemble a un espace).
-- EVOLUTION: en mode édition de texte SHIFT+ENTER provoque un retour a la ligne. 
-- BUG: les images importée ne peux pas être redimensionnée ou rotatée 
+✅ BUG: l'onglet affiche VITE + REACT + TS en titre. Change cela pour le nom de l'application
+✅ BUG: en mode édition de texte les touches SUPR et BACKSPACE ne doivent pas supprimer la forme. Dans ce contexte ces touches servent a supprimer du texte édité. 
+✅ BUG: en mode édition de texte, entrée rajoute un espace (ou autre chose mais ça ressemble a un espace).
+✅ EVOLUTION: en mode édition de texte SHIFT+ENTER provoque un retour a la ligne. 
+✅ BUG: les images importée ne peux pas être redimensionnée ou rotatée 
   
