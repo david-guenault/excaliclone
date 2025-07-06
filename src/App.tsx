@@ -1215,12 +1215,12 @@ function App() {
     
     // Handle group resize
     if (isGroupResizing && groupResizeStartPoint && groupResizeHandle && groupResizeStartBounds) {
-      const snappedCurrentPoint = applySnapping(worldPoint);
+      // Don't use snapping for multi-selection resize to avoid jerky behavior
       const newBounds = applyMultiSelectionResize(
         groupResizeStartBounds,
         groupResizeHandle,
         groupResizeStartPoint,
-        snappedCurrentPoint
+        worldPoint
       );
       
       const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
