@@ -30,3 +30,4 @@
 ✅ FEATURE: en mode edition de texte, la touche debut amène en début de texte, la touche fin en fin de texte, SHIFT+fleche gauche / fleche droite permet de selectionner le text, CTRL+A permet de selectionner tout le texte
 - EVOLUTION: en mode rotation il est inutile d'avoir le rectangle de selection. Celui ci réapparait en fin de rotation
 - BUG: il manque pour le texte des formes les alignements vérticaux (haut bas milieu)
+✅ FEATURE: en mode selection de texte (SHIFT+FLECHE) il faut un repère visuel comme un fond bleu indiquant la selection en cours

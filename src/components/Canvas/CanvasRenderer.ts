@@ -75,7 +75,7 @@ export class CanvasRenderer {
     }
   }
 
-  renderElement(element: Element, textEditing?: { elementId: string | null; cursorPosition: number; cursorVisible: boolean }) {
+  renderElement(element: Element, textEditing?: { elementId: string | null; cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
     if (!this.ctx || !this.rough) return;
     
     // Validate element has required properties
@@ -99,6 +99,8 @@ export class CanvasRenderer {
     const isBeingEdited = textEditing && textEditing.elementId === element.id;
     const editingInfo = isBeingEdited ? {
       cursorPosition: textEditing.cursorPosition,
+      selectionStart: textEditing.selectionStart,
+      selectionEnd: textEditing.selectionEnd,
       cursorVisible: textEditing.cursorVisible
     } : undefined;
 
@@ -155,7 +157,7 @@ export class CanvasRenderer {
     
   }
 
-  private drawRectangle(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
+  private drawRectangle(element: Element, textEditing?: { cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
     const hasRoundedCorners = element.cornerStyle === 'rounded' && element.cornerRadius && element.cornerRadius > 0;
     
     if (this.useRoughJs) {
@@ -278,7 +280,7 @@ export class CanvasRenderer {
     this.ctx.closePath();
   }
 
-  private drawCircle(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
+  private drawCircle(element: Element, textEditing?: { cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
     const centerX = element.width / 2;
     const centerY = element.height / 2;
     
@@ -369,7 +371,7 @@ export class CanvasRenderer {
     }
   }
 
-  private drawLine(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
+  private drawLine(element: Element, textEditing?: { cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
     if (!this.rough || !this.rough.generator) return;
     
     // Use Rough.js for line rendering
@@ -425,7 +427,7 @@ export class CanvasRenderer {
     }
   }
 
-  private drawArrow(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
+  private drawArrow(element: Element, textEditing?: { cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
     if (!this.rough || !this.rough.generator) return;
     
     // Use Rough.js for arrow line rendering
@@ -1278,7 +1280,7 @@ export class CanvasRenderer {
     this.ctx.restore();
   }
 
-  private drawTextInShape(element: Element, textEditing?: { cursorPosition: number; cursorVisible: boolean }) {
+  private drawTextInShape(element: Element, textEditing?: { cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
     // Don't return early if text is empty but we're editing - we need to show the cursor
     if ((!element.text || element.text.trim() === '') && !textEditing) return;
     
@@ -1330,6 +1332,62 @@ export class CanvasRenderer {
     const textAlign = element.textAlign || 'center';
     this.ctx.textAlign = textAlign;
     
+    // Draw selection background first if there's a selection
+    if (textEditing && textEditing.selectionStart !== textEditing.selectionEnd) {
+      const selStart = Math.min(textEditing.selectionStart, textEditing.selectionEnd);
+      const selEnd = Math.max(textEditing.selectionStart, textEditing.selectionEnd);
+      
+      let charCount = 0;
+      lines.forEach((line, index) => {
+        const y = startY + (index * lineHeight);
+        const lineStart = charCount;
+        const lineEnd = charCount + line.length;
+        
+        // Check if this line has any selected text
+        if (selEnd > lineStart && selStart < lineEnd) {
+          const selStartInLine = Math.max(0, selStart - lineStart);
+          const selEndInLine = Math.min(line.length, selEnd - lineStart);
+          
+          // Measure text to get selection bounds
+          const textBeforeSelection = line.slice(0, selStartInLine);
+          const selectedText = line.slice(selStartInLine, selEndInLine);
+          
+          const textMetrics = this.ctx.measureText(textBeforeSelection);
+          const selectedMetrics = this.ctx.measureText(selectedText);
+          const lineMetrics = this.ctx.measureText(line);
+          
+          // Calculate selection bounds based on alignment
+          let selectionStartX: number;
+          let selectionWidth = selectedMetrics.width;
+          
+          if (textAlign === 'left') {
+            selectionStartX = padding + textMetrics.width;
+          } else if (textAlign === 'right') {
+            selectionStartX = element.width - padding - lineMetrics.width + textMetrics.width;
+          } else {
+            selectionStartX = centerX - lineMetrics.width / 2 + textMetrics.width;
+          }
+          
+          // Draw selection background
+          this.ctx.fillStyle = 'rgba(0, 120, 255, 0.3)'; // Blue selection background
+          this.ctx.fillRect(
+            selectionStartX,
+            y - fontSize / 2,
+            selectionWidth,
+            fontSize
+          );
+        }
+        
+        charCount += line.length;
+        if (index < lines.length - 1) {
+          charCount += 1; // For the newline character
+        }
+      });
+    }
+
+    // Reset fill style for text
+    this.ctx.fillStyle = element.strokeColor || '#000000';
+
     // Draw each line and cursor if editing
     let charCount = 0;
     lines.forEach((line, index) => {
