@@ -170,7 +170,8 @@ export function applyResize(
   currentPoint: Point, 
   startPoint: Point,
   originalBounds?: {x: number, y: number, width: number, height: number},
-  snapFunction?: (point: Point) => Point
+  snapFunction?: (point: Point) => Point,
+  ctrlPressed?: boolean
 ): Partial<Element> {
   // Use original bounds if provided, otherwise use current element bounds
   const bounds = originalBounds || {
@@ -222,30 +223,83 @@ export function applyResize(
     // For rectangles, circles, text, pen strokes, and images
     const updates: Partial<Element> = {};
     
-    switch (handleType) {
-      case 'top-left':
-        updates.x = bounds.x + deltaX;
-        updates.y = bounds.y + deltaY;
-        updates.width = bounds.width - deltaX;
-        updates.height = bounds.height - deltaY;
-        break;
+    if (ctrlPressed) {
+      // Proportional resizing when CTRL is held
+      const originalAspectRatio = bounds.width / bounds.height;
+      
+      switch (handleType) {
+        case 'top-left': {
+          // Use the larger of the two deltas to maintain aspect ratio
+          const avgDelta = (Math.abs(deltaX) + Math.abs(deltaY)) / 2;
+          const proportionalDeltaX = Math.sign(deltaX) * avgDelta;
+          const proportionalDeltaY = proportionalDeltaX / originalAspectRatio;
+          
+          updates.x = bounds.x + proportionalDeltaX;
+          updates.y = bounds.y + proportionalDeltaY;
+          updates.width = bounds.width - proportionalDeltaX;
+          updates.height = bounds.height - proportionalDeltaY;
+          break;
+        }
         
-      case 'top-right':
-        updates.y = bounds.y + deltaY;
-        updates.width = bounds.width + deltaX;
-        updates.height = bounds.height - deltaY;
-        break;
+        case 'top-right': {
+          const avgDelta = (Math.abs(deltaX) + Math.abs(deltaY)) / 2;
+          const proportionalDeltaX = Math.sign(deltaX) * avgDelta;
+          const proportionalDeltaY = -proportionalDeltaX / originalAspectRatio;
+          
+          updates.y = bounds.y + proportionalDeltaY;
+          updates.width = bounds.width + proportionalDeltaX;
+          updates.height = bounds.height - proportionalDeltaY;
+          break;
+        }
         
-      case 'bottom-right':
-        updates.width = bounds.width + deltaX;
-        updates.height = bounds.height + deltaY;
-        break;
+        case 'bottom-right': {
+          const avgDelta = (Math.abs(deltaX) + Math.abs(deltaY)) / 2;
+          const proportionalDeltaX = Math.sign(deltaX) * avgDelta;
+          const proportionalDeltaY = proportionalDeltaX / originalAspectRatio;
+          
+          updates.width = bounds.width + proportionalDeltaX;
+          updates.height = bounds.height + proportionalDeltaY;
+          break;
+        }
         
-      case 'bottom-left':
-        updates.x = bounds.x + deltaX;
-        updates.width = bounds.width - deltaX;
-        updates.height = bounds.height + deltaY;
-        break;
+        case 'bottom-left': {
+          const avgDelta = (Math.abs(deltaX) + Math.abs(deltaY)) / 2;
+          const proportionalDeltaX = -Math.sign(deltaX) * avgDelta;
+          const proportionalDeltaY = -proportionalDeltaX / originalAspectRatio;
+          
+          updates.x = bounds.x - proportionalDeltaX;
+          updates.width = bounds.width + proportionalDeltaX;
+          updates.height = bounds.height + proportionalDeltaY;
+          break;
+        }
+      }
+    } else {
+      // Normal resizing (existing behavior)
+      switch (handleType) {
+        case 'top-left':
+          updates.x = bounds.x + deltaX;
+          updates.y = bounds.y + deltaY;
+          updates.width = bounds.width - deltaX;
+          updates.height = bounds.height - deltaY;
+          break;
+          
+        case 'top-right':
+          updates.y = bounds.y + deltaY;
+          updates.width = bounds.width + deltaX;
+          updates.height = bounds.height - deltaY;
+          break;
+          
+        case 'bottom-right':
+          updates.width = bounds.width + deltaX;
+          updates.height = bounds.height + deltaY;
+          break;
+          
+        case 'bottom-left':
+          updates.x = bounds.x + deltaX;
+          updates.width = bounds.width - deltaX;
+          updates.height = bounds.height + deltaY;
+          break;
+      }
     }
     
     // Ensure minimum size

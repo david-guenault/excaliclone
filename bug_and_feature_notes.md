@@ -20,5 +20,5 @@
 ✅ BUG: quand je redimensionne un ensemble de forme, cela est beaucoup trop sensible donc inutilisable. 
 ✅ BUG: en redimensionnement d'image ayant subit une rotation, le resize est symétrique, ce ne devrait pas être le cas.
 ✅ BUG: en mode coin arrondi on perd le rendu de rough.js
-EVOLUTION: il y a un bandeau sous la barre d'outil. Il ne devrais pas exister. Cela empiète sur la surface de travail. 
-FEATURE: lorsque l'on redimensionne un objet en maintenant la touche CTRL enfoncée, le redimensionnement est proportionnel. 
+✅ EVOLUTION: il y a un bandeau sous la barre d'outil. Il ne devrais pas exister. Cela empiète sur la surface de travail. 
+✅ FEATURE: lorsque l'on redimensionne un objet en maintenant la touche CTRL enfoncée, le redimensionnement est proportionnel. 

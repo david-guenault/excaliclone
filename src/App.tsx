@@ -1261,13 +1261,15 @@ function App() {
     if (isResizing && resizeElementId && resizeHandle && resizeStartPoint && resizeStartBounds) {
       const element = elements.find(el => el.id === resizeElementId);
       if (element) {
+        const modifiers = keyboardManager.getModifierState();
         const resizeUpdates = applyResize(
           element, 
           resizeHandle, 
           worldPoint, 
           resizeStartPoint, 
           resizeStartBounds,
-          applySnapping // Pass the snapping function
+          applySnapping, // Pass the snapping function
+          modifiers.ctrl // Pass CTRL key state for proportional resizing
         );
         updateElementSilent(resizeElementId, resizeUpdates);
       }
@@ -1869,16 +1871,15 @@ function App() {
         data-tool={activeTool}
         data-panning={isPanning ? 'true' : undefined}
         style={{
-          marginTop: '64px', // Account for top toolbar
           // Remove marginLeft - properties panel is now absolute overlay
           width: '100%',
-          height: `${windowSize.height - 64}px`
+          height: `${windowSize.height}px`
         }}
       >
         <Canvas
           ref={canvasRef}
           width={windowSize.width} // Full width - panel is overlay
-          height={windowSize.height - 64}
+          height={windowSize.height}
           elements={elements}
           viewport={viewport}
           gridSettings={ui.grid}
