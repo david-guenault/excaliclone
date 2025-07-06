@@ -1725,102 +1725,102 @@ function App() {
   }, [textEditing.isEditing]);
 
 
-  // Paste handler that directly accesses clipboard
-  const handlePasteCommand = useCallback(async () => {
+  // Paste handler that just does regular paste - images handled by clipboard event
+  const handlePasteCommand = useCallback(() => {
     console.log('Keyboard paste command triggered');
-    
-    // Don't handle paste if text editing is active
-    if (textEditing.isEditing) {
-      console.log('Skipping paste - text editing active');
-      paste();
-      return;
-    }
-    
-    // Try to read clipboard directly
-    try {
-      if (navigator.clipboard && navigator.clipboard.read) {
-        const clipboardItems = await navigator.clipboard.read();
-        console.log('Clipboard items:', clipboardItems);
+    paste();
+  }, [paste]);
+
+
+  // Handle clipboard paste events ONLY for images
+  useEffect(() => {
+    const handlePaste = async (event: ClipboardEvent) => {
+      console.log('Clipboard paste event triggered');
+      
+      // Don't handle if text editing is active
+      if (textEditing.isEditing) {
+        return;
+      }
+      
+      const clipboardData = event.clipboardData;
+      if (!clipboardData) {
+        return;
+      }
+      
+      // Check for image data ONLY
+      const items = Array.from(clipboardData.items);
+      const imageItem = items.find(item => item.type.startsWith('image/'));
+      
+      if (imageItem) {
+        // ONLY prevent default for images
+        event.preventDefault();
+        event.stopPropagation();
         
-        for (const clipboardItem of clipboardItems) {
-          for (const type of clipboardItem.types) {
-            if (type.startsWith('image/')) {
-              console.log('Found image type:', type);
-              
-              const blob = await clipboardItem.getType(type);
-              const imageUrl = URL.createObjectURL(blob);
-              
-              // Create a temporary image to get dimensions
-              const img = new Image();
-              img.onload = () => {
-                console.log('Image loaded, dimensions:', img.width, img.height);
-                
-                // Calculate position (center of viewport)
-                const centerX = viewport.pan.x + (windowSize.width / viewport.zoom) / 2;
-                const centerY = viewport.pan.y + (windowSize.height / viewport.zoom) / 2;
-                
-                // Scale image if too large (max 400px on any side)
-                const MAX_SIZE = 400;
-                let width = img.width;
-                let height = img.height;
-                
-                if (width > MAX_SIZE || height > MAX_SIZE) {
-                  const aspectRatio = width / height;
-                  if (width > height) {
-                    width = MAX_SIZE;
-                    height = MAX_SIZE / aspectRatio;
-                  } else {
-                    height = MAX_SIZE;
-                    width = MAX_SIZE * aspectRatio;
-                  }
-                }
-                
-                // Create image element
-                const imageElement = addElementSilent({
-                  type: 'image',
-                  x: centerX - width / 2,
-                  y: centerY - height / 2,
-                  width: width,
-                  height: height,
-                  angle: 0,
-                  strokeColor: toolOptions.strokeColor,
-                  backgroundColor: 'transparent',
-                  strokeWidth: toolOptions.strokeWidth,
-                  strokeStyle: toolOptions.strokeStyle,
-                  fillStyle: toolOptions.fillStyle,
-                  roughness: toolOptions.roughness,
-                  opacity: toolOptions.opacity,
-                  imageUrl: imageUrl,
-                });
-                
-                // Select the new image and switch to select tool
-                selectElements([imageElement.id]);
-                setActiveTool('select');
-                
-                // Save to history
-                saveToHistory();
-              };
-              
-              img.onerror = () => {
-                console.error('Failed to load pasted image');
-                URL.revokeObjectURL(imageUrl);
-              };
-              
-              img.src = imageUrl;
-              return; // Exit early if we found and handled an image
+        const file = imageItem.getAsFile();
+        if (!file) return;
+        
+        const imageUrl = URL.createObjectURL(file);
+        
+        const img = new Image();
+        img.onload = () => {
+          console.log('Image loaded, dimensions:', img.width, img.height);
+          
+          const centerX = viewport.pan.x + (windowSize.width / viewport.zoom) / 2;
+          const centerY = viewport.pan.y + (windowSize.height / viewport.zoom) / 2;
+          
+          const MAX_SIZE = 400;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > MAX_SIZE || height > MAX_SIZE) {
+            const aspectRatio = width / height;
+            if (width > height) {
+              width = MAX_SIZE;
+              height = MAX_SIZE / aspectRatio;
+            } else {
+              height = MAX_SIZE;
+              width = MAX_SIZE * aspectRatio;
             }
           }
-        }
+          
+          const imageElement = addElementSilent({
+            type: 'image',
+            x: centerX - width / 2,
+            y: centerY - height / 2,
+            width: width,
+            height: height,
+            angle: 0,
+            strokeColor: toolOptions.strokeColor,
+            backgroundColor: 'transparent',
+            strokeWidth: toolOptions.strokeWidth,
+            strokeStyle: toolOptions.strokeStyle,
+            fillStyle: toolOptions.fillStyle,
+            roughness: toolOptions.roughness,
+            opacity: toolOptions.opacity,
+            imageUrl: imageUrl,
+          });
+          
+          selectElements([imageElement.id]);
+          setActiveTool('select');
+          saveToHistory();
+        };
+        
+        img.onerror = () => {
+          console.error('Failed to load pasted image');
+          URL.revokeObjectURL(imageUrl);
+        };
+        
+        img.src = imageUrl;
       }
-    } catch (error) {
-      console.log('Clipboard API failed:', error);
-    }
+      // For non-images, do NOTHING - let keyboard handler deal with it
+    };
     
-    // Fallback to regular element paste
-    console.log('No image found, using regular paste');
-    paste();
-  }, [textEditing.isEditing, viewport, windowSize, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory, paste]);
-
+    document.addEventListener('paste', handlePaste);
+    
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [textEditing.isEditing, viewport, windowSize, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory]);
 
   // Set up keyboard shortcuts
   useEffect(() => {
