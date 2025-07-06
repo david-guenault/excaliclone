@@ -1725,97 +1725,123 @@ function App() {
   }, [textEditing.isEditing]);
 
 
-  // Enhanced paste handler that tries clipboard API first, then falls back
-  const handlePasteCommand = useCallback(async () => {
+  // Paste handler that uses regular element paste and clipboard events for images
+  const handlePasteCommand = useCallback(() => {
     console.log('Keyboard paste command triggered');
     
-    // Try the Clipboard API for images
-    try {
-      if (navigator.clipboard && navigator.clipboard.read) {
-        console.log('Trying to read clipboard...');
-        const clipboardItems = await navigator.clipboard.read();
-        console.log('Clipboard items:', clipboardItems);
-        
-        for (const clipboardItem of clipboardItems) {
-          console.log('Clipboard item types:', clipboardItem.types);
-          
-          for (const type of clipboardItem.types) {
-            if (type.startsWith('image/')) {
-              console.log('Found image type:', type);
-              
-              const blob = await clipboardItem.getType(type);
-              const imageUrl = URL.createObjectURL(blob);
-              
-              // Create a temporary image to get dimensions
-              const img = new Image();
-              img.onload = () => {
-                console.log('Image loaded, dimensions:', img.width, img.height);
-                
-                // Calculate position (center of viewport)
-                const centerX = viewport.pan.x + (viewport.bounds.width / viewport.zoom) / 2;
-                const centerY = viewport.pan.y + (viewport.bounds.height / viewport.zoom) / 2;
-                
-                // Scale image if too large (max 400px on any side)
-                const MAX_SIZE = 400;
-                let width = img.width;
-                let height = img.height;
-                
-                if (width > MAX_SIZE || height > MAX_SIZE) {
-                  const aspectRatio = width / height;
-                  if (width > height) {
-                    width = MAX_SIZE;
-                    height = MAX_SIZE / aspectRatio;
-                  } else {
-                    height = MAX_SIZE;
-                    width = MAX_SIZE * aspectRatio;
-                  }
-                }
-                
-                // Create image element
-                const imageElement = addElementSilent({
-                  type: 'image',
-                  x: centerX - width / 2,
-                  y: centerY - height / 2,
-                  width: width,
-                  height: height,
-                  angle: 0,
-                  strokeColor: toolOptions.strokeColor,
-                  backgroundColor: 'transparent',
-                  strokeWidth: toolOptions.strokeWidth,
-                  strokeStyle: toolOptions.strokeStyle,
-                  fillStyle: toolOptions.fillStyle,
-                  roughness: toolOptions.roughness,
-                  opacity: toolOptions.opacity,
-                  imageUrl: imageUrl,
-                });
-                
-                // Select the new image and switch to select tool
-                selectElements([imageElement.id]);
-                setActiveTool('select');
-                
-                // Save to history
-                saveToHistory();
-              };
-              
-              img.onerror = () => {
-                console.error('Failed to load pasted image');
-                URL.revokeObjectURL(imageUrl);
-              };
-              
-              img.src = imageUrl;
-              return; // Exit early if we found and handled an image
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.log('Clipboard API failed:', error);
-    }
-    
-    // Fallback to regular element paste
-    console.log('No image found, using regular paste');
+    // Just use regular element paste for now
+    // Image paste will be handled by clipboard event listener
     paste();
-  }, [viewport, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory, paste]);
+  }, [paste]);
+
+  // Handle clipboard paste events for images
+  useEffect(() => {
+    const handlePaste = async (event: ClipboardEvent) => {
+      console.log('Paste event triggered', event);
+      
+      // Don't handle paste if text editing is active
+      if (textEditing.isEditing) {
+        console.log('Skipping paste - text editing active');
+        return;
+      }
+      
+      const clipboardData = event.clipboardData;
+      if (!clipboardData) {
+        console.log('No clipboard data available');
+        return;
+      }
+      
+      // Check for image data in clipboard
+      const items = Array.from(clipboardData.items);
+      console.log('Clipboard items:', items.map(item => ({ type: item.type, kind: item.kind })));
+      
+      const imageItem = items.find(item => item.type.startsWith('image/'));
+      console.log('Image item found:', imageItem);
+      
+      if (imageItem) {
+        event.preventDefault(); // Prevent browser paste button
+        event.stopPropagation(); // Stop event bubbling
+        
+        const file = imageItem.getAsFile();
+        if (!file) return;
+        
+        try {
+          // Create object URL for the image
+          const imageUrl = URL.createObjectURL(file);
+          
+          // Create a temporary image to get dimensions
+          const img = new Image();
+          img.onload = () => {
+            console.log('Image loaded, dimensions:', img.width, img.height);
+            
+            // Calculate position (center of viewport)
+            const centerX = viewport.pan.x + (viewport.bounds.width / viewport.zoom) / 2;
+            const centerY = viewport.pan.y + (viewport.bounds.height / viewport.zoom) / 2;
+            
+            // Scale image if too large (max 400px on any side)
+            const MAX_SIZE = 400;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > MAX_SIZE || height > MAX_SIZE) {
+              const aspectRatio = width / height;
+              if (width > height) {
+                width = MAX_SIZE;
+                height = MAX_SIZE / aspectRatio;
+              } else {
+                height = MAX_SIZE;
+                width = MAX_SIZE * aspectRatio;
+              }
+            }
+            
+            // Create image element
+            const imageElement = addElementSilent({
+              type: 'image',
+              x: centerX - width / 2,
+              y: centerY - height / 2,
+              width: width,
+              height: height,
+              angle: 0,
+              strokeColor: toolOptions.strokeColor,
+              backgroundColor: 'transparent',
+              strokeWidth: toolOptions.strokeWidth,
+              strokeStyle: toolOptions.strokeStyle,
+              fillStyle: toolOptions.fillStyle,
+              roughness: toolOptions.roughness,
+              opacity: toolOptions.opacity,
+              imageUrl: imageUrl,
+            });
+            
+            // Select the new image and switch to select tool
+            selectElements([imageElement.id]);
+            setActiveTool('select');
+            
+            // Save to history
+            saveToHistory();
+          };
+          
+          img.onerror = () => {
+            console.error('Failed to load pasted image');
+            URL.revokeObjectURL(imageUrl);
+          };
+          
+          img.src = imageUrl;
+        } catch (error) {
+          console.error('Error handling pasted image:', error);
+        }
+      } else {
+        // No image found, let the regular paste handle it
+        console.log('No image in clipboard, allowing regular paste');
+      }
+    };
+    
+    // Add paste event listener to document with capture to intercept early
+    document.addEventListener('paste', handlePaste, true);
+    
+    return () => {
+      document.removeEventListener('paste', handlePaste, true);
+    };
+  }, [textEditing.isEditing, viewport, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory]);
 
   // Set up keyboard shortcuts
   useEffect(() => {
