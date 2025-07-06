@@ -73,6 +73,7 @@ interface AppStore extends AppState {
   // Direct Text Editing Actions
   startTextEditing: (elementId: string, text: string, cursorPosition: number) => void;
   updateTextContent: (text: string, cursorPosition: number) => void;
+  updateTextSelection: (text: string, cursorPosition: number, selectionStart: number, selectionEnd: number) => void;
   finishTextEditing: () => void;
   toggleCursor: () => void;
 }
@@ -121,6 +122,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     elementId: null,
     text: '',
     cursorPosition: 0,
+    selectionStart: 0,
+    selectionEnd: 0,
     cursorVisible: true,
   },
 
@@ -1043,6 +1046,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
         elementId,
         text,
         cursorPosition,
+        selectionStart: cursorPosition,
+        selectionEnd: cursorPosition,
         cursorVisible: true,
       },
     });
@@ -1065,6 +1070,32 @@ export const useAppStore = create<AppStore>((set, get) => ({
           ...state.textEditing,
           text,
           cursorPosition,
+          selectionStart: cursorPosition,
+          selectionEnd: cursorPosition,
+        },
+      };
+    });
+  },
+
+  updateTextSelection: (text: string, cursorPosition: number, selectionStart: number, selectionEnd: number) => {
+    set((state) => {
+      if (!state.textEditing.isEditing || !state.textEditing.elementId) return state;
+
+      // Update the element in real-time
+      const newElements = state.elements.map((el) =>
+        el.id === state.textEditing.elementId 
+          ? { ...el, text }
+          : el
+      );
+
+      return {
+        elements: newElements,
+        textEditing: {
+          ...state.textEditing,
+          text,
+          cursorPosition,
+          selectionStart,
+          selectionEnd,
         },
       };
     });
@@ -1084,6 +1115,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
           elementId: null,
           text: '',
           cursorPosition: 0,
+          selectionStart: 0,
+          selectionEnd: 0,
           cursorVisible: true,
         },
       };

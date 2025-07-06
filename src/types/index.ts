@@ -17,6 +17,8 @@ export interface DirectTextEditingState {
   elementId: string | null;
   text: string;
   cursorPosition: number;
+  selectionStart: number;
+  selectionEnd: number;
   cursorVisible: boolean;
 }
 

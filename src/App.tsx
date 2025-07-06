@@ -1,7 +1,7 @@
 // ABOUTME: Main application component that renders the Excalibox drawing interface
 // ABOUTME: Orchestrates the Canvas, Toolbar, and manages global application state
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Canvas } from './components/Canvas';
 import { TopToolbar } from './components/TopToolbar';
@@ -57,6 +57,7 @@ function App() {
     textEditing,
     startTextEditing,
     updateTextContent,
+    updateTextSelection,
     finishTextEditing,
     toggleGrid,
     closeGridDialog
@@ -1683,6 +1684,9 @@ function App() {
       
       const currentText = textEditing.text;
       const cursorPos = textEditing.cursorPosition;
+      const selStart = textEditing.selectionStart;
+      const selEnd = textEditing.selectionEnd;
+      const hasSelection = selStart !== selEnd;
       
       // Prevent default behavior for text editing keys
       if (event.key === 'Escape') {
@@ -1692,35 +1696,102 @@ function App() {
         event.preventDefault();
         if (event.shiftKey) {
           // Shift+Enter: Add line break at cursor position
-          const newText = currentText.slice(0, cursorPos) + '\n' + currentText.slice(cursorPos);
-          updateTextContent(newText, cursorPos + 1);
+          if (hasSelection) {
+            // Replace selection with line break
+            const newText = currentText.slice(0, selStart) + '\n' + currentText.slice(selEnd);
+            updateTextContent(newText, selStart + 1);
+          } else {
+            const newText = currentText.slice(0, cursorPos) + '\n' + currentText.slice(cursorPos);
+            updateTextContent(newText, cursorPos + 1);
+          }
         } else {
           // Enter: Finish text editing
           finishTextEditingAndActivateSelect();
         }
       } else if (event.key === 'Backspace') {
         event.preventDefault();
-        if (cursorPos > 0) {
+        if (hasSelection) {
+          // Delete selected text
+          const newText = currentText.slice(0, selStart) + currentText.slice(selEnd);
+          updateTextContent(newText, selStart);
+        } else if (cursorPos > 0) {
           const newText = currentText.slice(0, cursorPos - 1) + currentText.slice(cursorPos);
           updateTextContent(newText, cursorPos - 1);
         }
       } else if (event.key === 'Delete') {
         event.preventDefault();
-        if (cursorPos < currentText.length) {
+        if (hasSelection) {
+          // Delete selected text
+          const newText = currentText.slice(0, selStart) + currentText.slice(selEnd);
+          updateTextContent(newText, selStart);
+        } else if (cursorPos < currentText.length) {
           const newText = currentText.slice(0, cursorPos) + currentText.slice(cursorPos + 1);
           updateTextContent(newText, cursorPos);
         }
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        if (event.shiftKey) {
+          // Select from current position to beginning
+          updateTextSelection(currentText, 0, 0, selEnd);
+        } else {
+          // Move cursor to beginning
+          updateTextContent(currentText, 0);
+        }
+      } else if (event.key === 'End') {
+        event.preventDefault();
+        const textLength = currentText.length;
+        if (event.shiftKey) {
+          // Select from current position to end
+          updateTextSelection(currentText, textLength, selStart, textLength);
+        } else {
+          // Move cursor to end
+          updateTextContent(currentText, textLength);
+        }
       } else if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        updateTextContent(currentText, Math.max(0, cursorPos - 1));
+        if (event.shiftKey) {
+          // Extend selection to the left
+          const newSelEnd = Math.max(0, selEnd - 1);
+          updateTextSelection(currentText, newSelEnd, selStart, newSelEnd);
+        } else {
+          // Move cursor left
+          if (hasSelection) {
+            // Move to start of selection
+            updateTextContent(currentText, selStart);
+          } else {
+            updateTextContent(currentText, Math.max(0, cursorPos - 1));
+          }
+        }
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        updateTextContent(currentText, Math.min(currentText.length, cursorPos + 1));
+        if (event.shiftKey) {
+          // Extend selection to the right
+          const newSelEnd = Math.min(currentText.length, selEnd + 1);
+          updateTextSelection(currentText, newSelEnd, selStart, newSelEnd);
+        } else {
+          // Move cursor right
+          if (hasSelection) {
+            // Move to end of selection
+            updateTextContent(currentText, selEnd);
+          } else {
+            updateTextContent(currentText, Math.min(currentText.length, cursorPos + 1));
+          }
+        }
+      } else if (event.key === 'a' && event.ctrlKey) {
+        event.preventDefault();
+        // Select all text
+        updateTextSelection(currentText, currentText.length, 0, currentText.length);
       } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
         // Regular character input
         event.preventDefault();
-        const newText = currentText.slice(0, cursorPos) + event.key + currentText.slice(cursorPos);
-        updateTextContent(newText, cursorPos + 1);
+        if (hasSelection) {
+          // Replace selected text with new character
+          const newText = currentText.slice(0, selStart) + event.key + currentText.slice(selEnd);
+          updateTextContent(newText, selStart + 1);
+        } else {
+          const newText = currentText.slice(0, cursorPos) + event.key + currentText.slice(cursorPos);
+          updateTextContent(newText, cursorPos + 1);
+        }
       }
     };
 
@@ -1741,7 +1812,7 @@ function App() {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [textEditing, updateTextContent, finishTextEditing, setActiveTool]);
+  }, [textEditing, updateTextContent, updateTextSelection, finishTextEditing, setActiveTool]);
 
   // Sync text editing state with keyboard manager
   useEffect(() => {
