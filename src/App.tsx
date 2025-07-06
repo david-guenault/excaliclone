@@ -626,35 +626,37 @@ function App() {
         }
       }
       
-      // Check if we're clicking on a resize handle of a selected element (single selection)
-      for (const elementId of selectedElementIds) {
-        const element = elements.find(el => el.id === elementId);
-        if (!element || element.locked) continue;
-        
-        const handle = findResizeHandle(worldPoint, element);
-        if (handle) {
-          if (handle === 'rotation') {
-            // Start rotation operation
-            setIsRotating(true);
-            setRotationElementId(elementId);
-            
-            // Change cursor to grabbing for rotation
-            const canvas = event.target as HTMLElement;
-            canvas.style.cursor = 'grabbing';
-          } else {
-            // Start resize operation
-            setIsResizing(true);
-            setResizeElementId(elementId);
-            setResizeHandle(handle);
-            setResizeStartPoint(worldPoint);
-            setResizeStartBounds({
-              x: element.x,
-              y: element.y,
-              width: element.width,
-              height: element.height,
-            });
+      // Check if we're clicking on a resize handle of a selected element (ONLY for single selection)
+      if (selectedElementIds.length === 1) {
+        for (const elementId of selectedElementIds) {
+          const element = elements.find(el => el.id === elementId);
+          if (!element || element.locked) continue;
+          
+          const handle = findResizeHandle(worldPoint, element);
+          if (handle) {
+            if (handle === 'rotation') {
+              // Start rotation operation
+              setIsRotating(true);
+              setRotationElementId(elementId);
+              
+              // Change cursor to grabbing for rotation
+              const canvas = event.target as HTMLElement;
+              canvas.style.cursor = 'grabbing';
+            } else {
+              // Start resize operation
+              setIsResizing(true);
+              setResizeElementId(elementId);
+              setResizeHandle(handle);
+              setResizeStartPoint(worldPoint);
+              setResizeStartBounds({
+                x: element.x,
+                y: element.y,
+                width: element.width,
+                height: element.height,
+              });
+            }
+            return;
           }
-          return;
         }
       }
       
