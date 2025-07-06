@@ -14,5 +14,11 @@
 ✅ BUG: les images importée ne peux pas être redimensionnée ou rotatée 
 ✅ BUG: les lignes et les flèche ont un comportement étrange. déjà le bout de la ligne fleche n'est pas collée au curseur. Les déplacement sont étrange par exemple au premier click le dessin de la flèche par directement vers le bas a gauche. 
 ✅ BUG: les images comme les autres formes devrait avoir un rectangle visuel autour de celles ci. 
-- FEATURE: on doit pouvoir copier une image d'un autre onglet et la coller dans l'application.
-  
+✅ FEATURE: on doit pouvoir copier une image d'un autre onglet et la coller dans l'application.
+✅ BUG: en mode édition de texte les racourcis clavier ne devraient pas être activés. 
+✅ FEATURE: ajouter une propriété arrondi pour les formes elle permet d'avoir des angles arrondis ou droit selon si elle est activée ou non. 
+✅ BUG: quand je redimensionne un ensemble de forme, cela est beaucoup trop sensible donc inutilisable. 
+✅ BUG: en redimensionnement d'image ayant subit une rotation, le resize est symétrique, ce ne devrait pas être le cas.
+✅ BUG: en mode coin arrondi on perd le rendu de rough.js
+EVOLUTION: il y a un bandeau sous la barre d'outil. Il ne devrais pas exister. Cela empiète sur la surface de travail. 
+FEATURE: lorsque l'on redimensionne un objet en maintenant la touche CTRL enfoncée, le redimensionnement est proportionnel. 
