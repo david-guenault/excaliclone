@@ -255,10 +255,8 @@ export function applyMultiSelectionResize(
   let deltaX = currentPoint.x - startPoint.x;
   let deltaY = currentPoint.y - startPoint.y;
   
-  // Apply smooth sensitivity scaling without threshold
-  const RESIZE_SENSITIVITY = 0.7; // More responsive but still controlled
-  deltaX *= RESIZE_SENSITIVITY;
-  deltaY *= RESIZE_SENSITIVITY;
+  // No sensitivity scaling needed - delta is already cumulative from start point
+  // Adding sensitivity here creates exponential growth effect
 
   const newBounds = { ...originalBounds };
 
