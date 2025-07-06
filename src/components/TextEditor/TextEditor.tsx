@@ -50,12 +50,48 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
     if (e.key === 'Escape') {
       e.preventDefault();
       onCancel();
     } else if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onFinish();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        // Select from current position to beginning of text
+        textarea.setSelectionRange(0, textarea.selectionEnd);
+      } else {
+        // Move cursor to beginning
+        textarea.setSelectionRange(0, 0);
+      }
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      const textLength = textarea.value.length;
+      if (e.shiftKey) {
+        // Select from current position to end of text
+        textarea.setSelectionRange(textarea.selectionStart, textLength);
+      } else {
+        // Move cursor to end
+        textarea.setSelectionRange(textLength, textLength);
+      }
+    } else if (e.key === 'ArrowLeft' && e.shiftKey) {
+      e.preventDefault();
+      // Extend selection to the left
+      const newStart = Math.max(0, textarea.selectionEnd - 1);
+      textarea.setSelectionRange(textarea.selectionStart, newStart);
+    } else if (e.key === 'ArrowRight' && e.shiftKey) {
+      e.preventDefault();
+      // Extend selection to the right
+      const newEnd = Math.min(textarea.value.length, textarea.selectionEnd + 1);
+      textarea.setSelectionRange(textarea.selectionStart, newEnd);
+    } else if (e.key === 'a' && e.ctrlKey) {
+      e.preventDefault();
+      // Select all text
+      textarea.setSelectionRange(0, textarea.value.length);
     }
   };
 

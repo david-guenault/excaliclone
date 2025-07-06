@@ -113,3 +113,7 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
 
 - When making modifications, additions, or deletions, always remember to commit
 - Gather files to commit consistently and don't forget to push to the upstream repository
+
+## Project Tracking
+
+- À chaque résolution de bug, feature, evolution, cleanup. met a jour le fichier bug_and_feature.md en ajoutant une coche verte au début de la ligne.

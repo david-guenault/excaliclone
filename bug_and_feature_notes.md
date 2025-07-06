@@ -27,6 +27,6 @@
 ✅ BUG: quand j'ai copié et collé une image, je ne peux plus rien copier coller d'autre, ça me colle systématiquement l'image.
 ✅ CLEANUP: desactive les logs (tous) qui apparaissent dans la console
 ✅ BUG: en mode selection multiple, quand on passe sur les ancres de redimensionement bas gauche et haut droit, l'icone de curseur n'est pas la double fleche inclinée
-- FEATURE: en mode edition de texte, la touche debut amène en début de texte, la touche fin en fin de texte, SHIFT+fleche gauche / fleche droite permet de selectionner le text, CTRL+A permet de selectionner tout le texte
+✅ FEATURE: en mode edition de texte, la touche debut amène en début de texte, la touche fin en fin de texte, SHIFT+fleche gauche / fleche droite permet de selectionner le text, CTRL+A permet de selectionner tout le texte
 - EVOLUTION: en mode rotation il est inutile d'avoir le rectangle de selection. Celui ci réapparait en fin de rotation
 - BUG: il manque pour le texte des formes les alignements vérticaux (haut bas milieu)
