@@ -89,12 +89,13 @@ export class KeyboardManager {
       preventDefault: true,
     });
 
-    this.addShortcut({
-      key: 'v',
-      ctrlKey: true,
-      action: 'paste',
-      preventDefault: true, // Prevent browser paste button from appearing
-    });
+    // NOTE: Paste is handled by clipboard event listener, not keyboard shortcut
+    // this.addShortcut({
+    //   key: 'v',
+    //   ctrlKey: true,
+    //   action: 'paste',
+    //   preventDefault: true,
+    // });
 
     // Style copy/paste shortcuts
     this.addShortcut({

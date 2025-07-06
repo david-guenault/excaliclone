@@ -1725,14 +1725,8 @@ function App() {
   }, [textEditing.isEditing]);
 
 
-  // Paste handler that just does regular paste - images handled by clipboard event
-  const handlePasteCommand = useCallback(() => {
-    console.log('Keyboard paste command triggered');
-    paste();
-  }, [paste]);
 
-
-  // Handle clipboard paste events ONLY for images
+  // Handle clipboard paste events like Excalidraw
   useEffect(() => {
     const handlePaste = async (event: ClipboardEvent) => {
       console.log('Clipboard paste event triggered');
@@ -1742,20 +1736,19 @@ function App() {
         return;
       }
       
+      // Always prevent default to stop browser paste UI
+      event.preventDefault();
+      
       const clipboardData = event.clipboardData;
       if (!clipboardData) {
         return;
       }
       
-      // Check for image data ONLY
+      // Check for image data first
       const items = Array.from(clipboardData.items);
       const imageItem = items.find(item => item.type.startsWith('image/'));
       
       if (imageItem) {
-        // ONLY prevent default for images
-        event.preventDefault();
-        event.stopPropagation();
-        
         const file = imageItem.getAsFile();
         if (!file) return;
         
@@ -1811,16 +1804,19 @@ function App() {
         };
         
         img.src = imageUrl;
+      } else {
+        // No image found, trigger regular paste
+        paste();
       }
-      // For non-images, do NOTHING - let keyboard handler deal with it
     };
     
-    document.addEventListener('paste', handlePaste);
+    // Use passive: false like Excalidraw to allow preventDefault
+    document.addEventListener('paste', handlePaste, { passive: false });
     
     return () => {
       document.removeEventListener('paste', handlePaste);
     };
-  }, [textEditing.isEditing, viewport, windowSize, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory]);
+  }, [textEditing.isEditing, viewport, windowSize, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory, paste]);
 
   // Set up keyboard shortcuts
   useEffect(() => {
@@ -1833,7 +1829,7 @@ function App() {
     keyboardManager.on('selectNext', selectNext);
     keyboardManager.on('selectPrevious', selectPrevious);
     keyboardManager.on('copy', copy);
-    keyboardManager.on('paste', handlePasteCommand);
+    // Note: paste handled by clipboard event listener
     keyboardManager.on('copyStyle', copyStyle);
     keyboardManager.on('pasteStyle', pasteStyle);
     keyboardManager.on('resetZoom', resetZoom);
@@ -1850,14 +1846,14 @@ function App() {
       keyboardManager.off('selectNext');
       keyboardManager.off('selectPrevious');
       keyboardManager.off('copy');
-      keyboardManager.off('paste');
+      // Note: paste handled by clipboard event listener
       keyboardManager.off('copyStyle');
       keyboardManager.off('pasteStyle');
       keyboardManager.off('resetZoom');
       keyboardManager.off('zoomToFit');
       keyboardManager.off('toggleGrid');
     };
-  }, [setActiveTool, undo, redo, deleteSelectedElements, duplicateSelectedElements, selectAll, selectNext, selectPrevious, copy, handlePasteCommand, copyStyle, pasteStyle, resetZoom, zoomToFit, toggleGrid]);
+  }, [setActiveTool, undo, redo, deleteSelectedElements, duplicateSelectedElements, selectAll, selectNext, selectPrevious, copy, copyStyle, pasteStyle, resetZoom, zoomToFit, toggleGrid]);
 
   return (
     <div className="excalibox-app">
