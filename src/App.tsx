@@ -1741,12 +1741,15 @@ function App() {
       
       const clipboardData = event.clipboardData;
       if (!clipboardData) {
+        console.log('NO CLIPBOARD DATA');
         return;
       }
       
       // Check for image data first
       const items = Array.from(clipboardData.items);
+      console.log('CLIPBOARD ITEMS:', items.map(item => ({ type: item.type, kind: item.kind })));
       const imageItem = items.find(item => item.type.startsWith('image/'));
+      console.log('IMAGE ITEM FOUND:', !!imageItem);
       
       if (imageItem) {
         const file = imageItem.getAsFile();
@@ -1806,6 +1809,7 @@ function App() {
         img.src = imageUrl;
       } else {
         // No image found, trigger regular paste
+        console.log('NO IMAGE - DOING REGULAR PASTE');
         paste();
       }
     };
