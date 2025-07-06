@@ -567,7 +567,7 @@ export class CanvasRenderer {
     
     // Set font properties
     const fontSize = element.fontSize || 16;
-    const fontFamily = element.fontFamily || 'Inter';
+    const fontFamily = element.fontFamily || 'Excalifont';
     const fontWeight = element.fontWeight || 'normal';
     const fontStyle = element.fontStyle || 'normal';
     const textAlign = element.textAlign || 'left';
@@ -1125,7 +1125,7 @@ export class CanvasRenderer {
     
     // Set font properties to calculate cursor position
     const fontSize = element.fontSize || 16;
-    const fontFamily = element.fontFamily || 'Inter';
+    const fontFamily = element.fontFamily || 'Excalifont';
     const fontWeight = element.fontWeight || 'normal';
     const fontStyle = element.fontStyle || 'normal';
     
@@ -1222,7 +1222,7 @@ export class CanvasRenderer {
     
     // Set font properties
     const fontSize = element.fontSize || 16;
-    const fontFamily = element.fontFamily || 'Inter';
+    const fontFamily = element.fontFamily || 'Excalifont';
     const fontWeight = element.fontWeight || 'normal';
     const fontStyle = element.fontStyle || 'normal';
     
@@ -1286,7 +1286,7 @@ export class CanvasRenderer {
     
     // Set text properties
     const fontSize = element.fontSize || 16;
-    const fontFamily = element.fontFamily || 'Inter';
+    const fontFamily = element.fontFamily || 'Excalifont';
     const fontWeight = element.fontWeight || 'normal';
     const fontStyle = element.fontStyle || 'normal';
     
@@ -1474,7 +1474,7 @@ export class CanvasRenderer {
     
     // Set text properties
     const fontSize = element.fontSize || 14; // Slightly smaller for line labels
-    const fontFamily = element.fontFamily || 'Inter';
+    const fontFamily = element.fontFamily || 'Excalifont';
     const fontWeight = element.fontWeight || 'normal';
     const fontStyle = element.fontStyle || 'normal';
     

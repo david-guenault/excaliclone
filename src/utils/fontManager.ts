@@ -55,10 +55,8 @@ export class FontManager {
       }
       const manifest = await response.json();
       this.manifest = manifest;
-      console.log(`Manifeste de fontes chargé: ${manifest.fonts.length} famille(s) disponible(s)`);
       return manifest;
     } catch (error) {
-      console.warn('Impossible de charger le manifeste des fontes:', error);
       // Retourner un manifeste vide par défaut
       this.manifest = { 
         version: '1.0', 
@@ -83,7 +81,6 @@ export class FontManager {
       // Construire l'URL complète du fichier fonte
       const fontUrl = `/src/assets/fonts/custom/${variant.file}`;
       
-      console.log(`Tentative de chargement de la fonte: ${fontUrl}`);
       
       // Créer et charger la FontFace
       const fontFace = new FontFace(
@@ -96,23 +93,16 @@ export class FontManager {
         }
       );
       
-      console.log(`FontFace créée pour: ${fontFamily}`);
       
       await fontFace.load();
-      console.log(`FontFace.load() réussie pour: ${fontFamily}`);
-      console.log(`Status: ${fontFace.status}`);
       
       document.fonts.add(fontFace);
-      console.log(`Fonte ajoutée au document: ${fontFamily}`);
       
       this.loadedFonts.set(fontKey, fontFace);
       variant.loaded = true;
       
-      console.log(`Fonte chargée: ${fontFamily} ${variant.weight} ${variant.style}`);
       return true;
     } catch (error) {
-      console.error(`Erreur lors du chargement de la fonte ${fontKey}:`, error);
-      console.error(`URL tentée: /src/assets/fonts/custom/${variant.file}`);
       return false;
     }
   }
@@ -127,7 +117,6 @@ export class FontManager {
     
     const font = this.manifest?.fonts.find(f => f.family === fontFamily);
     if (!font) {
-      console.warn(`Famille de fonte non trouvée: ${fontFamily}`);
       return false;
     }
     
@@ -139,7 +128,6 @@ export class FontManager {
     const successCount = results.filter(Boolean).length;
     const success = results.every(result => result);
     
-    console.log(`Famille ${fontFamily}: ${successCount}/${font.variants.length} variantes chargées`);
     return success;
   }
   
@@ -195,7 +183,6 @@ export class FontManager {
     );
     
     if (!variant) {
-      console.warn(`Variante non trouvée: ${fontFamily} ${weight} ${style}`);
       return false;
     }
     
@@ -211,21 +198,17 @@ export class FontManager {
     }
     
     if (!this.manifest || this.manifest.fonts.length === 0) {
-      console.log('Aucune fonte personnalisée à précharger');
       return;
     }
     
-    console.log(`Préchargement de ${this.manifest.fonts.length} famille(s) de fonte...`);
     
     for (const font of this.manifest.fonts) {
       try {
         await this.loadFontFamily(font.family);
       } catch (error) {
-        console.warn(`Erreur lors du préchargement de ${font.family}:`, error);
       }
     }
     
-    console.log('Préchargement des fontes terminé');
   }
   
   /**
@@ -249,7 +232,6 @@ export class FontManager {
         try {
           await this.loadFont(font.family, regularVariant);
         } catch (error) {
-          console.warn(`Erreur lors du préchargement de ${font.family} regular:`, error);
         }
       }
     }
@@ -278,12 +260,10 @@ export class FontManager {
       try {
         document.fonts.delete(fontFace);
       } catch (error) {
-        console.warn('Erreur lors de la suppression de fonte:', error);
       }
     });
     
     this.loadedFonts.clear();
-    console.log('Fontes chargées nettoyées');
   }
 }
 

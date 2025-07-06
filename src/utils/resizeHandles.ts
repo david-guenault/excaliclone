@@ -364,11 +364,13 @@ export function applyRotation(
 export function getResizeCursor(handleType: ResizeHandleType): string {
   switch (handleType) {
     case 'top-left':
-    case 'bottom-right':
       return 'nw-resize';
     case 'top-right':
-    case 'bottom-left':
       return 'ne-resize';
+    case 'bottom-right':
+      return 'se-resize';
+    case 'bottom-left':
+      return 'sw-resize';
     case 'start-point':
     case 'end-point':
       return 'move';

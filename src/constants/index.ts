@@ -18,7 +18,7 @@ export const DEFAULT_TOOL_OPTIONS = {
   opacity: 1,
   cornerStyle: 'sharp' as const,
   cornerRadius: 0,
-  fontFamily: 'Inter',
+  fontFamily: 'Excalifont',
   fontSize: 16,
   fontWeight: 'normal' as const,
   fontStyle: 'normal' as const,
@@ -199,6 +199,7 @@ export const FONT_SIZE_PRESETS = [
 ] as const;
 
 export const FONT_FAMILY_PRESETS = [
+  { name: 'Excalifont', value: 'Excalifont' },
   { name: 'Inter', value: 'Inter' },
   { name: 'Arial', value: 'Arial' },
   { name: 'Helvetica', value: 'Helvetica' },

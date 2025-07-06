@@ -21,7 +21,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   padding: 16px;
   border: 1px solid #e5e7eb;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen', sans-serif;
   animation: slideIn 0.15s ease-out;
 }
 

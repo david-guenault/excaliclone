@@ -98,7 +98,6 @@ export const PropertiesPanel: React.FC = () => {
         // Preload regular variants of custom fonts for better performance
         await fontManager.preloadRegularVariants();
       } catch (error) {
-        console.warn('Error loading fonts:', error);
         // Fallback to system fonts only
         setAvailableFonts(FONT_FAMILY_PRESETS.map(font => ({
           name: font.name,
@@ -153,7 +152,6 @@ export const PropertiesPanel: React.FC = () => {
       // Ensure the font is loaded before applying
       const loaded = await fontManager.ensureFontLoaded(fontFamily);
       if (!loaded) {
-        console.warn(`Failed to load font: ${fontFamily}`);
         return;
       }
     }

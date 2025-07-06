@@ -1191,15 +1191,32 @@ function App() {
     if (!isPanning && !isResizing && !isRotating && !isDraggingElements && !isDragSelecting && activeTool === 'select') {
       let newCursor = 'default';
       
-      // Check if hovering over a resize handle
-      for (const elementId of selectedElementIds) {
-        const element = elements.find(el => el.id === elementId);
-        if (!element || element.locked) continue;
+      // Check for multi-selection group handles first
+      if (selectedElementIds.length > 1) {
+        const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
+        const multiSelectionBounds = getMultiSelectionBounds(selectedElements);
         
-        const handle = findResizeHandle(worldPoint, element);
-        if (handle) {
-          newCursor = getResizeCursor(handle);
-          break;
+        if (multiSelectionBounds) {
+          const groupHandle = findMultiSelectionHandle(worldPoint, multiSelectionBounds);
+          if (groupHandle) {
+            if (groupHandle === 'rotation') {
+              newCursor = 'grab';
+            } else {
+              newCursor = getResizeCursor(groupHandle as ResizeHandleType);
+            }
+          }
+        }
+      } else if (selectedElementIds.length === 1) {
+        // Check single element resize handles
+        for (const elementId of selectedElementIds) {
+          const element = elements.find(el => el.id === elementId);
+          if (!element || element.locked) continue;
+          
+          const handle = findResizeHandle(worldPoint, element);
+          if (handle) {
+            newCursor = getResizeCursor(handle);
+            break;
+          }
         }
       }
       
@@ -1736,7 +1753,6 @@ function App() {
   // Handle clipboard paste events like Excalidraw
   useEffect(() => {
     const handlePaste = async (event: ClipboardEvent) => {
-      console.log('Clipboard paste event triggered');
       
       // Don't handle if text editing is active
       if (textEditing.isEditing) {
@@ -1748,15 +1764,12 @@ function App() {
       
       const clipboardData = event.clipboardData;
       if (!clipboardData) {
-        console.log('NO CLIPBOARD DATA');
         return;
       }
       
       // Check for image data first
       const items = Array.from(clipboardData.items);
-      console.log('CLIPBOARD ITEMS:', items.map(item => ({ type: item.type, kind: item.kind })));
       const imageItem = items.find(item => item.type.startsWith('image/'));
-      console.log('IMAGE ITEM FOUND:', !!imageItem);
       
       if (imageItem) {
         const file = imageItem.getAsFile();
@@ -1766,7 +1779,6 @@ function App() {
         
         const img = new Image();
         img.onload = () => {
-          console.log('Image loaded, dimensions:', img.width, img.height);
           
           const centerX = viewport.pan.x + (windowSize.width / viewport.zoom) / 2;
           const centerY = viewport.pan.y + (windowSize.height / viewport.zoom) / 2;
@@ -1806,17 +1818,21 @@ function App() {
           selectElements([imageElement.id]);
           setActiveTool('select');
           saveToHistory();
+          
+          // Clear clipboard items to prevent sticking
+          try {
+            navigator.clipboard.writeText('');
+          } catch (e) {
+          }
         };
         
         img.onerror = () => {
-          console.error('Failed to load pasted image');
           URL.revokeObjectURL(imageUrl);
         };
         
         img.src = imageUrl;
       } else {
         // No image found, trigger regular paste
-        console.log('NO IMAGE - DOING REGULAR PASTE');
         paste();
       }
     };
