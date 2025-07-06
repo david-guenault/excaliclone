@@ -1,6 +1,6 @@
 ✅ BUG: quand on créé une forme elle est selectionnée par défaut. Cela fonctionne mais il faudrait que l'outil selection soit également activé afin de pouvoir immédiatement déplacer l'objet
 ✅ BUG: quand on double click sur une forme pour ajouter du texte, le curseur devrait directement être visible
-- EVOLUTION: la police par défaut devrait être excalifont
+✅ EVOLUTION: la police par défaut devrait être excalifont
 ✅ BUG: l'outil import d'image ne fonctionne pas. il faut supporter un maximum de format d'image
 - FEATURE: il faut ajouter un outil d'import de diagram compatible avec le format excalidraw et le format drawio. 
 ✅ BUG: l'outil gomme ne fonctionne pas
@@ -22,10 +22,11 @@
 ✅ BUG: en mode coin arrondi on perd le rendu de rough.js
 ✅ EVOLUTION: il y a un bandeau sous la barre d'outil. Il ne devrais pas exister. Cela empiète sur la surface de travail. 
 ✅ FEATURE: lorsque l'on redimensionne un objet en maintenant la touche CTRL enfoncée, le redimensionnement est proportionnel. 
-- BUG: quand on passe sur un controle de redimensionnement l'icone du curseur devrait être différente. genre une double flèche inclinée. cela montrerais que l'on est bien sur l'ancre de redimensionnement. 
-- CLEANUP: enleve les références a roboto pour les fontes. Dans le code et dans le visuel de l'interface. 
-- BUG: quand j'ai copié et collé une image, je ne peux plus rien copier coller d'autre, ça me colle systématiquement l'image.
-- CLEANUP: desactive les logs (tous) qui apparaissent dans la console
-- BUG: en mode selection multiple, quand on passe sur les ancres de redimensionement bas gauche et haut droit, l'icone de curseur n'est pas la double fleche inclinée
+✅ BUG: quand on passe sur un controle de redimensionnement l'icone du curseur devrait être différente. genre une double flèche inclinée. cela montrerais que l'on est bien sur l'ancre de redimensionnement. 
+✅ CLEANUP: enleve les références a roboto pour les fontes. Dans le code et dans le visuel de l'interface. 
+✅ BUG: quand j'ai copié et collé une image, je ne peux plus rien copier coller d'autre, ça me colle systématiquement l'image.
+✅ CLEANUP: desactive les logs (tous) qui apparaissent dans la console
+✅ BUG: en mode selection multiple, quand on passe sur les ancres de redimensionement bas gauche et haut droit, l'icone de curseur n'est pas la double fleche inclinée
 - FEATURE: en mode edition de texte, la touche debut amène en début de texte, la touche fin en fin de texte, SHIFT+fleche gauche / fleche droite permet de selectionner le text, CTRL+A permet de selectionner tout le texte
 - EVOLUTION: en mode rotation il est inutile d'avoir le rectangle de selection. Celui ci réapparait en fin de rotation
+- BUG: il manque pour le texte des formes les alignements vérticaux (haut bas milieu)
