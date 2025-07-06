@@ -118,6 +118,7 @@ function App() {
   const [groupResizeHandle, setGroupResizeHandle] = useState<string | null>(null);
   const [groupResizeStartPoint, setGroupResizeStartPoint] = useState<Point | null>(null);
   const [groupResizeStartBounds, setGroupResizeStartBounds] = useState<{x: number, y: number, width: number, height: number, center: Point} | null>(null);
+  const [groupResizeStartElements, setGroupResizeStartElements] = useState<Element[]>([]);
   const [groupRotationCenter, setGroupRotationCenter] = useState<Point | null>(null);
   const [groupRotationStartAngle, setGroupRotationStartAngle] = useState<number>(0);
   const [groupRotationStartElements, setGroupRotationStartElements] = useState<Element[]>([]);
@@ -620,6 +621,9 @@ function App() {
               setGroupResizeHandle(groupHandle);
               setGroupResizeStartPoint(worldPoint);
               setGroupResizeStartBounds(multiSelectionBounds);
+              // Save initial state of elements
+              const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
+              setGroupResizeStartElements(selectedElements.slice());
             }
             return;
           }
@@ -1216,7 +1220,7 @@ function App() {
     }
     
     // Handle group resize
-    if (isGroupResizing && groupResizeStartPoint && groupResizeHandle && groupResizeStartBounds) {
+    if (isGroupResizing && groupResizeStartPoint && groupResizeHandle && groupResizeStartBounds && groupResizeStartElements.length > 0) {
       // Don't use snapping for multi-selection resize to avoid jerky behavior
       const newBounds = applyMultiSelectionResize(
         groupResizeStartBounds,
@@ -1225,8 +1229,8 @@ function App() {
         worldPoint
       );
       
-      const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
-      const updates = applyGroupResize(selectedElements, groupResizeStartBounds, newBounds);
+      // Use the original elements state, not current elements
+      const updates = applyGroupResize(groupResizeStartElements, groupResizeStartBounds, newBounds);
       
       selectedElementIds.forEach((elementId, index) => {
         if (updates[index]) {
@@ -1374,6 +1378,7 @@ function App() {
       setGroupResizeHandle(null);
       setGroupResizeStartPoint(null);
       setGroupResizeStartBounds(null);
+      setGroupResizeStartElements([]);
       
       // Reset cursor
       const canvas = event.target as HTMLElement;
