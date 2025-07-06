@@ -93,7 +93,7 @@ export class KeyboardManager {
       key: 'v',
       ctrlKey: true,
       action: 'paste',
-      preventDefault: true,
+      preventDefault: false, // Allow default paste behavior for clipboard API
     });
 
     // Style copy/paste shortcuts
