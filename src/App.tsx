@@ -1775,8 +1775,8 @@ function App() {
             console.log('Image loaded, dimensions:', img.width, img.height);
             
             // Calculate position (center of viewport)
-            const centerX = viewport.pan.x + (viewport.bounds.width / viewport.zoom) / 2;
-            const centerY = viewport.pan.y + (viewport.bounds.height / viewport.zoom) / 2;
+            const centerX = viewport.pan.x + (windowSize.width / viewport.zoom) / 2;
+            const centerY = viewport.pan.y + (windowSize.height / viewport.zoom) / 2;
             
             // Scale image if too large (max 400px on any side)
             const MAX_SIZE = 400;
@@ -1841,7 +1841,7 @@ function App() {
     return () => {
       document.removeEventListener('paste', handlePaste, true);
     };
-  }, [textEditing.isEditing, viewport, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory]);
+  }, [textEditing.isEditing, viewport, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory, windowSize]);
 
   // Set up keyboard shortcuts
   useEffect(() => {
