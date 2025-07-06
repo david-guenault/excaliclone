@@ -148,7 +148,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  padding: 4px;
+  padding: 6px;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
@@ -231,6 +231,7 @@
   width: 28px;
   background: #374151;
   border-radius: 1px;
+  min-height: 1px; /* Ensure 1px strokes are visible */
 }
 
 .properties-panel__stroke-width-button.active .stroke-width-preview {

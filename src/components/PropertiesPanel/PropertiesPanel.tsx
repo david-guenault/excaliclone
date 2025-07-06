@@ -235,7 +235,7 @@ export const PropertiesPanel: React.FC = () => {
               >
                 <div 
                   className="stroke-width-preview" 
-                  style={{ height: `${width}px` }}
+                  style={{ height: `${Math.max(width, 2)}px` }}
                 />
               </button>
             ))}
