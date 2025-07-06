@@ -255,18 +255,8 @@ export function applyMultiSelectionResize(
   let deltaX = currentPoint.x - startPoint.x;
   let deltaY = currentPoint.y - startPoint.y;
   
-  // Add minimum movement threshold to reduce sensitivity
-  const MIN_RESIZE_THRESHOLD = 10; // pixels (increased from 5)
-  const absX = Math.abs(deltaX);
-  const absY = Math.abs(deltaY);
-  
-  // If movement is too small, return original bounds
-  if (absX < MIN_RESIZE_THRESHOLD && absY < MIN_RESIZE_THRESHOLD) {
-    return originalBounds;
-  }
-  
-  // Apply sensitivity scaling to make resize much less aggressive
-  const RESIZE_SENSITIVITY = 0.3; // Reduce sensitivity to 30% (was 50%)
+  // Apply smooth sensitivity scaling without threshold
+  const RESIZE_SENSITIVITY = 0.7; // More responsive but still controlled
   deltaX *= RESIZE_SENSITIVITY;
   deltaY *= RESIZE_SENSITIVITY;
 
