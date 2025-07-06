@@ -13,8 +13,8 @@
 }
 
 .simple-color-palette__swatch {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
   border: 1.5px solid transparent;
   cursor: pointer;
@@ -41,8 +41,8 @@
 }
 
 .simple-color-palette__current {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
   border: 1.5px solid #e5e7eb;
   cursor: pointer;
@@ -106,8 +106,8 @@
 
 .simple-color-palette__picker-apply,
 .simple-color-palette__picker-cancel {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
   background: #f9fafb;
