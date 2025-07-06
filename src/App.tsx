@@ -1,7 +1,7 @@
 // ABOUTME: Main application component that renders the Excalibox drawing interface
 // ABOUTME: Orchestrates the Canvas, Toolbar, and manages global application state
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import { Canvas } from './components/Canvas';
 import { TopToolbar } from './components/TopToolbar';
@@ -1722,97 +1722,95 @@ function App() {
     keyboardManager.setTextEditingActive(textEditing.isEditing);
   }, [textEditing.isEditing]);
 
-  // Handle clipboard paste events for images
-  useEffect(() => {
-    const handlePaste = async (event: ClipboardEvent) => {
-      // Don't handle paste if text editing is active or if it's not the main paste shortcut
-      if (textEditing.isEditing) return;
+
+  // Custom paste handler that checks for images first
+  const handlePasteCommand = useCallback(async () => {
+    console.log('Paste command triggered');
+    
+    try {
+      // Try to access clipboard for images
+      const clipboardItems = await navigator.clipboard.read();
+      console.log('Clipboard items from navigator:', clipboardItems);
       
-      const clipboardData = event.clipboardData;
-      if (!clipboardData) return;
-      
-      // Check for image data in clipboard
-      const items = Array.from(clipboardData.items);
-      const imageItem = items.find(item => item.type.startsWith('image/'));
-      
-      if (imageItem) {
-        event.preventDefault();
+      for (const clipboardItem of clipboardItems) {
+        console.log('Clipboard item types:', clipboardItem.types);
         
-        const file = imageItem.getAsFile();
-        if (!file) return;
-        
-        try {
-          // Create object URL for the image
-          const imageUrl = URL.createObjectURL(file);
-          
-          // Create a temporary image to get dimensions
-          const img = new Image();
-          img.onload = () => {
-            // Calculate position (center of viewport)
-            const centerX = viewport.pan.x + (viewport.bounds.width / viewport.zoom) / 2;
-            const centerY = viewport.pan.y + (viewport.bounds.height / viewport.zoom) / 2;
+        for (const type of clipboardItem.types) {
+          if (type.startsWith('image/')) {
+            console.log('Found image type:', type);
             
-            // Scale image if too large (max 400px on any side)
-            const MAX_SIZE = 400;
-            let width = img.width;
-            let height = img.height;
+            const blob = await clipboardItem.getType(type);
+            const imageUrl = URL.createObjectURL(blob);
             
-            if (width > MAX_SIZE || height > MAX_SIZE) {
-              const aspectRatio = width / height;
-              if (width > height) {
-                width = MAX_SIZE;
-                height = MAX_SIZE / aspectRatio;
-              } else {
-                height = MAX_SIZE;
-                width = MAX_SIZE * aspectRatio;
+            // Create a temporary image to get dimensions
+            const img = new Image();
+            img.onload = () => {
+              console.log('Image loaded, dimensions:', img.width, img.height);
+              
+              // Calculate position (center of viewport)
+              const centerX = viewport.pan.x + (viewport.bounds.width / viewport.zoom) / 2;
+              const centerY = viewport.pan.y + (viewport.bounds.height / viewport.zoom) / 2;
+              
+              // Scale image if too large (max 400px on any side)
+              const MAX_SIZE = 400;
+              let width = img.width;
+              let height = img.height;
+              
+              if (width > MAX_SIZE || height > MAX_SIZE) {
+                const aspectRatio = width / height;
+                if (width > height) {
+                  width = MAX_SIZE;
+                  height = MAX_SIZE / aspectRatio;
+                } else {
+                  height = MAX_SIZE;
+                  width = MAX_SIZE * aspectRatio;
+                }
               }
-            }
+              
+              // Create image element
+              const imageElement = addElementSilent({
+                type: 'image',
+                x: centerX - width / 2,
+                y: centerY - height / 2,
+                width: width,
+                height: height,
+                angle: 0,
+                strokeColor: toolOptions.strokeColor,
+                backgroundColor: 'transparent',
+                strokeWidth: toolOptions.strokeWidth,
+                strokeStyle: toolOptions.strokeStyle,
+                fillStyle: toolOptions.fillStyle,
+                roughness: toolOptions.roughness,
+                opacity: toolOptions.opacity,
+                imageUrl: imageUrl,
+              });
+              
+              // Select the new image and switch to select tool
+              selectElements([imageElement.id]);
+              setActiveTool('select');
+              
+              // Save to history
+              saveToHistory();
+            };
             
-            // Create image element
-            const imageElement = addElementSilent({
-              type: 'image',
-              x: centerX - width / 2,
-              y: centerY - height / 2,
-              width: width,
-              height: height,
-              angle: 0,
-              strokeColor: toolOptions.strokeColor,
-              backgroundColor: 'transparent',
-              strokeWidth: toolOptions.strokeWidth,
-              strokeStyle: toolOptions.strokeStyle,
-              fillStyle: toolOptions.fillStyle,
-              roughness: toolOptions.roughness,
-              opacity: toolOptions.opacity,
-              imageUrl: imageUrl,
-            });
+            img.onerror = () => {
+              console.error('Failed to load pasted image');
+              URL.revokeObjectURL(imageUrl);
+            };
             
-            // Select the new image and switch to select tool
-            selectElements([imageElement.id]);
-            setActiveTool('select');
-            
-            // Save to history
-            saveToHistory();
-          };
-          
-          img.onerror = () => {
-            console.error('Failed to load pasted image');
-            URL.revokeObjectURL(imageUrl);
-          };
-          
-          img.src = imageUrl;
-        } catch (error) {
-          console.error('Error handling pasted image:', error);
+            img.src = imageUrl;
+            return; // Exit early if we found and handled an image
+          }
         }
       }
-    };
+    } catch (error) {
+      console.log('No clipboard image access or error:', error);
+    }
     
-    // Add paste event listener to document
-    document.addEventListener('paste', handlePaste);
-    
-    return () => {
-      document.removeEventListener('paste', handlePaste);
-    };
-  }, [textEditing.isEditing, viewport, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory]);
+    // Fallback to regular element paste if no image found
+    console.log('Falling back to regular paste');
+    paste();
+  }, [viewport, toolOptions, addElementSilent, selectElements, setActiveTool, saveToHistory, paste]);
 
   // Set up keyboard shortcuts
   useEffect(() => {
@@ -1825,7 +1823,7 @@ function App() {
     keyboardManager.on('selectNext', selectNext);
     keyboardManager.on('selectPrevious', selectPrevious);
     keyboardManager.on('copy', copy);
-    keyboardManager.on('paste', paste);
+    keyboardManager.on('paste', handlePasteCommand);
     keyboardManager.on('copyStyle', copyStyle);
     keyboardManager.on('pasteStyle', pasteStyle);
     keyboardManager.on('resetZoom', resetZoom);
@@ -1849,7 +1847,7 @@ function App() {
       keyboardManager.off('zoomToFit');
       keyboardManager.off('toggleGrid');
     };
-  }, [setActiveTool, undo, redo, deleteSelectedElements, duplicateSelectedElements, selectAll, selectNext, selectPrevious, copy, paste, copyStyle, pasteStyle, resetZoom, zoomToFit, toggleGrid]);
+  }, [setActiveTool, undo, redo, deleteSelectedElements, duplicateSelectedElements, selectAll, selectNext, selectPrevious, copy, handlePasteCommand, copyStyle, pasteStyle, resetZoom, zoomToFit, toggleGrid]);
 
   return (
     <div className="excalibox-app">
