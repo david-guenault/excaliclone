@@ -6,7 +6,7 @@
 ✅ BUG: l'outil gomme ne fonctionne pas
 ✅ BUG: la propriété angle ne fonctionne pas
 - FEATURE: il manque des outils d'alignement sur selection multiples comme dans excalidraw. Pour le design voir l'image alignement dans design_examples. alignement horizontal (a gauche a droite centré répartit horizontalement) et alignement vertical (en haut en bas au centre repartit verticalement)
-- EVOLUTION: harmoniser la taille des icones de fenêtre de propriétés. Boutons carrés tous de la même taille.
+✅ EVOLUTION: harmoniser la taille des icones de fenêtre de propriétés. Boutons carrés tous de la même taille.
 ✅ BUG: l'onglet affiche VITE + REACT + TS en titre. Change cela pour le nom de l'application
 ✅ BUG: en mode édition de texte les touches SUPR et BACKSPACE ne doivent pas supprimer la forme. Dans ce contexte ces touches servent a supprimer du texte édité. 
 ✅ BUG: en mode édition de texte, entrée rajoute un espace (ou autre chose mais ça ressemble a un espace).
@@ -22,3 +22,4 @@
 ✅ BUG: en mode coin arrondi on perd le rendu de rough.js
 ✅ EVOLUTION: il y a un bandeau sous la barre d'outil. Il ne devrais pas exister. Cela empiète sur la surface de travail. 
 ✅ FEATURE: lorsque l'on redimensionne un objet en maintenant la touche CTRL enfoncée, le redimensionnement est proportionnel. 
+- BUG: quand on passe sur un controle de redimensionnement l'icone du curseur devrait être différente. genre une double flèche inclinée. cela montrerais que l'on est bien sur l'ancre de redimensionnement. 
