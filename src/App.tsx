@@ -1877,6 +1877,7 @@ function App() {
         updateTextSelection(currentText, currentText.length, 0, currentText.length);
       } else if (event.key === 'c' && event.ctrlKey) {
         event.preventDefault();
+        event.stopPropagation();
         // Copy selected text to clipboard
         if (hasSelection) {
           const selectedText = currentText.slice(selStart, selEnd);
@@ -1884,6 +1885,7 @@ function App() {
         }
       } else if (event.key === 'x' && event.ctrlKey) {
         event.preventDefault();
+        event.stopPropagation();
         // Cut selected text to clipboard
         if (hasSelection) {
           const selectedText = currentText.slice(selStart, selEnd);
@@ -1894,6 +1896,7 @@ function App() {
         }
       } else if (event.key === 'v' && event.ctrlKey) {
         event.preventDefault();
+        event.stopPropagation();
         // Paste text from clipboard
         navigator.clipboard.readText().then(clipboardText => {
           if (clipboardText) {
@@ -1932,11 +1935,11 @@ function App() {
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
     document.addEventListener('mousedown', handleClickOutside);
     
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [textEditing, updateTextContent, updateTextSelection, finishTextEditing, setActiveTool]);
@@ -1952,7 +1955,7 @@ function App() {
   useEffect(() => {
     const handlePaste = async (event: ClipboardEvent) => {
       
-      // Don't handle if text editing is active
+      // Don't handle if text editing is active - return early without preventing default
       if (textEditing.isEditing) {
         return;
       }
