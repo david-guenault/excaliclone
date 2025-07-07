@@ -43,3 +43,4 @@
 - REGRESSION: quand je fais une navigation par mot. le curseur doit se positionner au début des mots. 
 - EVOLUTION: pour les alignements de texte tout regrouper sous un meme libelle. 
 - BUG: une fois qu'un ensemble de forme a subi une rotation, il est impossible de supprimer les formes. Par contre si on remet l'ensemble comme au positionnement initial on peut a nouveau supprimer les formes. 
+- EVOLUTION: implémente aussi les racourci clavier couper/copier/coller mais au format linux (CTRL+INS / SHIFT+INS)

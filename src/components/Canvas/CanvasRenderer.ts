@@ -120,7 +120,7 @@ export class CanvasRenderer {
         this.drawArrow(element, editingInfo);
         break;
       case 'text':
-        this.drawText(element);
+        this.drawText(element, editingInfo);
         break;
       case 'pen':
         this.drawPen(element);
@@ -563,8 +563,10 @@ export class CanvasRenderer {
     }
   }
 
-  private drawText(element: Element) {
-    if (!element.text) return;
+  private drawText(element: Element, editingInfo?: { text: string; cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
+    // Use editing text if available, otherwise use element text
+    const text = editingInfo?.text !== undefined ? editingInfo.text : element.text;
+    if (!text) return;
     
     this.ctx.save();
     
@@ -582,7 +584,7 @@ export class CanvasRenderer {
     this.ctx.globalAlpha = element.opacity;
     
     // Calculate text dimensions for background and alignment
-    const lines = element.text.split('\n');
+    const lines = text.split('\n');
     const lineHeight = fontSize * 1.2;
     const maxLineWidth = Math.max(...lines.map(line => this.ctx.measureText(line).width));
     const padding = 4;
@@ -633,6 +635,107 @@ export class CanvasRenderer {
         this.ctx.restore();
       }
     });
+    
+    // Draw cursor and selection if editing
+    if (editingInfo) {
+      // Draw selection background first
+      if (editingInfo.selectionStart !== editingInfo.selectionEnd) {
+        const selStart = Math.min(editingInfo.selectionStart, editingInfo.selectionEnd);
+        const selEnd = Math.max(editingInfo.selectionStart, editingInfo.selectionEnd);
+        
+        let charCount = 0;
+        lines.forEach((line, index) => {
+          const y = padding + (index * lineHeight);
+          const lineStart = charCount;
+          const lineEnd = charCount + line.length;
+          
+          // Check if this line has any selected text
+          if (selEnd > lineStart && selStart < lineEnd) {
+            const selStartInLine = Math.max(0, selStart - lineStart);
+            const selEndInLine = Math.min(line.length, selEnd - lineStart);
+            
+            // Measure text to get selection bounds
+            const textBeforeSelection = line.slice(0, selStartInLine);
+            const selectedText = line.slice(selStartInLine, selEndInLine);
+            const textMetrics = this.ctx.measureText(textBeforeSelection);
+            const selectionWidth = this.ctx.measureText(selectedText).width;
+            
+            // Calculate selection start position based on alignment
+            let selectionStartX = padding;
+            if (textAlign === 'center') {
+              const lineWidth = this.ctx.measureText(line).width;
+              selectionStartX = padding + (maxLineWidth / 2) - (lineWidth / 2) + textMetrics.width;
+            } else if (textAlign === 'right') {
+              const lineWidth = this.ctx.measureText(line).width;
+              selectionStartX = padding + maxLineWidth - lineWidth + textMetrics.width;
+            } else {
+              selectionStartX = padding + textMetrics.width;
+            }
+            
+            // Draw selection background
+            this.ctx.fillStyle = 'rgba(0, 120, 255, 0.3)';
+            this.ctx.fillRect(
+              selectionStartX,
+              y,
+              selectionWidth,
+              lineHeight
+            );
+            
+            // Restore text color
+            this.ctx.fillStyle = element.strokeColor;
+          }
+          
+          charCount += line.length;
+          if (index < lines.length - 1) {
+            charCount += 1; // For the newline character
+          }
+        });
+      }
+      
+      // Draw cursor
+      if (editingInfo.cursorVisible) {
+        let charCount = 0;
+        lines.forEach((line, index) => {
+          const y = padding + (index * lineHeight);
+          const lineStart = charCount;
+          const lineEnd = charCount + line.length;
+          
+          // Check if cursor is in this line
+          if (editingInfo.cursorPosition >= lineStart && editingInfo.cursorPosition <= lineEnd) {
+            const cursorPosInLine = editingInfo.cursorPosition - lineStart;
+            
+            // Measure text up to cursor position
+            const textToCursor = line.slice(0, cursorPosInLine);
+            const textMetrics = this.ctx.measureText(textToCursor);
+            
+            // Calculate cursor X position based on alignment
+            let cursorX = padding;
+            if (textAlign === 'center') {
+              const lineWidth = this.ctx.measureText(line).width;
+              cursorX = padding + (maxLineWidth / 2) - (lineWidth / 2) + textMetrics.width;
+            } else if (textAlign === 'right') {
+              const lineWidth = this.ctx.measureText(line).width;
+              cursorX = padding + maxLineWidth - lineWidth + textMetrics.width;
+            } else {
+              cursorX = padding + textMetrics.width;
+            }
+            
+            // Draw cursor line
+            this.ctx.strokeStyle = element.strokeColor;
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(cursorX, y);
+            this.ctx.lineTo(cursorX, y + lineHeight);
+            this.ctx.stroke();
+          }
+          
+          charCount += line.length;
+          if (index < lines.length - 1) {
+            charCount += 1; // For the newline character
+          }
+        });
+      }
+    }
     
     this.ctx.restore();
   }
