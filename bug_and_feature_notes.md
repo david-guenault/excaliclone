@@ -36,5 +36,7 @@
 ✅ BUG: le retour a la ligne automatique ne se fait plus en édition de texte de forme. 
 - BUG: quand je fais une suppression de plusieurs ligne, je vois le le texte complet apparaitre deux fois
 ✅ FEATURE: implémenter les racourcis CTRL+X CTRL+C CTRL+V avec la selection de texte dans les formes
-- FEATURE: CTRL+flèche gauche droite doit permettre de naviguer par mot dans l'édition de texte.
-- FEATURE: CTRL+SHIFT+fléche gauche ou droite doit permettre de selectionner par mot dans l'édition de texte 
+✅ FEATURE: CTRL+flèche gauche droite doit permettre de naviguer par mot dans l'édition de texte.
+✅ FEATURE: CTRL+SHIFT+fléche gauche ou droite doit permettre de selectionner par mot dans l'édition de texte 
+- BUG: un click en dehors de la forme, stoppe l'édition de texte. 
+- REGRESSION: quand je fais une suppression dans un long texte sur une selection, le texte qui devait être supprimé apparait deux fois

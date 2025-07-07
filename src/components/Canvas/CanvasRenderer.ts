@@ -75,7 +75,7 @@ export class CanvasRenderer {
     }
   }
 
-  renderElement(element: Element, textEditing?: { elementId: string | null; cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
+  renderElement(element: Element, textEditing?: DirectTextEditingState | null) {
     if (!this.ctx || !this.rough) return;
     
     // Validate element has required properties
@@ -98,6 +98,7 @@ export class CanvasRenderer {
     // Determine if this element is being edited
     const isBeingEdited = textEditing && textEditing.elementId === element.id;
     const editingInfo = isBeingEdited ? {
+      text: textEditing.text,
       cursorPosition: textEditing.cursorPosition,
       selectionStart: textEditing.selectionStart,
       selectionEnd: textEditing.selectionEnd,
@@ -1280,7 +1281,7 @@ export class CanvasRenderer {
     this.ctx.restore();
   }
 
-  private drawTextInShape(element: Element, textEditing?: { cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
+  private drawTextInShape(element: Element, textEditing?: { text: string; cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
     // Don't return early if text is empty but we're editing - we need to show the cursor
     if ((!element.text || element.text.trim() === '') && !textEditing) return;
     
@@ -1320,7 +1321,8 @@ export class CanvasRenderer {
     }
     
     // Break text into lines with automatic word wrapping
-    const text = element.text || '';
+    // Use editing text if available, otherwise use element text
+    const text = (textEditing?.text !== undefined) ? textEditing.text : (element.text || '');
     const lines = this.wrapTextToLines(text, maxWidth);
     const lineHeight = fontSize * 1.2;
     const totalTextHeight = lines.length * lineHeight;
