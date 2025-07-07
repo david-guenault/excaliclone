@@ -1063,15 +1063,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => {
       if (!state.textEditing.isEditing || !state.textEditing.elementId) return state;
 
-      // Update the element in real-time
-      const newElements = state.elements.map((el) =>
-        el.id === state.textEditing.elementId 
-          ? { ...el, text }
-          : el
-      );
-
+      // During editing, only update textEditing state, NOT the element
+      // The element will be updated when editing finishes via finishTextEditing
       return {
-        elements: newElements,
         textEditing: {
           ...state.textEditing,
           text,
@@ -1088,15 +1082,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((state) => {
       if (!state.textEditing.isEditing || !state.textEditing.elementId) return state;
 
-      // Update the element in real-time
-      const newElements = state.elements.map((el) =>
-        el.id === state.textEditing.elementId 
-          ? { ...el, text }
-          : el
-      );
-
+      // During editing, only update textEditing state, NOT the element
+      // The element will be updated when editing finishes via finishTextEditing
       return {
-        elements: newElements,
         textEditing: {
           ...state.textEditing,
           text,
@@ -1111,11 +1099,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   finishTextEditing: () => {
     set((state) => {
+      if (!state.textEditing.isEditing || !state.textEditing.elementId) return state;
+
+      // Update the element with the final text
+      const newElements = state.elements.map((el) =>
+        el.id === state.textEditing.elementId 
+          ? { ...el, text: state.textEditing.text }
+          : el
+      );
+
       // Save to history when finishing text editing
       const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push([...state.elements]);
+      newHistory.push(newElements);
 
       return {
+        elements: newElements,
         history: newHistory,
         historyIndex: newHistory.length - 1,
         textEditing: {
