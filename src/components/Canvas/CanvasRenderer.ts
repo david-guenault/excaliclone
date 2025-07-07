@@ -148,7 +148,7 @@ export class CanvasRenderer {
     
     // Render selection indicators on top (but not during rotation)
     if (selectedElementIds.length > 0 && !isRotating) {
-      this.renderSelectionIndicators(elements, selectedElementIds);
+      this.renderSelectionIndicators(elements, selectedElementIds, isRotating);
     }
     
     // Render drag selection rectangle on top
@@ -725,7 +725,7 @@ export class CanvasRenderer {
     }
   }
 
-  private renderSelectionIndicators(elements: Element[], selectedElementIds: string[]) {
+  private renderSelectionIndicators(elements: Element[], selectedElementIds: string[], isRotating: boolean = false) {
     // Save current context state
     this.ctx.save();
     
@@ -740,7 +740,10 @@ export class CanvasRenderer {
     
     // Handle multi-selection group indicators
     if (selectedElementIds.length > 1) {
-      this.renderMultiSelectionIndicators(elements, selectedElementIds, SELECTION_COLOR, HANDLE_SIZE);
+      // Don't render multi-selection indicators during rotation
+      if (!isRotating) {
+        this.renderMultiSelectionIndicators(elements, selectedElementIds, SELECTION_COLOR, HANDLE_SIZE);
+      }
       // For multi-selection, only show group indicators, not individual ones
       this.ctx.restore();
       return;

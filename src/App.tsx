@@ -1998,10 +1998,9 @@ function App() {
         return;
       }
       
-      // Only finish editing if clicking outside the canvas or on canvas but not on UI
-      if (canvas && !canvas.contains(target)) {
-        finishTextEditingAndActivateSelect();
-      }
+      // Finish editing for ANY click outside the canvas OR inside the canvas
+      // This provides standard editor behavior where clicking anywhere finishes editing
+      finishTextEditingAndActivateSelect();
     };
 
     document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
