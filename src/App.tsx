@@ -1709,6 +1709,45 @@ function App() {
     };
   };
 
+  // Helper functions for word navigation
+  const findWordStart = (text: string, position: number): number => {
+    if (position <= 0) return 0;
+    
+    // Move backward to find word boundary
+    let pos = position - 1;
+    
+    // Skip whitespace backwards
+    while (pos >= 0 && /\s/.test(text[pos])) {
+      pos--;
+    }
+    
+    // Find start of word (stop at whitespace or beginning)
+    while (pos >= 0 && !/\s/.test(text[pos])) {
+      pos--;
+    }
+    
+    return pos + 1;
+  };
+
+  const findWordEnd = (text: string, position: number): number => {
+    if (position >= text.length) return text.length;
+    
+    // Move forward to find word boundary
+    let pos = position;
+    
+    // Skip whitespace forwards
+    while (pos < text.length && /\s/.test(text[pos])) {
+      pos++;
+    }
+    
+    // Find end of word (stop at whitespace or end)
+    while (pos < text.length && !/\s/.test(text[pos])) {
+      pos++;
+    }
+    
+    return pos;
+  };
+
   // Handle keyboard input for direct text editing
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1781,8 +1820,16 @@ function App() {
         }
       } else if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        if (event.shiftKey) {
-          // Extend selection to the left
+        if (event.ctrlKey && event.shiftKey) {
+          // CTRL+SHIFT+Left: Select to previous word start
+          const wordStart = findWordStart(currentText, cursorPos);
+          updateTextSelection(currentText, wordStart, selStart, wordStart);
+        } else if (event.ctrlKey) {
+          // CTRL+Left: Move to previous word start
+          const wordStart = findWordStart(currentText, cursorPos);
+          updateTextContent(currentText, wordStart);
+        } else if (event.shiftKey) {
+          // SHIFT+Left: Extend selection to the left
           const newSelEnd = Math.max(0, selEnd - 1);
           updateTextSelection(currentText, newSelEnd, selStart, newSelEnd);
         } else {
@@ -1796,8 +1843,16 @@ function App() {
         }
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        if (event.shiftKey) {
-          // Extend selection to the right
+        if (event.ctrlKey && event.shiftKey) {
+          // CTRL+SHIFT+Right: Select to next word end
+          const wordEnd = findWordEnd(currentText, cursorPos);
+          updateTextSelection(currentText, wordEnd, selStart, wordEnd);
+        } else if (event.ctrlKey) {
+          // CTRL+Right: Move to next word end
+          const wordEnd = findWordEnd(currentText, cursorPos);
+          updateTextContent(currentText, wordEnd);
+        } else if (event.shiftKey) {
+          // SHIFT+Right: Extend selection to the right
           const newSelEnd = Math.min(currentText.length, selEnd + 1);
           updateTextSelection(currentText, newSelEnd, selStart, newSelEnd);
         } else {

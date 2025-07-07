@@ -34,5 +34,7 @@
 ✅ BUG: en mode edition de texte l'utilisation de fleche haut/bas permet de remonter les différentes ligne. Cela est aussi valable en mode selection.
 ✅ BUG: aprés une suppression en mode selection multiligne, le curseur clignotant n'apparait plus. 
 ✅ BUG: le retour a la ligne automatique ne se fait plus en édition de texte de forme. 
-✅ BUG: quand je fais une suppression de plusieurs ligne, je vois le le texte complet apparaitre deux fois
-- FEATURE: implémenter les racourcis CTRL+X CTRL+C CTRL+V avec la selection de texte dans les formes
+- BUG: quand je fais une suppression de plusieurs ligne, je vois le le texte complet apparaitre deux fois
+✅ FEATURE: implémenter les racourcis CTRL+X CTRL+C CTRL+V avec la selection de texte dans les formes
+- FEATURE: CTRL+flèche gauche droite doit permettre de naviguer par mot dans l'édition de texte.
+- FEATURE: CTRL+SHIFT+fléche gauche ou droite doit permettre de selectionner par mot dans l'édition de texte 
