@@ -1677,6 +1677,38 @@ function App() {
     setActiveTool('select');
   };
 
+  // Helper function to calculate line information for vertical navigation
+  const calculateLineInfo = (text: string, cursorPosition: number) => {
+    const lines = text.split('\n');
+    let charCount = 0;
+    let currentLine = 0;
+    let positionInLine = 0;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const lineLength = lines[i].length;
+      if (cursorPosition <= charCount + lineLength) {
+        currentLine = i;
+        positionInLine = cursorPosition - charCount;
+        break;
+      }
+      charCount += lineLength + 1; // +1 for the newline character
+    }
+    
+    return {
+      lines,
+      currentLine,
+      positionInLine,
+      lineStarts: lines.reduce((acc, line, index) => {
+        if (index === 0) {
+          acc.push(0);
+        } else {
+          acc.push(acc[index - 1] + lines[index - 1].length + 1);
+        }
+        return acc;
+      }, [] as number[])
+    };
+  };
+
   // Handle keyboard input for direct text editing
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1776,6 +1808,68 @@ function App() {
           } else {
             updateTextContent(currentText, Math.min(currentText.length, cursorPos + 1));
           }
+        }
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const lineInfo = calculateLineInfo(currentText, cursorPos);
+        
+        if (lineInfo.currentLine > 0) {
+          // Move to previous line
+          const prevLine = lineInfo.lines[lineInfo.currentLine - 1];
+          const newPosInLine = Math.min(lineInfo.positionInLine, prevLine.length);
+          const newCursorPos = lineInfo.lineStarts[lineInfo.currentLine - 1] + newPosInLine;
+          
+          if (event.shiftKey) {
+            // Extend selection upward
+            updateTextSelection(currentText, newCursorPos, selStart, newCursorPos);
+          } else {
+            // Move cursor up
+            if (hasSelection) {
+              updateTextContent(currentText, selStart);
+            } else {
+              updateTextContent(currentText, newCursorPos);
+            }
+          }
+        } else if (event.shiftKey) {
+          // Already at first line, extend selection to beginning
+          updateTextSelection(currentText, 0, selStart, 0);
+        } else if (!hasSelection) {
+          // Move to beginning of current line
+          updateTextContent(currentText, lineInfo.lineStarts[lineInfo.currentLine]);
+        } else {
+          updateTextContent(currentText, selStart);
+        }
+      } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const lineInfo = calculateLineInfo(currentText, cursorPos);
+        
+        if (lineInfo.currentLine < lineInfo.lines.length - 1) {
+          // Move to next line
+          const nextLine = lineInfo.lines[lineInfo.currentLine + 1];
+          const newPosInLine = Math.min(lineInfo.positionInLine, nextLine.length);
+          const newCursorPos = lineInfo.lineStarts[lineInfo.currentLine + 1] + newPosInLine;
+          
+          if (event.shiftKey) {
+            // Extend selection downward
+            updateTextSelection(currentText, newCursorPos, selStart, newCursorPos);
+          } else {
+            // Move cursor down
+            if (hasSelection) {
+              updateTextContent(currentText, selEnd);
+            } else {
+              updateTextContent(currentText, newCursorPos);
+            }
+          }
+        } else if (event.shiftKey) {
+          // Already at last line, extend selection to end
+          updateTextSelection(currentText, currentText.length, selStart, currentText.length);
+        } else if (!hasSelection) {
+          // Move to end of current line
+          const currentLineLength = lineInfo.lines[lineInfo.currentLine].length;
+          const endOfLine = lineInfo.lineStarts[lineInfo.currentLine] + currentLineLength;
+          updateTextContent(currentText, endOfLine);
+        } else {
+          updateTextContent(currentText, selEnd);
         }
       } else if (event.key === 'a' && event.ctrlKey) {
         event.preventDefault();
