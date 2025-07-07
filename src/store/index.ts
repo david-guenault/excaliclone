@@ -1072,6 +1072,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           cursorPosition,
           selectionStart: cursorPosition,
           selectionEnd: cursorPosition,
+          cursorVisible: true, // Ensure cursor remains visible after content update
         },
       };
     });
@@ -1096,6 +1097,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           cursorPosition,
           selectionStart,
           selectionEnd,
+          cursorVisible: true, // Ensure cursor remains visible after selection update
         },
       };
     });
