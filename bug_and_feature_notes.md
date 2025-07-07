@@ -28,16 +28,17 @@
 ✅ CLEANUP: desactive les logs (tous) qui apparaissent dans la console
 ✅ BUG: en mode selection multiple, quand on passe sur les ancres de redimensionement bas gauche et haut droit, l'icone de curseur n'est pas la double fleche inclinée
 ✅ FEATURE: en mode edition de texte, la touche debut amène en début de texte, la touche fin en fin de texte, SHIFT+fleche gauche / fleche droite permet de selectionner le text, CTRL+A permet de selectionner tout le texte
-- EVOLUTION: en mode rotation il est inutile d'avoir le rectangle de selection. Celui ci réapparait en fin de rotation
-- BUG: il manque pour le texte des formes les alignements vérticaux (haut bas milieu)
+✅ EVOLUTION: en mode rotation il est inutile d'avoir le rectangle de selection. Celui ci réapparait en fin de rotation
+✅ BUG: il manque pour le texte des formes les alignements vérticaux (haut bas milieu)
 ✅ FEATURE: en mode selection de texte (SHIFT+FLECHE) il faut un repère visuel comme un fond bleu indiquant la selection en cours
 ✅ BUG: en mode edition de texte l'utilisation de fleche haut/bas permet de remonter les différentes ligne. Cela est aussi valable en mode selection.
 ✅ BUG: aprés une suppression en mode selection multiligne, le curseur clignotant n'apparait plus. 
 ✅ BUG: le retour a la ligne automatique ne se fait plus en édition de texte de forme. 
-- BUG: quand je fais une suppression de plusieurs ligne, je vois le le texte complet apparaitre deux fois
+✅ BUG: quand je fais une suppression de plusieurs ligne, je vois le le texte complet apparaitre deux fois
 ✅ FEATURE: implémenter les racourcis CTRL+X CTRL+C CTRL+V avec la selection de texte dans les formes
 ✅ FEATURE: CTRL+flèche gauche droite doit permettre de naviguer par mot dans l'édition de texte.
 ✅ FEATURE: CTRL+SHIFT+fléche gauche ou droite doit permettre de selectionner par mot dans l'édition de texte 
-- BUG: un click en dehors de la forme, stoppe l'édition de texte. 
-- REGRESSION: quand je fais une suppression dans un long texte sur une selection, le texte qui devait être supprimé apparait deux fois
+✅ BUG: un click en dehors de la forme, stoppe l'édition de texte. 
+✅ REGRESSION: quand je fais une suppression dans un long texte sur une selection, le texte qui devait être supprimé apparait deux fois
 - REGRESSION: quand je fais une navigation par mot. le curseur doit se positionner au début des mots. 
+- EVOLUTION: pour les alignements de texte tout regrouper sous un meme libelle. 

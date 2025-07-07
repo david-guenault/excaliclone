@@ -133,7 +133,7 @@ export class CanvasRenderer {
     this.ctx.restore();
   }
 
-  renderElements(elements: Element[], gridSettings?: GridSettings, selectedElementIds: string[] = [], dragSelectionRect?: { start: Point; end: Point } | null, textEditing?: DirectTextEditingState | null) {
+  renderElements(elements: Element[], gridSettings?: GridSettings, selectedElementIds: string[] = [], dragSelectionRect?: { start: Point; end: Point } | null, textEditing?: DirectTextEditingState | null, isRotating: boolean = false) {
     this.clear();
     
     // Render grid first (background layer)
@@ -146,8 +146,8 @@ export class CanvasRenderer {
       elements.filter(Boolean).forEach(element => this.renderElement(element, textEditing));
     }
     
-    // Render selection indicators on top
-    if (selectedElementIds.length > 0) {
+    // Render selection indicators on top (but not during rotation)
+    if (selectedElementIds.length > 0 && !isRotating) {
       this.renderSelectionIndicators(elements, selectedElementIds);
     }
     

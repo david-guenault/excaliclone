@@ -15,6 +15,7 @@ interface CanvasProps {
   selectedElementIds?: string[];
   dragSelectionRect?: { start: Point; end: Point } | null;
   textEditing?: DirectTextEditingState | null;
+  isRotating?: boolean;
   onMouseDown?: (point: Point, event: MouseEvent) => void;
   onMouseMove?: (point: Point, event: MouseEvent) => void;
   onMouseUp?: (point: Point, event: MouseEvent) => void;
@@ -31,6 +32,7 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
   selectedElementIds = [],
   dragSelectionRect = null,
   textEditing = null,
+  isRotating = false,
   onMouseDown,
   onMouseMove,
   onMouseUp,
@@ -99,7 +101,7 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
 
     const render = () => {
       renderer.updateViewport(viewport);
-      renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing);
+      renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing, isRotating);
     };
 
     // If text editing is active, use animation loop for cursor blinking

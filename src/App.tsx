@@ -2188,6 +2188,7 @@ function App() {
               : null
           }
           textEditing={textEditing.isEditing ? textEditing : null}
+          isRotating={isRotating || isGroupRotating}
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleCanvasMouseMove}
           onMouseUp={handleCanvasMouseUp}
