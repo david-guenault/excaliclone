@@ -92,37 +92,32 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     rendererRef.current = new CanvasRenderer(ctx, viewport);
   }, [viewport]);
 
-  // Render elements when they change
+  // Unified rendering system to prevent double rendering
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!renderer) return;
 
-    renderer.updateViewport(viewport);
-    renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing);
+    const render = () => {
+      renderer.updateViewport(viewport);
+      renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing);
+    };
+
+    // If text editing is active, use animation loop for cursor blinking
+    if (textEditing && textEditing.isEditing) {
+      // Render immediately when text editing starts to show cursor right away
+      render();
+      
+      // Start animation loop for cursor blinking
+      const intervalId = setInterval(render, 100); // Update every 100ms for smooth blinking
+      
+      return () => {
+        clearInterval(intervalId);
+      };
+    } else {
+      // Normal rendering when not text editing
+      render();
+    }
   }, [elements, viewport, gridSettings, selectedElementIds, dragSelectionRect, textEditing]);
-
-  // Animation loop for blinking cursor when text editing is active
-  useEffect(() => {
-    if (!textEditing) return;
-
-    const animate = () => {
-      const renderer = rendererRef.current;
-      if (renderer) {
-        renderer.updateViewport(viewport);
-        renderer.renderElements(elements, gridSettings, selectedElementIds, dragSelectionRect, textEditing);
-      }
-    };
-
-    // Render immediately when text editing starts to show cursor right away
-    animate();
-
-    // Start animation loop for cursor blinking
-    const intervalId = setInterval(animate, 100); // Update every 100ms for smooth blinking
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [textEditing, elements, viewport, gridSettings, selectedElementIds, dragSelectionRect]);
 
   // Event handlers
   useEffect(() => {

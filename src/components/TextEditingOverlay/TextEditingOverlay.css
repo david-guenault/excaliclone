@@ -25,7 +25,8 @@
   color: #374151;
   padding: 4px;
   min-height: 20px;
-  overflow: hidden;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .text-editing-overlay__input::placeholder {

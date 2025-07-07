@@ -126,7 +126,7 @@ export const TextEditingOverlay: React.FC<TextEditingOverlayProps> = ({
         onKeyDown={handleKeyDown}
         placeholder="Enter text..."
         aria-label="Edit text"
-        rows={1}
+        rows={3}
         autoFocus
       />
       <div className="text-editing-overlay__hint">

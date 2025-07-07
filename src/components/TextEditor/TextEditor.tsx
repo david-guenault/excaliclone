@@ -139,7 +139,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           minHeight: `${fontSize * 1.2}px`,
         }}
         placeholder="Tapez votre texte..."
-        rows={1}
+        rows={3}
       />
     </div>
   );
