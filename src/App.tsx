@@ -1875,6 +1875,39 @@ function App() {
         event.preventDefault();
         // Select all text
         updateTextSelection(currentText, currentText.length, 0, currentText.length);
+      } else if (event.key === 'c' && event.ctrlKey) {
+        event.preventDefault();
+        // Copy selected text to clipboard
+        if (hasSelection) {
+          const selectedText = currentText.slice(selStart, selEnd);
+          navigator.clipboard.writeText(selectedText).catch(console.error);
+        }
+      } else if (event.key === 'x' && event.ctrlKey) {
+        event.preventDefault();
+        // Cut selected text to clipboard
+        if (hasSelection) {
+          const selectedText = currentText.slice(selStart, selEnd);
+          navigator.clipboard.writeText(selectedText).catch(console.error);
+          // Remove the selected text
+          const newText = currentText.slice(0, selStart) + currentText.slice(selEnd);
+          updateTextContent(newText, selStart);
+        }
+      } else if (event.key === 'v' && event.ctrlKey) {
+        event.preventDefault();
+        // Paste text from clipboard
+        navigator.clipboard.readText().then(clipboardText => {
+          if (clipboardText) {
+            if (hasSelection) {
+              // Replace selected text with clipboard content
+              const newText = currentText.slice(0, selStart) + clipboardText + currentText.slice(selEnd);
+              updateTextContent(newText, selStart + clipboardText.length);
+            } else {
+              // Insert clipboard content at cursor position
+              const newText = currentText.slice(0, cursorPos) + clipboardText + currentText.slice(cursorPos);
+              updateTextContent(newText, cursorPos + clipboardText.length);
+            }
+          }
+        }).catch(console.error);
       } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
         // Regular character input
         event.preventDefault();
