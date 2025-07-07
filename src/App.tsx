@@ -1985,7 +1985,21 @@ function App() {
       if (!textEditing.isEditing) return;
       
       const canvas = canvasRef.current;
-      if (canvas && !canvas.contains(event.target as Node)) {
+      const target = event.target as Element;
+      
+      // Don't finish editing if clicking on UI elements (buttons, panels, toolbars)
+      if (target.closest('.top-toolbar') || 
+          target.closest('.properties-panel') || 
+          target.closest('.zoom-control') ||
+          target.closest('button') ||
+          target.closest('[role="button"]') ||
+          target.closest('.modal') ||
+          target.closest('.dialog')) {
+        return;
+      }
+      
+      // Only finish editing if clicking outside the canvas or on canvas but not on UI
+      if (canvas && !canvas.contains(target)) {
         finishTextEditingAndActivateSelect();
       }
     };

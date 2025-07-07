@@ -22,7 +22,7 @@ import {
   DEFAULT_ARROWHEADS,
   ARROWHEAD_TYPES
 } from '../../constants';
-import type { StrokeStyle, FillStyle, CornerStyle, TextAlign, FontWeight, FontStyle, TextDecoration, ArrowheadType } from '../../types';
+import type { StrokeStyle, FillStyle, CornerStyle, TextAlign, TextVerticalAlign, FontWeight, FontStyle, TextDecoration, ArrowheadType } from '../../types';
 import { SimpleColorPalette } from './SimpleColorPalette';
 import { fontManager } from '../../utils/fontManager';
 import './PropertiesPanel.css';
@@ -519,6 +519,30 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </div>
           </>
+        )}
+
+        {/* Text elements and shapes with text support vertical alignment */}
+        {(singleElement && (singleElement.type === 'text' || singleElement.text) || 
+          (isMultipleSelection && selectedElements.some(el => el.type === 'text' || el.text))) && (
+          <div className="properties-panel__section">
+            <h4 className="properties-panel__section-title">Alignement vertical du texte</h4>
+            <div className="properties-panel__preset-row">
+              {(['top', 'middle', 'bottom'] as TextVerticalAlign[]).map((align) => (
+                <button
+                  key={align}
+                  className={`properties-panel__preset-button ${
+                    getCurrentValue('textVerticalAlign') === align ? 'active' : ''
+                  }`}
+                  onClick={() => updateElementProperty('textVerticalAlign', align)}
+                  title={`Aligner ${align === 'top' ? 'en haut' : align === 'middle' ? 'au centre' : 'en bas'}`}
+                >
+                  {align === 'top' && '⤴'}
+                  {align === 'middle' && '↕'}
+                  {align === 'bottom' && '⤵'}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* 11. Transparence (Opacity) */}

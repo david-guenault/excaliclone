@@ -23,6 +23,7 @@ export const DEFAULT_TOOL_OPTIONS = {
   fontWeight: 'normal' as const,
   fontStyle: 'normal' as const,
   textAlign: 'left' as const,
+  textVerticalAlign: 'top' as const,
   textDecoration: 'none' as const,
   startArrowhead: 'none' as const,
   endArrowhead: 'none' as const,

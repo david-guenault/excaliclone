@@ -40,3 +40,4 @@
 ✅ FEATURE: CTRL+SHIFT+fléche gauche ou droite doit permettre de selectionner par mot dans l'édition de texte 
 - BUG: un click en dehors de la forme, stoppe l'édition de texte. 
 - REGRESSION: quand je fais une suppression dans un long texte sur une selection, le texte qui devait être supprimé apparait deux fois
+- REGRESSION: quand je fais une navigation par mot. le curseur doit se positionner au début des mots. 

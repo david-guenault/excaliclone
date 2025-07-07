@@ -37,6 +37,7 @@ export type LineJoin = 'miter' | 'round' | 'bevel';
 export type FillStyle = 'solid' | 'hachure' | 'cross-hatch';
 export type CornerStyle = 'sharp' | 'rounded';
 export type TextAlign = 'left' | 'center' | 'right';
+export type TextVerticalAlign = 'top' | 'middle' | 'bottom';
 export type FontWeight = 'normal' | 'bold';
 export type FontStyle = 'normal' | 'italic';
 export type TextDecoration = 'none' | 'underline';
@@ -75,6 +76,7 @@ export interface StyleClipboard {
   fontWeight?: FontWeight;
   fontStyle?: FontStyle;
   textAlign?: TextAlign;
+  textVerticalAlign?: TextVerticalAlign;
   textDecoration?: TextDecoration;
   startArrowhead?: ArrowheadType;
   endArrowhead?: ArrowheadType;
@@ -106,6 +108,7 @@ export interface Element {
   fontWeight?: FontWeight; // For text elements
   fontStyle?: FontStyle; // For text elements
   textAlign?: TextAlign; // For text elements
+  textVerticalAlign?: TextVerticalAlign; // For vertical text alignment
   textDecoration?: TextDecoration; // For text elements
   imageUrl?: string; // For image elements
   locked?: boolean; // For element locking
@@ -131,6 +134,7 @@ export interface ToolOptions {
   fontWeight: FontWeight;
   fontStyle: FontStyle;
   textAlign: TextAlign;
+  textVerticalAlign: TextVerticalAlign;
   textDecoration: TextDecoration;
   startArrowhead: ArrowheadType;
   endArrowhead: ArrowheadType;

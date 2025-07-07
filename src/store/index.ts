@@ -142,6 +142,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       fontWeight: elementData.fontWeight || 'normal',
       fontStyle: elementData.fontStyle || 'normal',
       textAlign: elementData.textAlign || 'center',
+      textVerticalAlign: elementData.textVerticalAlign || 'middle',
       locked: elementData.locked || false,
       zIndex: elementData.zIndex || 0,
       id: generateId(),
@@ -184,6 +185,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       fontWeight: elementData.fontWeight || 'normal',
       fontStyle: elementData.fontStyle || 'normal',
       textAlign: elementData.textAlign || 'center',
+      textVerticalAlign: elementData.textVerticalAlign || 'middle',
       locked: elementData.locked || false,
       zIndex: elementData.zIndex || 0,
       id: generateId(),
@@ -612,6 +614,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         fontWeight: sourceElement.fontWeight,
         fontStyle: sourceElement.fontStyle,
         textAlign: sourceElement.textAlign,
+        textVerticalAlign: sourceElement.textVerticalAlign,
         textDecoration: sourceElement.textDecoration,
         startArrowhead: sourceElement.startArrowhead,
         endArrowhead: sourceElement.endArrowhead,
@@ -656,6 +659,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }
           if (state.styleClipboard!.textAlign !== undefined) {
             updatedElement.textAlign = state.styleClipboard!.textAlign;
+          }
+          if (state.styleClipboard!.textVerticalAlign !== undefined) {
+            updatedElement.textVerticalAlign = state.styleClipboard!.textVerticalAlign;
           }
           if (state.styleClipboard!.textDecoration !== undefined) {
             updatedElement.textDecoration = state.styleClipboard!.textDecoration;

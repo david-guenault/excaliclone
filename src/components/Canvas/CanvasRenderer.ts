@@ -1327,12 +1327,25 @@ export class CanvasRenderer {
     const lineHeight = fontSize * 1.2;
     const totalTextHeight = lines.length * lineHeight;
     
-    // Calculate starting Y position to center text vertically
-    const startY = centerY - (totalTextHeight / 2) + (lineHeight / 2);
-    
     // Set text alignment based on element property
     const textAlign = element.textAlign || 'center';
+    const textVerticalAlign = element.textVerticalAlign || 'middle';
     this.ctx.textAlign = textAlign;
+    
+    // Calculate starting Y position based on vertical alignment
+    let startY: number;
+    switch (textVerticalAlign) {
+      case 'top':
+        startY = (lineHeight / 2); // Start from top with half line height padding
+        break;
+      case 'bottom':
+        startY = element.height - totalTextHeight + (lineHeight / 2); // Start from bottom minus text height
+        break;
+      case 'middle':
+      default:
+        startY = centerY - (totalTextHeight / 2) + (lineHeight / 2); // Center vertically (existing behavior)
+        break;
+    }
     
     // Draw selection background first if there's a selection
     if (textEditing && textEditing.selectionStart !== textEditing.selectionEnd) {
