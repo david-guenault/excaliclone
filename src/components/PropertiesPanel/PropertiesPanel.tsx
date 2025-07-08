@@ -498,12 +498,13 @@ export const PropertiesPanel: React.FC = () => {
               </div>
             </div>
 
-            {/* 10. Alignement du texte (Text Alignment) - Regroupé horizontal et vertical */}
+            {/* 10. Alignement du texte (Text Alignment) - 6 boutons sur une ligne */}
             <div className="properties-panel__section">
               <h4 className="properties-panel__section-title">Alignement du texte</h4>
               
-              {/* Alignement horizontal */}
+              {/* Tous les alignements sur une seule ligne */}
               <div className="properties-panel__preset-row">
+                {/* Alignement horizontal */}
                 {(['left', 'center', 'right'] as TextAlign[]).map((align) => (
                   <button
                     key={align}
@@ -518,13 +519,11 @@ export const PropertiesPanel: React.FC = () => {
                     {align === 'right' && '⟶'}
                   </button>
                 ))}
-              </div>
-              
-              {/* Alignement vertical */}
-              <div className="properties-panel__preset-row">
+                
+                {/* Alignement vertical */}
                 {(['top', 'middle', 'bottom'] as TextVerticalAlign[]).map((align) => (
                   <button
-                    key={align}
+                    key={`vertical-${align}`}
                     className={`properties-panel__preset-button ${
                       getCurrentValue('textVerticalAlign') === align ? 'active' : ''
                     }`}
