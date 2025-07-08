@@ -89,6 +89,13 @@ export class KeyboardManager {
       preventDefault: true,
     });
 
+    this.addShortcut({
+      key: 'x',
+      ctrlKey: true,
+      action: 'cut',
+      preventDefault: true,
+    });
+
     // NOTE: Paste is handled by clipboard event listener, not keyboard shortcut
     // this.addShortcut({
     //   key: 'v',
@@ -96,6 +103,41 @@ export class KeyboardManager {
     //   action: 'paste',
     //   preventDefault: true,
     // });
+
+    // Linux-style clipboard shortcuts (CTRL+INS / SHIFT+INS format)
+    // Support multiple key name variations for better compatibility
+    const insertKeyVariations = ['Insert', 'insert', 'Ins', 'ins'];
+    const deleteKeyVariations = ['Delete', 'delete', 'Del', 'del'];
+    
+    // CTRL+Insert for copy
+    insertKeyVariations.forEach(keyName => {
+      this.addShortcut({
+        key: keyName,
+        ctrlKey: true,
+        action: 'copy',
+        preventDefault: true,
+      });
+    });
+
+    // SHIFT+Insert for paste
+    insertKeyVariations.forEach(keyName => {
+      this.addShortcut({
+        key: keyName,
+        shiftKey: true,
+        action: 'paste',
+        preventDefault: true,
+      });
+    });
+
+    // SHIFT+Delete for cut
+    deleteKeyVariations.forEach(keyName => {
+      this.addShortcut({
+        key: keyName,
+        shiftKey: true,
+        action: 'cut',
+        preventDefault: true,
+      });
+    });
 
     // Style copy/paste shortcuts
     this.addShortcut({
@@ -231,6 +273,7 @@ export class KeyboardManager {
       altKey: event.altKey,
       metaKey: event.metaKey,
     });
+
 
     const shortcut = this.shortcuts.get(shortcutKey);
     if (shortcut) {
