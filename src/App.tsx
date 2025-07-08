@@ -18,7 +18,8 @@ import {
   findMultiSelectionHandle, 
   applyMultiSelectionResize,
   applyGroupResize,
-  applyGroupRotation
+  applyGroupRotation,
+  isPointInRotatedElement
 } from './utils/multiSelection';
 import type { Point, ResizeHandleType, Element } from './types';
 import './App.css';
@@ -747,11 +748,9 @@ function App() {
           return distance <= tolerance;
         }
         
-        // Standard bounding box hit testing for other elements
-        return worldPoint.x >= element.x && 
-               worldPoint.x <= element.x + element.width &&
-               worldPoint.y >= element.y && 
-               worldPoint.y <= element.y + element.height;
+        // Hit testing for rectangles, circles, text, and images
+        // Use rotated hit testing that accounts for element angle
+        return isPointInRotatedElement(worldPoint, element);
       });
       
       if (clickedElement) {
@@ -1060,28 +1059,41 @@ function App() {
           return distance <= tolerance;
         }
         
-        // Standard bounding box hit testing for other shapes
-        const isInsideBounds = (
-          worldPoint.x >= element.x &&
-          worldPoint.x <= element.x + element.width &&
-          worldPoint.y >= element.y &&
-          worldPoint.y <= element.y + element.height
-        );
+        // Hit testing for rectangles, circles, text, and images
+        // Use rotated hit testing that accounts for element angle
+        if (!isPointInRotatedElement(worldPoint, element)) return false;
         
-        if (!isInsideBounds) return false;
-        
-        // Special hit testing for circles
+        // Special hit testing for circles - check if really inside the ellipse
         if (element.type === 'circle') {
+          // For circles, we need additional check to ensure we're inside the ellipse
+          // First check if we're in the bounding box (already done above)
+          // Then check if we're actually inside the ellipse
           const centerX = element.x + element.width / 2;
           const centerY = element.y + element.height / 2;
           const radiusX = element.width / 2;
           const radiusY = element.height / 2;
-          const dx = (worldPoint.x - centerX) / radiusX;
-          const dy = (worldPoint.y - centerY) / radiusY;
-          return dx * dx + dy * dy <= 1;
+          
+          // If the element is rotated, we need to transform the point
+          if (element.angle && element.angle !== 0) {
+            // Transform click point to element's local coordinate system
+            const cos = Math.cos(-element.angle);
+            const sin = Math.sin(-element.angle);
+            const dx = worldPoint.x - centerX;
+            const dy = worldPoint.y - centerY;
+            const localX = dx * cos - dy * sin;
+            const localY = dx * sin + dy * cos;
+            
+            // Check if the local point is inside the ellipse
+            return (localX / radiusX) * (localX / radiusX) + (localY / radiusY) * (localY / radiusY) <= 1;
+          } else {
+            // Non-rotated case
+            const dx = (worldPoint.x - centerX) / radiusX;
+            const dy = (worldPoint.y - centerY) / radiusY;
+            return dx * dx + dy * dy <= 1;
+          }
         }
         
-        // For rectangles, text, and images, bounding box test is sufficient
+        // For rectangles, text, and images, polygon test is sufficient
         return true;
       });
     
@@ -1553,25 +1565,40 @@ function App() {
       .slice() // Prevent array mutation
       .reverse() // Search from front to back (newest to oldest)
       .find((element) => {
-        // Hit test for different element types
+        // Hit test for different element types using rotation-aware testing
         switch (element.type) {
           case 'rectangle':
           case 'text':
           case 'image':
-            return (
-              worldPoint.x >= element.x &&
-              worldPoint.x <= element.x + element.width &&
-              worldPoint.y >= element.y &&
-              worldPoint.y <= element.y + element.height
-            );
+            return isPointInRotatedElement(worldPoint, element);
           case 'circle': {
+            // First check if we're in the rotated bounding box
+            if (!isPointInRotatedElement(worldPoint, element)) return false;
+            
+            // Then check if we're actually inside the ellipse
             const centerX = element.x + element.width / 2;
             const centerY = element.y + element.height / 2;
             const radiusX = element.width / 2;
             const radiusY = element.height / 2;
-            const dx = (worldPoint.x - centerX) / radiusX;
-            const dy = (worldPoint.y - centerY) / radiusY;
-            return dx * dx + dy * dy <= 1;
+            
+            // Handle rotation for circles
+            if (element.angle && element.angle !== 0) {
+              // Transform click point to element's local coordinate system
+              const cos = Math.cos(-element.angle);
+              const sin = Math.sin(-element.angle);
+              const dx = worldPoint.x - centerX;
+              const dy = worldPoint.y - centerY;
+              const localX = dx * cos - dy * sin;
+              const localY = dx * sin + dy * cos;
+              
+              // Check if the local point is inside the ellipse
+              return (localX / radiusX) * (localX / radiusX) + (localY / radiusY) * (localY / radiusY) <= 1;
+            } else {
+              // Non-rotated case
+              const dx = (worldPoint.x - centerX) / radiusX;
+              const dy = (worldPoint.y - centerY) / radiusY;
+              return dx * dx + dy * dy <= 1;
+            }
           }
           case 'line':
           case 'arrow': {
@@ -1579,8 +1606,7 @@ function App() {
             const tolerance = Math.max(element.strokeWidth * 2, 10);
             const lineStart = { x: element.x, y: element.y };
             const lineEnd = { x: element.x + element.width, y: element.y + element.height };
-            const distance = pointToLineDistance(worldPoint, lineStart, lineEnd);
-            return distance <= tolerance;
+            return pointToLineDistance(worldPoint, lineStart, lineEnd) <= tolerance;
           }
           case 'pen': {
             // Check if click is near any segment of the pen stroke
@@ -1713,38 +1739,49 @@ function App() {
   const findWordStart = (text: string, position: number): number => {
     if (position <= 0) return 0;
     
-    // Move backward to find word boundary
-    let pos = position - 1;
+    let pos = position;
     
-    // Skip whitespace backwards
-    while (pos >= 0 && /\s/.test(text[pos])) {
+    // Check if we're already at the beginning of a word
+    const isAtWordStart = (pos === 0 || /\s/.test(text[pos - 1])) && pos < text.length && !/\s/.test(text[pos]);
+    
+    if (isAtWordStart) {
+      // We're at word start, go to previous word start
       pos--;
+      // Skip whitespace backwards
+      while (pos >= 0 && /\s/.test(text[pos])) {
+        pos--;
+      }
+      // Skip the word backwards
+      while (pos >= 0 && !/\s/.test(text[pos])) {
+        pos--;
+      }
+      return Math.max(0, pos + 1);
+    } else {
+      // We're not at word start, go to start of current word
+      // If we're in a word, go to its beginning
+      while (pos > 0 && !/\s/.test(text[pos - 1])) {
+        pos--;
+      }
+      return pos;
     }
-    
-    // Find start of word (stop at whitespace or beginning)
-    while (pos >= 0 && !/\s/.test(text[pos])) {
-      pos--;
-    }
-    
-    return pos + 1;
   };
 
   const findWordEnd = (text: string, position: number): number => {
     if (position >= text.length) return text.length;
     
-    // Move forward to find word boundary
     let pos = position;
     
-    // Skip whitespace forwards
-    while (pos < text.length && /\s/.test(text[pos])) {
-      pos++;
-    }
-    
-    // Find end of word (stop at whitespace or end)
+    // Skip current word if we're in it
     while (pos < text.length && !/\s/.test(text[pos])) {
       pos++;
     }
     
+    // Skip whitespace to find next word
+    while (pos < text.length && /\s/.test(text[pos])) {
+      pos++;
+    }
+    
+    // Return the start of the next word
     return pos;
   };
 
@@ -1984,8 +2021,7 @@ function App() {
     const handleClickOutside = (event: MouseEvent) => {
       if (!textEditing.isEditing) return;
       
-      const canvas = canvasRef.current;
-      const target = event.target as Element;
+      const target = event.target as HTMLElement;
       
       // Don't finish editing if clicking on UI elements (buttons, panels, toolbars)
       if (target.closest('.top-toolbar') || 

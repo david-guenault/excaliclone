@@ -59,7 +59,7 @@ export function getMultiSelectionBounds(elements: Element[]): BoundingBox | null
 /**
  * Get the four corners of an element, accounting for rotation
  */
-function getElementCorners(element: Element): Point[] {
+export function getElementCorners(element: Element): Point[] {
   const { x, y, width, height, angle } = element;
   const centerX = x + width / 2;
   const centerY = y + height / 2;
@@ -309,4 +309,38 @@ export function applyMultiSelectionResize(
   };
 
   return newBounds;
+}
+
+/**
+ * Test if a point is inside a rotated element using point-in-polygon algorithm
+ */
+export function isPointInRotatedElement(point: Point, element: Element): boolean {
+  // If element is not rotated, use simple bounding box test
+  if (!element.angle || element.angle === 0) {
+    return (
+      point.x >= element.x &&
+      point.x <= element.x + element.width &&
+      point.y >= element.y &&
+      point.y <= element.y + element.height
+    );
+  }
+
+  // For rotated elements, get the corners and use point-in-polygon test
+  const corners = getElementCorners(element);
+  
+  // Ray casting algorithm for point-in-polygon test
+  let inside = false;
+  for (let i = 0, j = corners.length - 1; i < corners.length; j = i++) {
+    const xi = corners[i].x;
+    const yi = corners[i].y;
+    const xj = corners[j].x;
+    const yj = corners[j].y;
+    
+    if (((yi > point.y) !== (yj > point.y)) &&
+        (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  
+  return inside;
 }
