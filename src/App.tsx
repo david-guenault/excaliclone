@@ -2058,14 +2058,15 @@ function App() {
   // Handle clipboard paste events like Excalidraw
   useEffect(() => {
     const handlePaste = async (event: ClipboardEvent) => {
+      // Always prevent default and stop propagation to avoid browser's native paste UI
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       
-      // Don't handle if text editing is active - return early without preventing default
+      // Don't handle if text editing is active - text editing uses its own paste handling
       if (textEditing.isEditing) {
         return;
       }
-      
-      // Always prevent default to stop browser paste UI
-      event.preventDefault();
       
       const clipboardData = event.clipboardData;
       if (!clipboardData) {

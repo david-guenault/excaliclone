@@ -44,5 +44,5 @@
 ✅ EVOLUTION: pour les alignements de texte tout regrouper sous un meme libelle. 
 ✅ BUG: une fois qu'un ensemble de forme a subi une rotation, il est impossible de supprimer les formes. Par contre si on remet l'ensemble comme au positionnement initial on peut a nouveau supprimer les formes. 
 - EVOLUTION: implémente aussi les racourci clavier couper/copier/coller mais au format linux (CTRL+INS / SHIFT+INS)
-- BUG: lorsque je colle un texte dans une forme, un bouton coller apparait. je ne veux pas de ce bouton mais juste que tu colle le texte. 
+✅ BUG: lorsque je colle un texte dans une forme, un bouton coller apparait. je ne veux pas de ce bouton mais juste que tu colle le texte. 
 - EVOLUTION: les 6 boutons d'alignement de texte doivent apparaitre sur une seule ligne dans la boite de propriété.
