@@ -231,6 +231,35 @@ export class KeyboardManager {
       action: 'selectPrevious',
       preventDefault: true,
     });
+
+    // Advanced selection shortcuts
+    this.addShortcut({
+      key: 'a',
+      ctrlKey: true,
+      shiftKey: true,
+      action: 'selectByType',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'l',
+      ctrlKey: true,
+      shiftKey: true,
+      action: 'selectSimilar',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'ArrowUp',
+      action: 'selectAbove',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'ArrowDown',
+      action: 'selectBelow',
+      preventDefault: true,
+    });
   }
 
   private addShortcut(shortcut: KeyboardShortcut) {

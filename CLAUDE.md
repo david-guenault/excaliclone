@@ -126,3 +126,8 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
     - EVOLUTION
     - FEATURE
 - pour chaque élément traité, ajoute une coche verte, demande moi de tester la résolution puis commit et push vers l'upstream
+
+## Development Environment
+
+- Pour démarrer le serveur de développement :
+    - Systématiquement faire un `stop.sh` puis un `start.sh`

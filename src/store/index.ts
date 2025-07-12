@@ -6,6 +6,7 @@ import type { AppState, Element, ToolType, Point, StyleClipboard } from '../type
 import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG, RECENT_COLORS_STORAGE_KEY, MAX_RECENT_COLORS, GRID_CONFIG, AUTO_SAVE_DEBOUNCE } from '../constants';
 import { generateId } from '../utils';
 import { saveStateToStorage, loadStateFromStorage, debouncedSave } from '../utils/autoSave';
+import { SpatialIndex, spatialHitTest } from '../utils/spatialIndex';
 
 interface AppStore extends AppState {
   // Actions
@@ -25,6 +26,11 @@ interface AppStore extends AppState {
   selectNext: () => void;
   selectPrevious: () => void;
   clearSelection: () => void;
+  // Advanced Selection Actions
+  selectByType: () => void;
+  selectSimilar: () => void;
+  selectAbove: () => void;
+  selectBelow: () => void;
   setActiveTool: (tool: ToolType) => void;
   setZoom: (zoom: number) => void;
   setPan: (pan: Point) => void;
@@ -90,6 +96,15 @@ interface AppStore extends AppState {
   toggleCursor: () => void;
   // Save State Actions
   setSaving: (isSaving: boolean) => void;
+  // Spatial Index Actions
+  getSpatialIndex: () => SpatialIndex;
+  rebuildSpatialIndex: () => void;
+  spatialHitTest: (point: Point) => Element | null;
+  // Bulk Operations with Progress
+  bulkDuplicate: (elementIds: string[], onProgress?: (current: number, total: number) => void) => Promise<Element[]>;
+  bulkDelete: (elementIds: string[], onProgress?: (current: number, total: number) => void) => Promise<void>;
+  bulkApplyStyle: (elementIds: string[], style: Partial<Element>, onProgress?: (current: number, total: number) => void) => Promise<void>;
+  bulkMove: (elementIds: string[], deltaX: number, deltaY: number, onProgress?: (current: number, total: number) => void) => Promise<void>;
 }
 
 // Initialize state with saved data if available
@@ -170,15 +185,34 @@ const initializeState = (): Partial<AppState> => {
 };
 
 export const useAppStore = create<AppStore>((set, get) => {
+  // Initialize spatial index for performance optimization
+  let spatialIndex = new SpatialIndex(
+    { x: -10000, y: -10000, width: 20000, height: 20000 },
+    10, // maxElements per node
+    8   // maxDepth
+  );
+
   // Helper function to trigger auto-save after state changes
   const triggerAutoSave = () => {
     const state = get();
     debouncedSave(state, AUTO_SAVE_DEBOUNCE);
   };
 
+  // Helper function to update spatial index when elements change
+  const updateSpatialIndex = (elements: Element[]) => {
+    spatialIndex.rebuild(elements);
+  };
+
+  const initialState = initializeState();
+  
+  // Initialize spatial index with existing elements
+  if (initialState.elements) {
+    updateSpatialIndex(initialState.elements);
+  }
+  
   return {
     // Initialize with saved state or defaults
-    ...initializeState(),
+    ...initialState,
 
     // Actions
   addElement: (elementData) => {
@@ -205,6 +239,9 @@ export const useAppStore = create<AppStore>((set, get) => {
       const newElements = [...state.elements, createdElement];
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
       
       return {
         elements: newElements,
@@ -248,6 +285,9 @@ export const useAppStore = create<AppStore>((set, get) => {
     set((state) => {
       const newElements = [...state.elements, createdElement];
       
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
       return {
         elements: newElements,
       };
@@ -281,6 +321,9 @@ export const useAppStore = create<AppStore>((set, get) => {
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
       
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
       return { 
         elements: newElements,
         history: newHistory,
@@ -296,6 +339,9 @@ export const useAppStore = create<AppStore>((set, get) => {
         el.id === id ? { ...el, ...updates } : el
       );
       
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
       return { 
         elements: newElements,
       };
@@ -307,6 +353,9 @@ export const useAppStore = create<AppStore>((set, get) => {
       const newElements = state.elements.filter((el) => el.id !== id);
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
       
       return {
         elements: newElements,
@@ -364,8 +413,13 @@ export const useAppStore = create<AppStore>((set, get) => {
     set((state) => {
       if (state.historyIndex > 0) {
         const newIndex = state.historyIndex - 1;
+        const newElements = state.history[newIndex];
+        
+        // Update spatial index
+        updateSpatialIndex(newElements);
+        
         return {
-          elements: state.history[newIndex],
+          elements: newElements,
           historyIndex: newIndex,
           selectedElementIds: [],
         };
@@ -379,8 +433,13 @@ export const useAppStore = create<AppStore>((set, get) => {
     set((state) => {
       if (state.historyIndex < state.history.length - 1) {
         const newIndex = state.historyIndex + 1;
+        const newElements = state.history[newIndex];
+        
+        // Update spatial index
+        updateSpatialIndex(newElements);
+        
         return {
-          elements: state.history[newIndex],
+          elements: newElements,
           historyIndex: newIndex,
           selectedElementIds: [],
         };
@@ -558,6 +617,143 @@ export const useAppStore = create<AppStore>((set, get) => {
           },
         },
       };
+    });
+  },
+
+  // Advanced Selection Actions
+  selectByType: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0 || state.elements.length === 0) return state;
+      
+      // Get the type of the first selected element
+      const firstSelectedElement = state.elements.find(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (!firstSelectedElement) return state;
+      
+      // Select all elements of the same type
+      const elementsOfSameType = state.elements
+        .filter(el => el.type === firstSelectedElement.type)
+        .map(el => el.id);
+      
+      return {
+        selectedElementIds: elementsOfSameType,
+        ui: {
+          ...state.ui,
+          propertiesPanel: {
+            ...state.ui.propertiesPanel,
+            visible: true,
+          },
+        },
+      };
+    });
+  },
+
+  selectSimilar: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0 || state.elements.length === 0) return state;
+      
+      // Get the first selected element as reference
+      const referenceElement = state.elements.find(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (!referenceElement) return state;
+      
+      // Select elements with similar properties (type, strokeColor, backgroundColor)
+      const similarElements = state.elements
+        .filter(el => 
+          el.type === referenceElement.type &&
+          el.strokeColor === referenceElement.strokeColor &&
+          el.backgroundColor === referenceElement.backgroundColor
+        )
+        .map(el => el.id);
+      
+      return {
+        selectedElementIds: similarElements,
+        ui: {
+          ...state.ui,
+          propertiesPanel: {
+            ...state.ui.propertiesPanel,
+            visible: true,
+          },
+        },
+      };
+    });
+  },
+
+  selectAbove: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0 || state.elements.length === 0) return state;
+      
+      // Get the topmost selected element
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (selectedElements.length === 0) return state;
+      
+      const topmostY = Math.min(...selectedElements.map(el => el.y));
+      
+      // Find elements above the topmost selected element
+      const elementsAbove = state.elements
+        .filter(el => el.y < topmostY - 10) // 10px threshold
+        .sort((a, b) => b.y - a.y) // Sort by Y descending (closest to selection first)
+        .slice(0, 10) // Limit to 10 elements for performance
+        .map(el => el.id);
+      
+      if (elementsAbove.length > 0) {
+        return {
+          selectedElementIds: elementsAbove,
+          ui: {
+            ...state.ui,
+            propertiesPanel: {
+              ...state.ui.propertiesPanel,
+              visible: true,
+            },
+          },
+        };
+      }
+      
+      return state;
+    });
+  },
+
+  selectBelow: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0 || state.elements.length === 0) return state;
+      
+      // Get the bottommost selected element
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (selectedElements.length === 0) return state;
+      
+      const bottommostY = Math.max(...selectedElements.map(el => el.y + el.height));
+      
+      // Find elements below the bottommost selected element
+      const elementsBelow = state.elements
+        .filter(el => el.y > bottommostY + 10) // 10px threshold
+        .sort((a, b) => a.y - b.y) // Sort by Y ascending (closest to selection first)
+        .slice(0, 10) // Limit to 10 elements for performance
+        .map(el => el.id);
+      
+      if (elementsBelow.length > 0) {
+        return {
+          selectedElementIds: elementsBelow,
+          ui: {
+            ...state.ui,
+            propertiesPanel: {
+              ...state.ui.propertiesPanel,
+              visible: true,
+            },
+          },
+        };
+      }
+      
+      return state;
     });
   },
 
@@ -1578,6 +1774,171 @@ export const useAppStore = create<AppStore>((set, get) => {
   // Save State Actions
   setSaving: (isSaving: boolean) => {
     set({ isSaving });
+  },
+
+  // Spatial Index Actions
+  getSpatialIndex: () => {
+    return spatialIndex;
+  },
+
+  rebuildSpatialIndex: () => {
+    const { elements } = get();
+    updateSpatialIndex(elements);
+  },
+
+  spatialHitTest: (point: Point) => {
+    const { elements } = get();
+    return spatialHitTest(spatialIndex, point, elements);
+  },
+
+  // Bulk Operations with Progress
+  bulkDuplicate: async (elementIds: string[], onProgress?: (current: number, total: number) => void): Promise<Element[]> => {
+    const { elements } = get();
+    const duplicatedElements: Element[] = [];
+    const total = elementIds.length;
+    
+    for (let i = 0; i < elementIds.length; i++) {
+      const element = elements.find(el => el.id === elementIds[i]);
+      if (element) {
+        // Create duplicate with offset
+        const duplicate: Element = {
+          ...element,
+          id: generateId(),
+          x: element.x + 20,
+          y: element.y + 20,
+          zIndex: element.zIndex + 1
+        };
+        
+        duplicatedElements.push(duplicate);
+        
+        // Update progress
+        if (onProgress) {
+          onProgress(i + 1, total);
+        }
+        
+        // Add small delay for progress visualization
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    }
+    
+    // Add all duplicated elements at once
+    set((state) => {
+      const newElements = [...state.elements, ...duplicatedElements];
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      updateSpatialIndex(newElements);
+      
+      return {
+        elements: newElements,
+        selectedElementIds: duplicatedElements.map(el => el.id),
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    
+    triggerAutoSave();
+    return duplicatedElements;
+  },
+
+  bulkDelete: async (elementIds: string[], onProgress?: (current: number, total: number) => void): Promise<void> => {
+    const total = elementIds.length;
+    
+    for (let i = 0; i < elementIds.length; i++) {
+      // Update progress
+      if (onProgress) {
+        onProgress(i + 1, total);
+      }
+      
+      // Add small delay for progress visualization
+      await new Promise(resolve => setTimeout(resolve, 30));
+    }
+    
+    // Delete all elements at once
+    set((state) => {
+      const newElements = state.elements.filter(el => !elementIds.includes(el.id));
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      updateSpatialIndex(newElements);
+      
+      return {
+        elements: newElements,
+        selectedElementIds: state.selectedElementIds.filter(id => !elementIds.includes(id)),
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    
+    triggerAutoSave();
+  },
+
+  bulkApplyStyle: async (elementIds: string[], style: Partial<Element>, onProgress?: (current: number, total: number) => void): Promise<void> => {
+    const total = elementIds.length;
+    
+    for (let i = 0; i < elementIds.length; i++) {
+      // Update progress
+      if (onProgress) {
+        onProgress(i + 1, total);
+      }
+      
+      // Add small delay for progress visualization
+      await new Promise(resolve => setTimeout(resolve, 40));
+    }
+    
+    // Apply style to all elements at once
+    set((state) => {
+      const newElements = state.elements.map(el => 
+        elementIds.includes(el.id) ? { ...el, ...style } : el
+      );
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      updateSpatialIndex(newElements);
+      
+      return {
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    
+    triggerAutoSave();
+  },
+
+  bulkMove: async (elementIds: string[], deltaX: number, deltaY: number, onProgress?: (current: number, total: number) => void): Promise<void> => {
+    const total = elementIds.length;
+    
+    for (let i = 0; i < elementIds.length; i++) {
+      // Update progress
+      if (onProgress) {
+        onProgress(i + 1, total);
+      }
+      
+      // Add small delay for progress visualization
+      await new Promise(resolve => setTimeout(resolve, 35));
+    }
+    
+    // Move all elements at once
+    set((state) => {
+      const newElements = state.elements.map(el => 
+        elementIds.includes(el.id) 
+          ? { ...el, x: el.x + deltaX, y: el.y + deltaY }
+          : el
+      );
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      updateSpatialIndex(newElements);
+      
+      return {
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    
+    triggerAutoSave();
   },
   };
 });

@@ -9,6 +9,7 @@ import { PropertiesPanel } from './components/PropertiesPanel';
 import { ZoomControl } from './components/ZoomControl';
 import { GridDialog } from './components/GridDialog';
 import { SaveIndicator } from './components/SaveIndicator';
+import { SnapGuides } from './components/SnapGuides';
 import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
@@ -23,7 +24,9 @@ import {
   isPointInRotatedElement
 } from './utils/multiSelection';
 import { setSavingCallback } from './utils/autoSave';
+import { snapElementPosition, generateDebugSnapGuides } from './utils/snapToObjects';
 import type { Point, ResizeHandleType, Element } from './types';
+import type { SnapGuide } from './utils/snapToObjects';
 import './App.css';
 
 function App() {
@@ -48,6 +51,10 @@ function App() {
     selectAll,
     selectNext,
     selectPrevious,
+    selectByType,
+    selectSimilar,
+    selectAbove,
+    selectBelow,
     copy,
     cut,
     paste,
@@ -103,6 +110,9 @@ function App() {
   const [isDraggingElements, setIsDraggingElements] = useState(false);
   const [dragStart, setDragStart] = useState<Point | null>(null);
   const [dragStartPositions, setDragStartPositions] = useState<Map<string, Point>>(new Map());
+  
+  // Snap guides state
+  const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   
   // Pen drawing state
   const [isDrawingPen, setIsDrawingPen] = useState(false);
@@ -671,92 +681,9 @@ function App() {
         }
       }
       
-      const clickedElement = elements
-        .filter(element => !element.locked) // Skip locked elements
-        .slice() // Create a copy before reversing to avoid mutating the original array
-        .reverse() // Search from front to back (newest to oldest)
-        .find(element => {
-        // Special hit testing for pen strokes
-        if (element.type === 'pen' && element.points && element.points.length > 1) {
-          // Check if click is near any segment of the pen stroke
-          const tolerance = Math.max(element.strokeWidth * 2, 8) / viewport.zoom; // Scale tolerance by zoom
-          
-          for (let i = 0; i < element.points.length - 1; i++) {
-            const p1 = element.points[i];
-            const p2 = element.points[i + 1];
-            
-            // Calculate distance from point to line segment
-            const A = worldPoint.x - p1.x;
-            const B = worldPoint.y - p1.y;
-            const C = p2.x - p1.x;
-            const D = p2.y - p1.y;
-            
-            const dot = A * C + B * D;
-            const lenSq = C * C + D * D;
-            
-            if (lenSq === 0) continue; // p1 and p2 are the same point
-            
-            let param = dot / lenSq;
-            param = Math.max(0, Math.min(1, param)); // Clamp to segment
-            
-            const closestX = p1.x + param * C;
-            const closestY = p1.y + param * D;
-            
-            const distance = Math.sqrt(
-              (worldPoint.x - closestX) * (worldPoint.x - closestX) + 
-              (worldPoint.y - closestY) * (worldPoint.y - closestY)
-            );
-            
-            if (distance <= tolerance) {
-              return true;
-            }
-          }
-          return false;
-        }
-        
-        // Special hit testing for lines and arrows (linear elements)
-        if (element.type === 'line' || element.type === 'arrow') {
-          const tolerance = Math.max(element.strokeWidth * 2, 12) / viewport.zoom; // Generous tolerance for lines/arrows
-          
-          // For lines and arrows, we need to check distance to the actual line, not the bounding box
-          const startX = element.x;
-          const startY = element.y;
-          const endX = element.x + element.width;
-          const endY = element.y + element.height;
-          
-          // Calculate distance from click point to line segment
-          const A = worldPoint.x - startX;
-          const B = worldPoint.y - startY;
-          const C = endX - startX;
-          const D = endY - startY;
-          
-          const dot = A * C + B * D;
-          const lenSq = C * C + D * D;
-          
-          if (lenSq === 0) {
-            // Start and end points are the same (degenerate line)
-            const distance = Math.sqrt(A * A + B * B);
-            return distance <= tolerance;
-          }
-          
-          let param = dot / lenSq;
-          param = Math.max(0, Math.min(1, param)); // Clamp to segment
-          
-          const closestX = startX + param * C;
-          const closestY = startY + param * D;
-          
-          const distance = Math.sqrt(
-            (worldPoint.x - closestX) * (worldPoint.x - closestX) + 
-            (worldPoint.y - closestY) * (worldPoint.y - closestY)
-          );
-          
-          return distance <= tolerance;
-        }
-        
-        // Hit testing for rectangles, circles, text, and images
-        // Use rotated hit testing that accounts for element angle
-        return isPointInRotatedElement(worldPoint, element);
-      });
+      // Use spatial index for optimized hit testing
+      const { spatialHitTest } = useAppStore.getState();
+      const clickedElement = spatialHitTest(worldPoint);
       
       if (clickedElement) {
         // Check for modifier keys
@@ -1285,6 +1212,20 @@ function App() {
       y: point.y / viewport.zoom + viewport.pan.y,
     };
     
+    // Check for debug mode (Ctrl pressed) even when not dragging
+    const modifiers = keyboardManager.getModifierState();
+    if (modifiers.ctrl && !isDraggingElements && activeTool === 'select' && selectedElementIds.length > 0) {
+      const selectedElement = elements.find(el => el.id === selectedElementIds[0]);
+      if (selectedElement) {
+        const otherElements = elements.filter(el => !selectedElementIds.includes(el.id));
+        const debugGuides = generateDebugSnapGuides(selectedElement, otherElements, [selectedElement]);
+        setSnapGuides(debugGuides);
+      }
+    } else if (!isDraggingElements) {
+      // Clear guides when Ctrl is released and not dragging
+      setSnapGuides([]);
+    }
+    
     // Update cursor based on hover state (only when not in a drag operation)
     if (!isPanning && !isResizing && !isRotating && !isDraggingElements && !isDragSelecting && activeTool === 'select') {
       let newCursor = 'default';
@@ -1439,24 +1380,79 @@ function App() {
     
     // Handle element dragging
     if (isDraggingElements && dragStart && dragStartPositions.size > 0) {
-      // Apply grid and magnetic snapping to drag movement
-      const snappedTargetPoint = applySnapping(worldPoint);
-      const finalDelta = {
-        x: snappedTargetPoint.x - dragStart.x,
-        y: snappedTargetPoint.y - dragStart.y
-      };
+      // Get the primary element being dragged (first selected element)
+      const primaryElementId = selectedElementIds[0];
+      const primaryElement = elements.find(el => el.id === primaryElementId);
       
-      // Update all selected elements based on their initial positions
-      const { updateElementSilent } = useAppStore.getState();
-      selectedElementIds.forEach(elementId => {
-        const initialPosition = dragStartPositions.get(elementId);
+      if (primaryElement) {
+        // Calculate where the primary element would be without snapping
+        const initialPosition = dragStartPositions.get(primaryElementId);
         if (initialPosition) {
-          updateElementSilent(elementId, { 
-            x: initialPosition.x + finalDelta.x,
-            y: initialPosition.y + finalDelta.y
+          const deltaX = worldPoint.x - dragStart.x;
+          const deltaY = worldPoint.y - dragStart.y;
+          
+          // Create a temporary element at the new position for snap calculation
+          const tempElement = {
+            ...primaryElement,
+            x: initialPosition.x + deltaX,
+            y: initialPosition.y + deltaY
+          };
+          
+          // Get all other elements (excluding selected ones)
+          const otherElements = elements.filter(el => !selectedElementIds.includes(el.id));
+          
+          // Check if Ctrl is pressed for debug mode
+          const modifiers = keyboardManager.getModifierState();
+          
+          let finalDelta;
+          let guidesToShow: SnapGuide[] = [];
+          
+          if (modifiers.ctrl) {
+            // Ctrl pressed: activate snap AND show debug guides
+            const snapResult = snapElementPosition(tempElement, otherElements);
+            
+            if (snapResult.snapped) {
+              // Use snap result
+              finalDelta = {
+                x: snapResult.element.x - initialPosition.x,
+                y: snapResult.element.y - initialPosition.y
+              };
+              guidesToShow = snapResult.guides;
+            } else {
+              // No snap found, use current position
+              finalDelta = {
+                x: deltaX,
+                y: deltaY
+              };
+            }
+            
+            // Add all debug guides to show snap possibilities
+            const debugGuides = generateDebugSnapGuides(tempElement, otherElements, [tempElement]);
+            guidesToShow = [...guidesToShow, ...debugGuides];
+          } else {
+            // Normal mode: no snap, free movement
+            finalDelta = {
+              x: deltaX,
+              y: deltaY
+            };
+            guidesToShow = [];
+          }
+          
+          setSnapGuides(guidesToShow);
+          
+          // Update all selected elements based on their initial positions
+          const { updateElementSilent } = useAppStore.getState();
+          selectedElementIds.forEach(elementId => {
+            const elementInitialPosition = dragStartPositions.get(elementId);
+            if (elementInitialPosition) {
+              updateElementSilent(elementId, { 
+                x: elementInitialPosition.x + finalDelta.x,
+                y: elementInitialPosition.y + finalDelta.y
+              });
+            }
           });
         }
-      });
+      }
     }
     
     // Handle drag selection
@@ -1576,6 +1572,9 @@ function App() {
       setIsDraggingElements(false);
       setDragStart(null);
       setDragStartPositions(new Map());
+      
+      // Clear snap guides when dragging ends
+      setSnapGuides([]);
     }
     
     // Handle drag selection completion
@@ -2262,6 +2261,10 @@ function App() {
     keyboardManager.on('selectAll', selectAll);
     keyboardManager.on('selectNext', selectNext);
     keyboardManager.on('selectPrevious', selectPrevious);
+    keyboardManager.on('selectByType', selectByType);
+    keyboardManager.on('selectSimilar', selectSimilar);
+    keyboardManager.on('selectAbove', selectAbove);
+    keyboardManager.on('selectBelow', selectBelow);
     keyboardManager.on('copy', copy);
     keyboardManager.on('cut', cut);
     keyboardManager.on('paste', paste);
@@ -2281,6 +2284,10 @@ function App() {
       keyboardManager.off('selectAll');
       keyboardManager.off('selectNext');
       keyboardManager.off('selectPrevious');
+      keyboardManager.off('selectByType');
+      keyboardManager.off('selectSimilar');
+      keyboardManager.off('selectAbove');
+      keyboardManager.off('selectBelow');
       keyboardManager.off('copy');
       keyboardManager.off('cut');
       keyboardManager.off('paste');
@@ -2311,6 +2318,9 @@ function App() {
       
       {/* Save indicator */}
       <SaveIndicator isSaving={isSaving} />
+      
+      {/* Snap guides */}
+      <SnapGuides guides={snapGuides} viewport={viewport} />
       
       {/* Grid Configuration Dialog */}
       <GridDialog 

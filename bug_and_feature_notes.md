@@ -49,3 +49,10 @@
 ✅ BUG: lorsque je colle du texte dans une forme, j'ai un bouton coller qui apparait. lorsque je clique sur ce bouton, le texte n'est pas collé. Par contre lorsque je clique en dehors de la forme, le texte apparait. je ne veux pas du bouton coller, et je veux que le texte collé apparaisse immédiatement. [RÉSOLU: navigator.clipboard API remplacé par paste event] 
 ✅ EVOLUTION: preserve le dessin dans le stockage local du navigateur. de cette manière si je rafraichis la page le dessin est automatiquement rechargée. Fais une sauvegarde automatique en continue de manière a ne rien perdre. 
 ✅ BUG: après une sauvegarde rechargée, on pert le contenu de l'image que j'ai collé ainsi que le texte que j'ai collé dans une forme. Ainsi que la rotation des objets. [RÉSOLU: blob URLs remplacées par data URLs + amélioration auto-save] 
+BUG: NE PAS CORRIGER SANS MON AUTORISATION. La forme diamant n'est pas implémentée
+EVOLUTION: NE PAS CORRIGER SANS MON AUTORISATION. ajouter la posibilité d'un cadre sur les images (identique au trait des différentes formes)
+BUG: lorsque j'importe un diagramme draw io je n'ai que des formes noires. la disposition et la taille des formes est par contre respectée. 
+BUG: lorsque j'importe un diagramme excalidraw le fond des formes est systématiquement noir, les images ne sont pas importées. le fond de texte est systématiquement noir et je ne vois pas si le texte est importé. 
+BUG: les images importées ne collent pas a la grille
+REGRESSION: les icones pour aligner les formes dans la barre d'outils ne sont plus bonnes.
+EVOLUTION: ajouter un redimensionnement proportionnel déclenché par l'appui et le maintient de la touche CTRL plus redimensionnement. 
