@@ -23,6 +23,7 @@ import {
   ChevronDownIcon,
 } from '../UI/Icons';
 import { ToolbarMenu } from './ToolbarMenu';
+import { DrawingWeightIndicator } from '../DrawingWeightIndicator';
 import './TopToolbar.css';
 
 interface ToolDefinition {
@@ -169,6 +170,7 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({ onImportDiagram }) => {
       </div>
 
       <div className="top-toolbar__actions">
+        <DrawingWeightIndicator />
         <ToolbarMenu onImportDiagram={onImportDiagram} />
       </div>
     </div>

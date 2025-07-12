@@ -1,0 +1,96 @@
+/* Save indicator floating in top-right corner */
+.save-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.3s ease;
+}
+
+.save-indicator.saving {
+  border-color: #f59e0b;
+}
+
+.save-indicator.saved {
+  border-color: #10b981;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+/* Animated floppy disk icon */
+.save-icon {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+/* Blinking animation for saving state */
+.save-indicator.saving .save-icon {
+  animation: saveBlinking 0.8s ease-in-out infinite alternate;
+}
+
+.save-indicator.saved .save-icon {
+  animation: none;
+  filter: hue-rotate(100deg); /* Make it more green when saved */
+}
+
+@keyframes saveBlinking {
+  0% {
+    filter: hue-rotate(0deg) brightness(1); /* Orange */
+    transform: scale(1);
+  }
+  50% {
+    filter: hue-rotate(-20deg) brightness(1.2); /* Red */
+    transform: scale(1.1);
+  }
+  100% {
+    filter: hue-rotate(0deg) brightness(1); /* Orange */
+    transform: scale(1);
+  }
+}
+
+/* Smooth entrance animation */
+.save-indicator {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Text styling */
+.save-text {
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .save-indicator {
+    top: 10px;
+    right: 10px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .save-icon {
+    font-size: 14px;
+  }
+}

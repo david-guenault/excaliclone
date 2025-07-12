@@ -88,6 +88,8 @@ interface AppStore extends AppState {
   updateTextSelection: (text: string, cursorPosition: number, selectionStart: number, selectionEnd: number) => void;
   finishTextEditing: () => void;
   toggleCursor: () => void;
+  // Save State Actions
+  setSaving: (isSaving: boolean) => void;
 }
 
 // Initialize state with saved data if available
@@ -139,6 +141,7 @@ const initializeState = (): Partial<AppState> => {
       selectionEnd: 0,
       cursorVisible: true,
     },
+    isSaving: false,
   };
 
   // Try to load saved state
@@ -1570,6 +1573,11 @@ export const useAppStore = create<AppStore>((set, get) => {
         },
       },
     }));
+  },
+
+  // Save State Actions
+  setSaving: (isSaving: boolean) => {
+    set({ isSaving });
   },
   };
 });

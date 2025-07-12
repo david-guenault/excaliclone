@@ -185,4 +185,5 @@ export interface AppState {
   styleClipboard: StyleClipboard | null;
   recentColors: string[];
   textEditing: DirectTextEditingState;
+  isSaving: boolean;
 }

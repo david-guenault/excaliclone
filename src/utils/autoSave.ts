@@ -4,6 +4,14 @@
 import type { AppState, Element } from '../types';
 import { AUTO_SAVE_STORAGE_KEY } from '../constants';
 
+// Store setter for saving indicator
+let setSavingState: ((isSaving: boolean) => void) | null = null;
+
+// Export function to set the saving state callback
+export function setSavingCallback(callback: (isSaving: boolean) => void) {
+  setSavingState = callback;
+}
+
 // Expose diagnostic function globally for debugging
 declare global {
   interface Window {
@@ -29,6 +37,11 @@ const SAVE_FORMAT_VERSION = '1.0.0';
  * Save the current state to localStorage
  */
 export function saveStateToStorage(state: Partial<AppState>): void {
+  // Indicate saving started
+  if (setSavingState) {
+    setSavingState(true);
+  }
+  
   try {
     const savedState: SavedState = {
       elements: state.elements || [],
@@ -84,12 +97,22 @@ export function saveStateToStorage(state: Partial<AppState>): void {
     console.log(`   🖼️ Image elements: ${elementsWithImages.length}`);
     console.log(`   🔄 Rotated elements: ${elementsWithRotation.length}`);
     
+    // Indicate saving completed successfully
+    if (setSavingState) {
+      setTimeout(() => setSavingState!(false), 200);
+    }
+    
   } catch (error) {
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
       console.error('localStorage quota exceeded. Drawing too large to save automatically.');
       // Optionally show a user notification here
     } else {
       console.error('Failed to save state to localStorage:', error);
+    }
+    
+    // Indicate saving failed
+    if (setSavingState) {
+      setSavingState(false);
     }
   }
 }

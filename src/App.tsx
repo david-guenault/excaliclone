@@ -8,6 +8,7 @@ import { TopToolbar } from './components/TopToolbar';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { ZoomControl } from './components/ZoomControl';
 import { GridDialog } from './components/GridDialog';
+import { SaveIndicator } from './components/SaveIndicator';
 import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
@@ -21,6 +22,7 @@ import {
   applyGroupRotation,
   isPointInRotatedElement
 } from './utils/multiSelection';
+import { setSavingCallback } from './utils/autoSave';
 import type { Point, ResizeHandleType, Element } from './types';
 import './App.css';
 
@@ -62,7 +64,9 @@ function App() {
     updateTextSelection,
     finishTextEditing,
     toggleGrid,
-    closeGridDialog
+    closeGridDialog,
+    isSaving,
+    setSaving
   } = useAppStore();
   
   const [isPanning, setIsPanning] = useState(false);
@@ -2167,62 +2171,73 @@ function App() {
         const file = imageItem.getAsFile();
         if (!file) return;
         
-        const imageUrl = URL.createObjectURL(file);
-        
-        const img = new Image();
-        img.onload = () => {
+        // Use FileReader to create persistent data URL instead of temporary blob URL
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const imageUrl = e.target?.result as string;
+          if (!imageUrl) return;
           
-          const centerX = viewport.pan.x + (windowSize.width / viewport.zoom) / 2;
-          const centerY = viewport.pan.y + (windowSize.height / viewport.zoom) / 2;
-          
-          const MAX_SIZE = 400;
-          let width = img.width;
-          let height = img.height;
-          
-          if (width > MAX_SIZE || height > MAX_SIZE) {
-            const aspectRatio = width / height;
-            if (width > height) {
-              width = MAX_SIZE;
-              height = MAX_SIZE / aspectRatio;
-            } else {
-              height = MAX_SIZE;
-              width = MAX_SIZE * aspectRatio;
+          const img = new Image();
+          img.onload = () => {
+            
+            const centerX = viewport.pan.x + (windowSize.width / viewport.zoom) / 2;
+            const centerY = viewport.pan.y + (windowSize.height / viewport.zoom) / 2;
+            
+            const MAX_SIZE = 400;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > MAX_SIZE || height > MAX_SIZE) {
+              const aspectRatio = width / height;
+              if (width > height) {
+                width = MAX_SIZE;
+                height = MAX_SIZE / aspectRatio;
+              } else {
+                height = MAX_SIZE;
+                width = MAX_SIZE * aspectRatio;
+              }
             }
-          }
+            
+            const imageElement = addElementSilent({
+              type: 'image',
+              x: centerX - width / 2,
+              y: centerY - height / 2,
+              width: width,
+              height: height,
+              angle: 0,
+              strokeColor: toolOptions.strokeColor,
+              backgroundColor: 'transparent',
+              strokeWidth: toolOptions.strokeWidth,
+              strokeStyle: toolOptions.strokeStyle,
+              fillStyle: toolOptions.fillStyle,
+              roughness: toolOptions.roughness,
+              opacity: toolOptions.opacity,
+              imageUrl: imageUrl,
+            });
+            
+            selectElements([imageElement.id]);
+            setActiveTool('select');
+            saveToHistory();
+            
+            // Clear clipboard items to prevent sticking
+            try {
+              navigator.clipboard.writeText('');
+            } catch (e) {
+            }
+          };
           
-          const imageElement = addElementSilent({
-            type: 'image',
-            x: centerX - width / 2,
-            y: centerY - height / 2,
-            width: width,
-            height: height,
-            angle: 0,
-            strokeColor: toolOptions.strokeColor,
-            backgroundColor: 'transparent',
-            strokeWidth: toolOptions.strokeWidth,
-            strokeStyle: toolOptions.strokeStyle,
-            fillStyle: toolOptions.fillStyle,
-            roughness: toolOptions.roughness,
-            opacity: toolOptions.opacity,
-            imageUrl: imageUrl,
-          });
+          img.onerror = () => {
+            console.error('Failed to load pasted image');
+          };
           
-          selectElements([imageElement.id]);
-          setActiveTool('select');
-          saveToHistory();
-          
-          // Clear clipboard items to prevent sticking
-          try {
-            navigator.clipboard.writeText('');
-          } catch (e) {
-          }
+          img.src = imageUrl;
         };
         
-        img.onerror = () => {
-          URL.revokeObjectURL(imageUrl);
+        reader.onerror = () => {
+          console.error('Failed to read pasted image file');
         };
         
-        img.src = imageUrl;
+        reader.readAsDataURL(file);
       } else {
         // No image found, trigger regular paste
         paste();
@@ -2278,11 +2293,24 @@ function App() {
     };
   }, [setActiveTool, undo, redo, deleteSelectedElements, duplicateSelectedElements, selectAll, selectNext, selectPrevious, copy, copyStyle, pasteStyle, resetZoom, zoomToFit, toggleGrid]);
 
+  // Connect auto-save with saving indicator
+  useEffect(() => {
+    setSavingCallback(setSaving);
+    
+    // Cleanup on unmount
+    return () => {
+      setSavingCallback(() => {});
+    };
+  }, [setSaving]);
+
   return (
     <div className="excalibox-app">
       <TopToolbar onImportDiagram={handleDiagramImport} />
       <PropertiesPanel />
       <ZoomControl />
+      
+      {/* Save indicator */}
+      <SaveIndicator isSaving={isSaving} />
       
       {/* Grid Configuration Dialog */}
       <GridDialog 

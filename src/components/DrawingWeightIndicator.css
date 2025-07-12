@@ -1,0 +1,108 @@
+/* Separator before weight indicator */
+.toolbar-separator {
+  width: 1px;
+  height: 32px;
+  background: #e1e5e9;
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+
+/* Drawing weight indicator in toolbar */
+.drawing-weight-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #6b7280;
+  min-width: 120px;
+  transition: all 0.2s ease;
+}
+
+.drawing-weight-indicator:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* Size-based color coding */
+.drawing-weight-indicator.small {
+  border-color: #10b981;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.drawing-weight-indicator.medium {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.drawing-weight-indicator.large {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* Weight icon */
+.weight-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Weight information */
+.weight-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0; /* Allow text to truncate */
+}
+
+.weight-size {
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.weight-details {
+  font-size: 10px;
+  opacity: 0.8;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .drawing-weight-indicator {
+    min-width: 100px;
+    padding: 4px 8px;
+    gap: 6px;
+  }
+  
+  .weight-size {
+    font-size: 11px;
+  }
+  
+  .weight-details {
+    font-size: 9px;
+  }
+  
+  .weight-icon {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .drawing-weight-indicator {
+    min-width: 80px;
+    padding: 4px 6px;
+  }
+  
+  .weight-details {
+    display: none; /* Hide details on very small screens */
+  }
+}
