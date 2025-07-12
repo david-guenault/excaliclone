@@ -245,6 +245,30 @@ export class KeyboardManager {
       preventDefault: true,
     });
 
+    // Element locking shortcuts
+    this.addShortcut({
+      key: 'l',
+      ctrlKey: true,
+      action: 'lockSelectedElements',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'l',
+      ctrlKey: true,
+      shiftKey: true,
+      action: 'unlockSelectedElements',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'l',
+      ctrlKey: true,
+      altKey: true,
+      action: 'unlockAllElements',
+      preventDefault: true,
+    });
+
     // Grid shortcuts  
     this.addShortcut({
       key: '`',

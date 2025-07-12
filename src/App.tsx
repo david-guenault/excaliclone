@@ -10,6 +10,7 @@ import { ZoomControl } from './components/ZoomControl';
 import { GridDialog } from './components/GridDialog';
 import { SaveIndicator } from './components/SaveIndicator';
 import { SnapGuides } from './components/SnapGuides';
+import { LockIndicators } from './components/LockIndicators';
 import { useAppStore } from './store';
 import { keyboardManager } from './utils/keyboard';
 import { LINE_CONFIG, ARROW_CONFIG, DEFAULT_ARROWHEADS } from './constants';
@@ -56,6 +57,9 @@ function App() {
     ungroupSelectedElements,
     getElementGroup,
     getGroupElements,
+    lockSelectedElements,
+    unlockSelectedElements,
+    unlockAllElements,
     selectAll,
     selectNext,
     selectPrevious,
@@ -2299,6 +2303,9 @@ function App() {
     keyboardManager.on('sendSelectedToBack', sendSelectedToBack);
     keyboardManager.on('groupSelectedElements', groupSelectedElements);
     keyboardManager.on('ungroupSelectedElements', ungroupSelectedElements);
+    keyboardManager.on('lockSelectedElements', lockSelectedElements);
+    keyboardManager.on('unlockSelectedElements', unlockSelectedElements);
+    keyboardManager.on('unlockAllElements', unlockAllElements);
     keyboardManager.on('selectAll', selectAll);
     keyboardManager.on('selectNext', selectNext);
     keyboardManager.on('selectPrevious', selectPrevious);
@@ -2328,6 +2335,9 @@ function App() {
       keyboardManager.off('sendSelectedToBack');
       keyboardManager.off('groupSelectedElements');
       keyboardManager.off('ungroupSelectedElements');
+      keyboardManager.off('lockSelectedElements');
+      keyboardManager.off('unlockSelectedElements');
+      keyboardManager.off('unlockAllElements');
       keyboardManager.off('selectAll');
       keyboardManager.off('selectNext');
       keyboardManager.off('selectPrevious');
@@ -2368,6 +2378,13 @@ function App() {
       
       {/* Snap guides */}
       <SnapGuides guides={snapGuides} viewport={viewport} />
+      
+      {/* Lock indicators */}
+      <LockIndicators 
+        elements={elements} 
+        viewport={viewport} 
+        selectedElementIds={selectedElementIds}
+      />
       
       {/* Grid Configuration Dialog */}
       <GridDialog 

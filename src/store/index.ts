@@ -75,6 +75,11 @@ interface AppStore extends AppState {
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   toggleElementLock: (id: string) => void;
+  lockSelectedElements: () => void;
+  unlockSelectedElements: () => void;
+  unlockAllElements: () => void;
+  isElementLocked: (id: string) => boolean;
+  getLockedElementCount: () => number;
   // Group Z-order actions
   bringSelectedForward: () => void;
   sendSelectedBackward: () => void;
@@ -1711,6 +1716,89 @@ export const useAppStore = create<AppStore>((set, get) => {
       };
     });
     triggerAutoSave();
+  },
+
+  lockSelectedElements: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      const newElements = state.elements.map((el) =>
+        state.selectedElementIds.includes(el.id) ? { ...el, locked: true } : el
+      );
+      
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
+      return { 
+        elements: newElements,
+        selectedElementIds: [], // Clear selection after locking
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    triggerAutoSave();
+  },
+
+  unlockSelectedElements: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      const newElements = state.elements.map((el) =>
+        state.selectedElementIds.includes(el.id) ? { ...el, locked: false } : el
+      );
+      
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    triggerAutoSave();
+  },
+
+  unlockAllElements: () => {
+    set((state) => {
+      const hasLockedElements = state.elements.some(el => el.locked);
+      if (!hasLockedElements) return state;
+      
+      const newElements = state.elements.map((el) => ({ ...el, locked: false }));
+      
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    triggerAutoSave();
+  },
+
+  isElementLocked: (id: string) => {
+    const { elements } = get();
+    const element = elements.find(el => el.id === id);
+    return element?.locked || false;
+  },
+
+  getLockedElementCount: () => {
+    const { elements } = get();
+    return elements.filter(el => el.locked).length;
   },
 
   // Group Z-order actions
