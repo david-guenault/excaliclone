@@ -229,9 +229,25 @@ export class KeyboardManager {
       preventDefault: true,
     });
 
-    // Grid shortcuts
+    // Element grouping shortcuts
     this.addShortcut({
       key: 'g',
+      ctrlKey: true,
+      action: 'groupSelectedElements',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'g',
+      ctrlKey: true,
+      shiftKey: true,
+      action: 'ungroupSelectedElements',
+      preventDefault: true,
+    });
+
+    // Grid shortcuts  
+    this.addShortcut({
+      key: '`',
       action: 'toggleGrid',
       preventDefault: true,
     });

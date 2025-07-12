@@ -115,6 +115,13 @@ export interface Element {
   zIndex?: number; // For layering
   startArrowhead?: ArrowheadType; // For arrow and line start
   endArrowhead?: ArrowheadType; // For arrow and line end
+  groupId?: string; // For element grouping
+}
+
+export interface Group {
+  id: string;
+  elementIds: string[];
+  name?: string;
 }
 
 export type ToolType = ElementType | 'select' | 'move' | 'resize' | 'lock' | 'hand' | 'eraser';
@@ -175,6 +182,7 @@ export interface AppState {
   viewport: Viewport;
   elements: Element[];
   selectedElementIds: string[];
+  groups: Group[];
   activeTool: ToolType;
   toolOptions: ToolOptions;
   theme: 'light' | 'dark';

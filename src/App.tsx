@@ -52,6 +52,10 @@ function App() {
     sendSelectedBackward,
     bringSelectedToFront,
     sendSelectedToBack,
+    groupSelectedElements,
+    ungroupSelectedElements,
+    getElementGroup,
+    getGroupElements,
     selectAll,
     selectNext,
     selectPrevious,
@@ -695,8 +699,27 @@ function App() {
         const isSelectedElement = selectedElementIds.includes(clickedElement.id);
         
         if (isShiftClick) {
-          // Shift+Click: Toggle element in selection
-          toggleSelection(clickedElement.id);
+          // Shift+Click: Toggle element or group in selection
+          const elementGroup = getElementGroup(clickedElement.id);
+          if (elementGroup) {
+            // Toggle all elements in the group
+            const groupElements = getGroupElements(elementGroup.id);
+            const allSelected = groupElements.every(el => selectedElementIds.includes(el.id));
+            if (allSelected) {
+              // Remove all group elements from selection
+              groupElements.forEach(el => toggleSelection(el.id));
+            } else {
+              // Add all group elements to selection
+              groupElements.forEach(el => {
+                if (!selectedElementIds.includes(el.id)) {
+                  toggleSelection(el.id);
+                }
+              });
+            }
+          } else {
+            // Single element toggle
+            toggleSelection(clickedElement.id);
+          }
           return;
         } else if (isSelectedElement) {
           // If clicking on a selected element without Shift, start dragging
@@ -715,7 +738,15 @@ function App() {
           return;
         } else {
           // Single element selection (replace current selection)
-          selectElement(clickedElement.id);
+          const elementGroup = getElementGroup(clickedElement.id);
+          if (elementGroup) {
+            // Select all elements in the group
+            const groupElements = getGroupElements(elementGroup.id);
+            selectElements(groupElements.map(el => el.id));
+          } else {
+            // Single element selection
+            selectElement(clickedElement.id);
+          }
           return;
         }
       } else {
@@ -2266,6 +2297,8 @@ function App() {
     keyboardManager.on('sendSelectedBackward', sendSelectedBackward);
     keyboardManager.on('bringSelectedToFront', bringSelectedToFront);
     keyboardManager.on('sendSelectedToBack', sendSelectedToBack);
+    keyboardManager.on('groupSelectedElements', groupSelectedElements);
+    keyboardManager.on('ungroupSelectedElements', ungroupSelectedElements);
     keyboardManager.on('selectAll', selectAll);
     keyboardManager.on('selectNext', selectNext);
     keyboardManager.on('selectPrevious', selectPrevious);
@@ -2293,6 +2326,8 @@ function App() {
       keyboardManager.off('sendSelectedBackward');
       keyboardManager.off('bringSelectedToFront');
       keyboardManager.off('sendSelectedToBack');
+      keyboardManager.off('groupSelectedElements');
+      keyboardManager.off('ungroupSelectedElements');
       keyboardManager.off('selectAll');
       keyboardManager.off('selectNext');
       keyboardManager.off('selectPrevious');

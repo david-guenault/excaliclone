@@ -2,7 +2,7 @@
 // ABOUTME: Centralized state for elements, tools, viewport, and UI settings
 
 import { create } from 'zustand';
-import type { AppState, Element, ToolType, Point, StyleClipboard } from '../types';
+import type { AppState, Element, ToolType, Point, StyleClipboard, Group } from '../types';
 import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG, RECENT_COLORS_STORAGE_KEY, MAX_RECENT_COLORS, GRID_CONFIG, AUTO_SAVE_DEBOUNCE } from '../constants';
 import { generateId } from '../utils';
 import { saveStateToStorage, loadStateFromStorage, debouncedSave } from '../utils/autoSave';
@@ -79,6 +79,12 @@ interface AppStore extends AppState {
   sendSelectedBackward: () => void;
   bringSelectedToFront: () => void;
   sendSelectedToBack: () => void;
+  // Element Grouping Actions
+  groupSelectedElements: () => void;
+  ungroupSelectedElements: () => void;
+  getElementGroup: (elementId: string) => Group | null;
+  getGroupElements: (groupId: string) => Element[];
+  selectGroup: (groupId: string) => void;
   // Style Actions
   copyStyle: () => void;
   pasteStyle: () => void;
@@ -122,6 +128,7 @@ const initializeState = (): Partial<AppState> => {
     },
     elements: [],
     selectedElementIds: [],
+    groups: [],
     activeTool: 'select',
     toolOptions: DEFAULT_TOOL_OPTIONS,
     theme: 'light',
@@ -1790,6 +1797,111 @@ export const useAppStore = create<AppStore>((set, get) => {
       };
     });
     triggerAutoSave();
+  },
+
+  // Element Grouping Actions
+  groupSelectedElements: () => {
+    set((state) => {
+      if (state.selectedElementIds.length < 2) return state;
+      
+      const groupId = generateId();
+      const newGroup: Group = {
+        id: groupId,
+        elementIds: [...state.selectedElementIds],
+        name: `Group ${state.groups.length + 1}`,
+      };
+      
+      // Add groupId to all selected elements
+      const newElements = state.elements.map((el) =>
+        state.selectedElementIds.includes(el.id) 
+          ? { ...el, groupId }
+          : el
+      );
+      
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
+      return {
+        elements: newElements,
+        groups: [...state.groups, newGroup],
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    triggerAutoSave();
+  },
+
+  ungroupSelectedElements: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      // Get unique group IDs from selected elements
+      const groupIds = new Set(
+        selectedElements
+          .map(el => el.groupId)
+          .filter(Boolean) as string[]
+      );
+      
+      if (groupIds.size === 0) return state;
+      
+      // Remove groupId from all elements in these groups
+      const newElements = state.elements.map((el) =>
+        groupIds.has(el.groupId!) 
+          ? { ...el, groupId: undefined }
+          : el
+      );
+      
+      // Remove the groups
+      const newGroups = state.groups.filter(group => !groupIds.has(group.id));
+      
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
+      return {
+        elements: newElements,
+        groups: newGroups,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    triggerAutoSave();
+  },
+
+  getElementGroup: (elementId: string) => {
+    const { elements, groups } = get();
+    const element = elements.find(el => el.id === elementId);
+    if (!element?.groupId) return null;
+    
+    return groups.find(group => group.id === element.groupId) || null;
+  },
+
+  getGroupElements: (groupId: string) => {
+    const { elements } = get();
+    return elements.filter(el => el.groupId === groupId);
+  },
+
+  selectGroup: (groupId: string) => {
+    set((state) => {
+      const group = state.groups.find(g => g.id === groupId);
+      if (!group) return state;
+      
+      return {
+        selectedElementIds: [...group.elementIds],
+        activeTool: 'select',
+      };
+    });
   },
 
   saveToHistory: () => {
