@@ -48,6 +48,10 @@ function App() {
     redo,
     deleteSelectedElements,
     duplicateSelectedElements,
+    bringSelectedForward,
+    sendSelectedBackward,
+    bringSelectedToFront,
+    sendSelectedToBack,
     selectAll,
     selectNext,
     selectPrevious,
@@ -2258,6 +2262,10 @@ function App() {
     keyboardManager.on('redo', redo);
     keyboardManager.on('delete', deleteSelectedElements);
     keyboardManager.on('duplicate', duplicateSelectedElements);
+    keyboardManager.on('bringSelectedForward', bringSelectedForward);
+    keyboardManager.on('sendSelectedBackward', sendSelectedBackward);
+    keyboardManager.on('bringSelectedToFront', bringSelectedToFront);
+    keyboardManager.on('sendSelectedToBack', sendSelectedToBack);
     keyboardManager.on('selectAll', selectAll);
     keyboardManager.on('selectNext', selectNext);
     keyboardManager.on('selectPrevious', selectPrevious);
@@ -2281,6 +2289,10 @@ function App() {
       keyboardManager.off('redo');
       keyboardManager.off('delete');
       keyboardManager.off('duplicate');
+      keyboardManager.off('bringSelectedForward');
+      keyboardManager.off('sendSelectedBackward');
+      keyboardManager.off('bringSelectedToFront');
+      keyboardManager.off('sendSelectedToBack');
       keyboardManager.off('selectAll');
       keyboardManager.off('selectNext');
       keyboardManager.off('selectPrevious');

@@ -74,6 +74,11 @@ interface AppStore extends AppState {
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
   toggleElementLock: (id: string) => void;
+  // Group Z-order actions
+  bringSelectedForward: () => void;
+  sendSelectedBackward: () => void;
+  bringSelectedToFront: () => void;
+  sendSelectedToBack: () => void;
   // Style Actions
   copyStyle: () => void;
   pasteStyle: () => void;
@@ -1539,12 +1544,16 @@ export const useAppStore = create<AppStore>((set, get) => {
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
 
+      // Update spatial index
+      updateSpatialIndex(newElements);
+
       return { 
         elements: newElements,
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   sendBackward: (id: string) => {
@@ -1560,12 +1569,16 @@ export const useAppStore = create<AppStore>((set, get) => {
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
 
+      // Update spatial index
+      updateSpatialIndex(newElements);
+
       return { 
         elements: newElements,
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   bringToFront: (id: string) => {
@@ -1581,12 +1594,16 @@ export const useAppStore = create<AppStore>((set, get) => {
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
 
+      // Update spatial index
+      updateSpatialIndex(newElements);
+
       return { 
         elements: newElements,
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   sendToBack: (id: string) => {
@@ -1602,12 +1619,16 @@ export const useAppStore = create<AppStore>((set, get) => {
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
 
+      // Update spatial index
+      updateSpatialIndex(newElements);
+
       return { 
         elements: newElements,
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   toggleElementLock: (id: string) => {
@@ -1620,12 +1641,155 @@ export const useAppStore = create<AppStore>((set, get) => {
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
       
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
       return { 
         elements: newElements,
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
+  },
+
+  // Group Z-order actions
+  bringSelectedForward: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      const newElements = [...state.elements];
+      const selectedIndices = state.selectedElementIds
+        .map(id => newElements.findIndex(el => el.id === id))
+        .filter(index => index !== -1)
+        .sort((a, b) => b - a); // Sort descending to avoid index conflicts
+      
+      // Move each selected element forward one position
+      selectedIndices.forEach(index => {
+        if (index < newElements.length - 1) {
+          [newElements[index], newElements[index + 1]] = 
+            [newElements[index + 1], newElements[index]];
+        }
+      });
+      
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    triggerAutoSave();
+  },
+
+  sendSelectedBackward: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      const newElements = [...state.elements];
+      const selectedIndices = state.selectedElementIds
+        .map(id => newElements.findIndex(el => el.id === id))
+        .filter(index => index !== -1)
+        .sort((a, b) => a - b); // Sort ascending to avoid index conflicts
+      
+      // Move each selected element backward one position
+      selectedIndices.forEach(index => {
+        if (index > 0) {
+          [newElements[index], newElements[index - 1]] = 
+            [newElements[index - 1], newElements[index]];
+        }
+      });
+      
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    triggerAutoSave();
+  },
+
+  bringSelectedToFront: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      const newElements = [...state.elements];
+      const selectedElements: Element[] = [];
+      
+      // Remove selected elements from their current positions
+      state.selectedElementIds.forEach(id => {
+        const index = newElements.findIndex(el => el.id === id);
+        if (index !== -1) {
+          selectedElements.push(...newElements.splice(index, 1));
+        }
+      });
+      
+      // Add selected elements to the end (front)
+      newElements.push(...selectedElements);
+      
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    triggerAutoSave();
+  },
+
+  sendSelectedToBack: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      const newElements = [...state.elements];
+      const selectedElements: Element[] = [];
+      
+      // Remove selected elements from their current positions (reverse order to maintain indices)
+      const selectedIndices = state.selectedElementIds
+        .map(id => newElements.findIndex(el => el.id === id))
+        .filter(index => index !== -1)
+        .sort((a, b) => b - a);
+      
+      selectedIndices.forEach(index => {
+        selectedElements.unshift(...newElements.splice(index, 1));
+      });
+      
+      // Add selected elements to the beginning (back)
+      newElements.unshift(...selectedElements);
+      
+      // Save to history for proper state management
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
+      return { 
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+    triggerAutoSave();
   },
 
   saveToHistory: () => {

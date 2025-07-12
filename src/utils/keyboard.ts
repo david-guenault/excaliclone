@@ -198,6 +198,37 @@ export class KeyboardManager {
       preventDefault: true,
     });
 
+    // Z-order shortcuts for group operations
+    this.addShortcut({
+      key: ']',
+      ctrlKey: true,
+      action: 'bringSelectedForward',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: '[',
+      ctrlKey: true,
+      action: 'sendSelectedBackward',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: ']',
+      ctrlKey: true,
+      shiftKey: true,
+      action: 'bringSelectedToFront',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: '[',
+      ctrlKey: true,
+      shiftKey: true,
+      action: 'sendSelectedToBack',
+      preventDefault: true,
+    });
+
     // Grid shortcuts
     this.addShortcut({
       key: 'g',
