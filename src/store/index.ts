@@ -7,6 +7,7 @@ import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG, RECENT_COLORS_STORAGE_KEY, MAX_REC
 import { generateId } from '../utils';
 import { saveStateToStorage, loadStateFromStorage, debouncedSave } from '../utils/autoSave';
 import { SpatialIndex, spatialHitTest } from '../utils/spatialIndex';
+import { calculateSmartDuplicationOffset, preserveGroupRelationships } from '../utils/smartDuplication';
 
 interface AppStore extends AppState {
   // Actions
@@ -1507,35 +1508,87 @@ export const useAppStore = create<AppStore>((set, get) => {
     set((state) => {
       if (state.selectedElementIds.length === 0) return state;
       
+      // Get selected elements with group relationship preservation
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      // Preserve group relationships when duplicating
+      const elementsToDuplicate = preserveGroupRelationships(state.elements, selectedElements);
+      
+      if (elementsToDuplicate.length === 0) return state;
+      
+      // Calculate smart positioning offset
+      const smartOffset = calculateSmartDuplicationOffset(
+        state.elements,
+        elementsToDuplicate,
+        state.viewport,
+        {
+          baseOffset: 20,
+          preferredDirection: 'diagonal',
+          collisionPadding: 10,
+        }
+      );
+      
+      // Create group ID mapping for preserving group relationships
+      const groupIdMapping = new Map<string, string>();
       const duplicatedElements: Element[] = [];
       
-      // Create duplicates for all selected elements
-      state.selectedElementIds.forEach(id => {
-        const element = state.elements.find(el => el.id === id);
-        if (element) {
-          const duplicated: Element = {
-            ...element,
-            id: generateId(),
-            x: element.x + 20,
-            y: element.y + 20,
-          };
-          duplicatedElements.push(duplicated);
+      // Create duplicates with smart positioning
+      elementsToDuplicate.forEach(element => {
+        // Handle group relationships
+        let newGroupId: string | undefined = undefined;
+        if (element.groupId) {
+          if (!groupIdMapping.has(element.groupId)) {
+            groupIdMapping.set(element.groupId, generateId());
+          }
+          newGroupId = groupIdMapping.get(element.groupId);
         }
+        
+        const duplicated: Element = {
+          ...element,
+          id: generateId(),
+          x: element.x + smartOffset.x,
+          y: element.y + smartOffset.y,
+          groupId: newGroupId,
+          zIndex: (element.zIndex || 0) + 1, // Place above original
+        };
+        duplicatedElements.push(duplicated);
       });
       
-      if (duplicatedElements.length === 0) return state;
+      // Create new groups for duplicated grouped elements
+      const newGroups: Group[] = [];
+      groupIdMapping.forEach((newGroupId, originalGroupId) => {
+        const originalGroup = state.groups.find(g => g.id === originalGroupId);
+        if (originalGroup) {
+          const duplicatedGroupElementIds = duplicatedElements
+            .filter(el => el.groupId === newGroupId)
+            .map(el => el.id);
+            
+          newGroups.push({
+            id: newGroupId,
+            elementIds: duplicatedGroupElementIds,
+            name: `${originalGroup.name} Copy`,
+          });
+        }
+      });
       
       const newElements = [...state.elements, ...duplicatedElements];
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newElements);
       
+      // Update spatial index
+      updateSpatialIndex(newElements);
+      
       return {
         elements: newElements,
+        groups: [...state.groups, ...newGroups],
         selectedElementIds: duplicatedElements.map(el => el.id),
         history: newHistory,
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   bringForward: (id: string) => {
