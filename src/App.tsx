@@ -60,6 +60,12 @@ function App() {
     lockSelectedElements,
     unlockSelectedElements,
     unlockAllElements,
+    alignLeft,
+    alignCenter,
+    alignRight,
+    alignTop,
+    alignMiddle,
+    alignBottom,
     selectAll,
     selectNext,
     selectPrevious,
@@ -2306,6 +2312,12 @@ function App() {
     keyboardManager.on('lockSelectedElements', lockSelectedElements);
     keyboardManager.on('unlockSelectedElements', unlockSelectedElements);
     keyboardManager.on('unlockAllElements', unlockAllElements);
+    keyboardManager.on('alignLeft', alignLeft);
+    keyboardManager.on('alignCenter', alignCenter);
+    keyboardManager.on('alignRight', alignRight);
+    keyboardManager.on('alignTop', alignTop);
+    keyboardManager.on('alignMiddle', alignMiddle);
+    keyboardManager.on('alignBottom', alignBottom);
     keyboardManager.on('selectAll', selectAll);
     keyboardManager.on('selectNext', selectNext);
     keyboardManager.on('selectPrevious', selectPrevious);
@@ -2338,6 +2350,12 @@ function App() {
       keyboardManager.off('lockSelectedElements');
       keyboardManager.off('unlockSelectedElements');
       keyboardManager.off('unlockAllElements');
+      keyboardManager.off('alignLeft');
+      keyboardManager.off('alignCenter');
+      keyboardManager.off('alignRight');
+      keyboardManager.off('alignTop');
+      keyboardManager.off('alignMiddle');
+      keyboardManager.off('alignBottom');
       keyboardManager.off('selectAll');
       keyboardManager.off('selectNext');
       keyboardManager.off('selectPrevious');

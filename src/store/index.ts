@@ -8,6 +8,17 @@ import { generateId } from '../utils';
 import { saveStateToStorage, loadStateFromStorage, debouncedSave } from '../utils/autoSave';
 import { SpatialIndex, spatialHitTest } from '../utils/spatialIndex';
 import { calculateSmartDuplicationOffset, preserveGroupRelationships } from '../utils/smartDuplication';
+import { 
+  calculateAlignmentBounds,
+  getElementsToAlign,
+  alignElementsLeft,
+  alignElementsCenter,
+  alignElementsRight,
+  alignElementsTop,
+  alignElementsMiddle,
+  alignElementsBottom,
+  validateAlignment
+} from '../utils/alignmentUtils';
 
 interface AppStore extends AppState {
   // Actions
@@ -219,6 +230,44 @@ export const useAppStore = create<AppStore>((set, get) => {
   // Helper function to update spatial index when elements change
   const updateSpatialIndex = (elements: Element[]) => {
     spatialIndex.rebuild(elements);
+  };
+
+  // Helper function for alignment operations
+  const performAlignment = (
+    state: AppState, 
+    alignFunction: (elements: Element[], bounds: any) => Element[]
+  ) => {
+    if (!validateAlignment(state.selectedElementIds)) return state;
+    
+    const elementsToAlign = getElementsToAlign(
+      state.elements,
+      state.selectedElementIds,
+      state.groups,
+      { respectGroups: true }
+    );
+    
+    if (!validateAlignment(elementsToAlign)) return state;
+    
+    const bounds = calculateAlignmentBounds(elementsToAlign);
+    const alignedElements = alignFunction(elementsToAlign, bounds);
+    
+    // Update elements in state
+    const updatedElements = state.elements.map((element) => {
+      const aligned = alignedElements.find(aligned => aligned.id === element.id);
+      return aligned || element;
+    });
+    
+    const newHistory = state.history.slice(0, state.historyIndex + 1);
+    newHistory.push(updatedElements);
+    
+    // Update spatial index
+    updateSpatialIndex(updatedElements);
+    
+    return {
+      elements: updatedElements,
+      history: newHistory,
+      historyIndex: newHistory.length - 1,
+    };
   };
 
   const initialState = initializeState();
@@ -1009,198 +1058,32 @@ export const useAppStore = create<AppStore>((set, get) => {
 
   // Alignment Actions
   alignLeft: () => {
-    set((state) => {
-      if (state.selectedElementIds.length < 2) return state;
-      
-      const selectedElements = state.elements.filter(el => 
-        state.selectedElementIds.includes(el.id)
-      );
-      
-      if (selectedElements.length < 2) return state;
-      
-      // Find the leftmost x position
-      const leftmost = Math.min(...selectedElements.map(el => el.x));
-      
-      const updatedElements = state.elements.map((element) => {
-        if (state.selectedElementIds.includes(element.id)) {
-          return { ...element, x: leftmost };
-        }
-        return element;
-      });
-      
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(updatedElements);
-      
-      return {
-        elements: updatedElements,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
-    });
+    set((state) => performAlignment(state, alignElementsLeft));
     triggerAutoSave();
   },
 
   alignCenter: () => {
-    set((state) => {
-      if (state.selectedElementIds.length < 2) return state;
-      
-      const selectedElements = state.elements.filter(el => 
-        state.selectedElementIds.includes(el.id)
-      );
-      
-      if (selectedElements.length < 2) return state;
-      
-      // Calculate the center x position of the selection
-      const leftmost = Math.min(...selectedElements.map(el => el.x));
-      const rightmost = Math.max(...selectedElements.map(el => el.x + el.width));
-      const centerX = (leftmost + rightmost) / 2;
-      
-      const updatedElements = state.elements.map((element) => {
-        if (state.selectedElementIds.includes(element.id)) {
-          return { ...element, x: centerX - element.width / 2 };
-        }
-        return element;
-      });
-      
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(updatedElements);
-      
-      return {
-        elements: updatedElements,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
-    });
+    set((state) => performAlignment(state, alignElementsCenter));
     triggerAutoSave();
   },
 
   alignRight: () => {
-    set((state) => {
-      if (state.selectedElementIds.length < 2) return state;
-      
-      const selectedElements = state.elements.filter(el => 
-        state.selectedElementIds.includes(el.id)
-      );
-      
-      if (selectedElements.length < 2) return state;
-      
-      // Find the rightmost edge position
-      const rightmost = Math.max(...selectedElements.map(el => el.x + el.width));
-      
-      const updatedElements = state.elements.map((element) => {
-        if (state.selectedElementIds.includes(element.id)) {
-          return { ...element, x: rightmost - element.width };
-        }
-        return element;
-      });
-      
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(updatedElements);
-      
-      return {
-        elements: updatedElements,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
-    });
+    set((state) => performAlignment(state, alignElementsRight));
     triggerAutoSave();
   },
 
   alignTop: () => {
-    set((state) => {
-      if (state.selectedElementIds.length < 2) return state;
-      
-      const selectedElements = state.elements.filter(el => 
-        state.selectedElementIds.includes(el.id)
-      );
-      
-      if (selectedElements.length < 2) return state;
-      
-      // Find the topmost y position
-      const topmost = Math.min(...selectedElements.map(el => el.y));
-      
-      const updatedElements = state.elements.map((element) => {
-        if (state.selectedElementIds.includes(element.id)) {
-          return { ...element, y: topmost };
-        }
-        return element;
-      });
-      
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(updatedElements);
-      
-      return {
-        elements: updatedElements,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
-    });
+    set((state) => performAlignment(state, alignElementsTop));
     triggerAutoSave();
   },
 
   alignMiddle: () => {
-    set((state) => {
-      if (state.selectedElementIds.length < 2) return state;
-      
-      const selectedElements = state.elements.filter(el => 
-        state.selectedElementIds.includes(el.id)
-      );
-      
-      if (selectedElements.length < 2) return state;
-      
-      // Calculate the center y position of the selection
-      const topmost = Math.min(...selectedElements.map(el => el.y));
-      const bottommost = Math.max(...selectedElements.map(el => el.y + el.height));
-      const centerY = (topmost + bottommost) / 2;
-      
-      const updatedElements = state.elements.map((element) => {
-        if (state.selectedElementIds.includes(element.id)) {
-          return { ...element, y: centerY - element.height / 2 };
-        }
-        return element;
-      });
-      
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(updatedElements);
-      
-      return {
-        elements: updatedElements,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
-    });
+    set((state) => performAlignment(state, alignElementsMiddle));
     triggerAutoSave();
   },
 
   alignBottom: () => {
-    set((state) => {
-      if (state.selectedElementIds.length < 2) return state;
-      
-      const selectedElements = state.elements.filter(el => 
-        state.selectedElementIds.includes(el.id)
-      );
-      
-      if (selectedElements.length < 2) return state;
-      
-      // Find the bottommost edge position
-      const bottommost = Math.max(...selectedElements.map(el => el.y + el.height));
-      
-      const updatedElements = state.elements.map((element) => {
-        if (state.selectedElementIds.includes(element.id)) {
-          return { ...element, y: bottommost - element.height };
-        }
-        return element;
-      });
-      
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(updatedElements);
-      
-      return {
-        elements: updatedElements,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
-    });
+    set((state) => performAlignment(state, alignElementsBottom));
     triggerAutoSave();
   },
 
@@ -1244,6 +1127,9 @@ export const useAppStore = create<AppStore>((set, get) => {
       
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(updatedElements);
+      
+      // Update spatial index
+      updateSpatialIndex(updatedElements);
       
       return {
         elements: updatedElements,
@@ -1294,6 +1180,9 @@ export const useAppStore = create<AppStore>((set, get) => {
       
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(updatedElements);
+      
+      // Update spatial index
+      updateSpatialIndex(updatedElements);
       
       return {
         elements: updatedElements,

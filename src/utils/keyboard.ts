@@ -269,6 +269,55 @@ export class KeyboardManager {
       preventDefault: true,
     });
 
+    // Alignment shortcuts (using Ctrl+Alt to avoid conflicts)
+    this.addShortcut({
+      key: 'ArrowLeft',
+      ctrlKey: true,
+      altKey: true,
+      action: 'alignLeft',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'ArrowRight',
+      ctrlKey: true,
+      altKey: true,
+      action: 'alignRight',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'ArrowUp',
+      ctrlKey: true,
+      altKey: true,
+      action: 'alignTop',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'ArrowDown',
+      ctrlKey: true,
+      altKey: true,
+      action: 'alignBottom',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'h',
+      ctrlKey: true,
+      altKey: true,
+      action: 'alignCenter',
+      preventDefault: true,
+    });
+
+    this.addShortcut({
+      key: 'v',
+      ctrlKey: true,
+      altKey: true,
+      action: 'alignMiddle',
+      preventDefault: true,
+    });
+
     // Grid shortcuts  
     this.addShortcut({
       key: '`',
