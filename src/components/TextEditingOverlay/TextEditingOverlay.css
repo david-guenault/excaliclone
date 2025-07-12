@@ -27,6 +27,24 @@
   min-height: 20px;
   overflow-wrap: break-word;
   white-space: pre-wrap;
+  
+  /* Disable browser paste UI completely */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  
+  /* Disable browser autocomplete and suggestions */
+  autocomplete: off;
+  autocapitalize: off;
+  autocorrect: off;
+  spellcheck: false;
+  
+  /* Remove browser context menu */
+  -webkit-touch-callout: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .text-editing-overlay__input::placeholder {

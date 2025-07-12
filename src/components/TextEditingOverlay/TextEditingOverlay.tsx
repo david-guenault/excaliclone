@@ -37,6 +37,40 @@ export const TextEditingOverlay: React.FC<TextEditingOverlayProps> = ({
     }
   }, []);
 
+  // Additional effect to aggressively prevent browser paste UI
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Prevent all context menu events that might trigger paste UI
+    const preventContextMenu = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    };
+
+    // Prevent drag and drop which can also trigger paste-like UI
+    const preventDragDrop = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    // Add multiple event listeners to catch all possible paste UI triggers
+    textarea.addEventListener('contextmenu', preventContextMenu, { passive: false });
+    textarea.addEventListener('dragover', preventDragDrop, { passive: false });
+    textarea.addEventListener('drop', preventDragDrop, { passive: false });
+    textarea.addEventListener('dragenter', preventDragDrop, { passive: false });
+    textarea.addEventListener('dragleave', preventDragDrop, { passive: false });
+
+    return () => {
+      textarea.removeEventListener('contextmenu', preventContextMenu);
+      textarea.removeEventListener('dragover', preventDragDrop);
+      textarea.removeEventListener('drop', preventDragDrop);
+      textarea.removeEventListener('dragenter', preventDragDrop);
+      textarea.removeEventListener('dragleave', preventDragDrop);
+    };
+  }, []);
+
   useEffect(() => {
     // Handle clicks outside the overlay
     const handleClickOutside = (event: MouseEvent) => {
@@ -157,6 +191,13 @@ export const TextEditingOverlay: React.FC<TextEditingOverlayProps> = ({
         aria-label="Edit text"
         rows={3}
         autoFocus
+        autoComplete="off"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+        data-gramm="false"
+        data-gramm_editor="false"
+        data-enable-grammarly="false"
       />
       <div className="text-editing-overlay__hint">
         Press Enter to save, Esc to cancel
