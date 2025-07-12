@@ -248,6 +248,11 @@ export const ARROW_CONFIG = {
 } as const;
 export const MAX_RECENT_COLORS = 12;
 
+// Auto-save constants
+export const AUTO_SAVE_STORAGE_KEY = 'excalibox-drawing-state';
+export const AUTO_SAVE_INTERVAL = 2000; // Save every 2 seconds
+export const AUTO_SAVE_DEBOUNCE = 500; // Debounce rapid changes by 500ms
+
 // Properties Panel Color Palettes (5 predefined + 1 current/picker)
 export const PANEL_STROKE_COLORS = [
   '#000000', // Noir

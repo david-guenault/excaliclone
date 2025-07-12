@@ -46,4 +46,5 @@
 ✅ EVOLUTION: implémente aussi les racourci clavier couper/copier/coller mais au format linux (CTRL+INS / SHIFT+INS)
 ✅ BUG: lorsque je colle un texte dans une forme, un bouton coller apparait. je ne veux pas de ce bouton mais juste que tu colle le texte. 
 ✅ EVOLUTION: les 6 boutons d'alignement de texte doivent apparaitre sur une seule ligne dans la boite de propriété.
-✅ BUG: lorsque je colle du texte dans une forme, j'ai un bouton coller qui apparait. lorsque je clique sur ce bouton, le texte n'est pas collé. Par contre lorsque je clique en dehors de la forme, le texte apparait. je ne veux pas du bouton coller, et je veux que le texte collé apparaisse immédiatement. 
+✅ BUG: lorsque je colle du texte dans une forme, j'ai un bouton coller qui apparait. lorsque je clique sur ce bouton, le texte n'est pas collé. Par contre lorsque je clique en dehors de la forme, le texte apparait. je ne veux pas du bouton coller, et je veux que le texte collé apparaisse immédiatement. [RÉSOLU: navigator.clipboard API remplacé par paste event] 
+✅ EVOLUTION: preserve le dessin dans le stockage local du navigateur. de cette manière si je rafraichis la page le dessin est automatiquement rechargée. Fais une sauvegarde automatique en continue de manière a ne rien perdre. 

@@ -3,8 +3,9 @@
 
 import { create } from 'zustand';
 import type { AppState, Element, ToolType, Point, StyleClipboard } from '../types';
-import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG, RECENT_COLORS_STORAGE_KEY, MAX_RECENT_COLORS, GRID_CONFIG } from '../constants';
+import { DEFAULT_TOOL_OPTIONS, CANVAS_CONFIG, RECENT_COLORS_STORAGE_KEY, MAX_RECENT_COLORS, GRID_CONFIG, AUTO_SAVE_DEBOUNCE } from '../constants';
 import { generateId } from '../utils';
+import { saveStateToStorage, loadStateFromStorage, debouncedSave } from '../utils/autoSave';
 
 interface AppStore extends AppState {
   // Actions
@@ -89,56 +90,94 @@ interface AppStore extends AppState {
   toggleCursor: () => void;
 }
 
-export const useAppStore = create<AppStore>((set, get) => ({
-  // Initial state
-  viewport: {
-    zoom: CANVAS_CONFIG.DEFAULT_ZOOM,
-    pan: { x: 0, y: 0 },
-    bounds: { x: 0, y: 0, width: 800, height: 600 },
-  },
-  elements: [],
-  selectedElementIds: [],
-  activeTool: 'select',
-  toolOptions: DEFAULT_TOOL_OPTIONS,
-  theme: 'light',
-  ui: {
-    propertiesPanel: {
-      visible: false, // Hidden by default, shows when elements selected
-      width: 200, // Fixed width from new design
+// Initialize state with saved data if available
+const initializeState = (): Partial<AppState> => {
+  const defaultState: AppState = {
+    viewport: {
+      zoom: CANVAS_CONFIG.DEFAULT_ZOOM,
+      pan: { x: 0, y: 0 },
+      bounds: { x: 0, y: 0, width: 800, height: 600 },
     },
-    topToolbar: {
-      visible: true,
+    elements: [],
+    selectedElementIds: [],
+    activeTool: 'select',
+    toolOptions: DEFAULT_TOOL_OPTIONS,
+    theme: 'light',
+    ui: {
+      propertiesPanel: {
+        visible: false,
+        width: 200,
+      },
+      topToolbar: {
+        visible: true,
+      },
+      canvasLocked: false,
+      grid: {
+        enabled: true,
+        size: GRID_CONFIG.DEFAULT_SIZE,
+        snapToGrid: false,
+        snapDistance: GRID_CONFIG.DEFAULT_SNAP_DISTANCE,
+        showGrid: false,
+        color: GRID_CONFIG.COLOR,
+        opacity: GRID_CONFIG.OPACITY,
+      },
+      dialogs: {
+        gridDialog: false,
+      },
     },
-    canvasLocked: false,
-    grid: {
-      enabled: true,
-      size: GRID_CONFIG.DEFAULT_SIZE,
-      snapToGrid: false,
-      snapDistance: GRID_CONFIG.DEFAULT_SNAP_DISTANCE,
-      showGrid: false, // Hidden by default, can be toggled
-      color: GRID_CONFIG.COLOR,
-      opacity: GRID_CONFIG.OPACITY,
+    history: [[]],
+    historyIndex: 0,
+    clipboard: null,
+    styleClipboard: null,
+    recentColors: JSON.parse(localStorage.getItem(RECENT_COLORS_STORAGE_KEY) || '[]'),
+    textEditing: {
+      isEditing: false,
+      elementId: null,
+      text: '',
+      cursorPosition: 0,
+      selectionStart: 0,
+      selectionEnd: 0,
+      cursorVisible: true,
     },
-    dialogs: {
-      gridDialog: false,
-    },
-  },
-  history: [[]],
-  historyIndex: 0,
-  clipboard: null,
-  styleClipboard: null,
-  recentColors: JSON.parse(localStorage.getItem(RECENT_COLORS_STORAGE_KEY) || '[]'),
-  textEditing: {
-    isEditing: false,
-    elementId: null,
-    text: '',
-    cursorPosition: 0,
-    selectionStart: 0,
-    selectionEnd: 0,
-    cursorVisible: true,
-  },
+  };
 
-  // Actions
+  // Try to load saved state
+  const savedState = loadStateFromStorage();
+  if (savedState) {
+    return {
+      ...defaultState,
+      ...savedState,
+      // Don't restore UI state except grid, as it should reset on page load
+      ui: {
+        ...defaultState.ui,
+        grid: savedState.ui?.grid || defaultState.ui.grid,
+      },
+      // Reset transient state
+      selectedElementIds: [],
+      textEditing: defaultState.textEditing,
+      clipboard: null,
+      styleClipboard: null,
+      // Initialize history with saved elements
+      history: [savedState.elements || []],
+      historyIndex: 0,
+    };
+  }
+
+  return defaultState;
+};
+
+export const useAppStore = create<AppStore>((set, get) => {
+  // Helper function to trigger auto-save after state changes
+  const triggerAutoSave = () => {
+    const state = get();
+    debouncedSave(state, AUTO_SAVE_DEBOUNCE);
+  };
+
+  return {
+    // Initialize with saved state or defaults
+    ...initializeState(),
+
+    // Actions
   addElement: (elementData) => {
     // Create element first
     const createdElement: Element = {
@@ -179,6 +218,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       };
     });
     
+    triggerAutoSave();
     return createdElement;
   },
 
@@ -225,6 +265,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   updateElement: (id, updates) => {
@@ -243,6 +284,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   updateElementSilent: (id, updates) => {
@@ -270,6 +312,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   selectElement: (id) => {
@@ -326,6 +369,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
       return state;
     });
+    triggerAutoSave();
   },
 
   redo: () => {
@@ -340,6 +384,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
       return state;
     });
+    triggerAutoSave();
   },
 
   deleteSelectedElements: () => {
@@ -359,6 +404,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   selectAll: () => {
@@ -639,6 +685,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   // Style Actions
@@ -773,6 +820,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   alignCenter: () => {
@@ -806,6 +854,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   alignRight: () => {
@@ -837,6 +886,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   alignTop: () => {
@@ -868,6 +918,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   alignMiddle: () => {
@@ -901,6 +952,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   alignBottom: () => {
@@ -932,6 +984,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   distributeHorizontally: () => {
@@ -981,6 +1034,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   distributeVertically: () => {
@@ -1030,6 +1084,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         historyIndex: newHistory.length - 1,
       };
     });
+    triggerAutoSave();
   },
 
   // UI Actions
@@ -1516,4 +1571,5 @@ export const useAppStore = create<AppStore>((set, get) => ({
       },
     }));
   },
-}));
+  };
+});
