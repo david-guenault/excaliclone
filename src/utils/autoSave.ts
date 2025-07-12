@@ -4,6 +4,14 @@
 import type { AppState, Element } from '../types';
 import { AUTO_SAVE_STORAGE_KEY } from '../constants';
 
+// Expose diagnostic function globally for debugging
+declare global {
+  interface Window {
+    diagnoseSavedData: () => void;
+    clearSavedState: () => void;
+  }
+}
+
 // Define what parts of the state should be saved
 interface SavedState {
   elements: Element[];
@@ -45,10 +53,44 @@ export function saveStateToStorage(state: Partial<AppState>): void {
       version: SAVE_FORMAT_VERSION
     };
 
-    localStorage.setItem(AUTO_SAVE_STORAGE_KEY, JSON.stringify(savedState));
-    console.log(`💾 Drawing auto-saved: ${state.elements?.length || 0} elements`);
+    const serializedData = JSON.stringify(savedState);
+    
+    // Check localStorage quota and data size
+    const sizeInBytes = new Blob([serializedData]).size;
+    const sizeInKB = (sizeInBytes / 1024).toFixed(2);
+    
+    // Test storage first with a temporary key to detect quota issues
+    const testKey = `${AUTO_SAVE_STORAGE_KEY}_test`;
+    try {
+      localStorage.setItem(testKey, serializedData);
+      localStorage.removeItem(testKey);
+    } catch (testError) {
+      if (testError instanceof DOMException && testError.name === 'QuotaExceededError') {
+        console.warn('⚠️ localStorage quota will be exceeded. Trying to free space...');
+        // Clear old auto-save data before saving new one
+        localStorage.removeItem(AUTO_SAVE_STORAGE_KEY);
+      }
+    }
+    
+    localStorage.setItem(AUTO_SAVE_STORAGE_KEY, serializedData);
+    
+    // Enhanced logging with content details
+    const elementsWithText = savedState.elements.filter(el => el.text);
+    const elementsWithImages = savedState.elements.filter(el => el.imageUrl);
+    const elementsWithRotation = savedState.elements.filter(el => el.angle && el.angle !== 0);
+    
+    console.log(`💾 Drawing auto-saved: ${savedState.elements.length} elements (${sizeInKB}KB)`);
+    console.log(`   📝 Text elements: ${elementsWithText.length}`);
+    console.log(`   🖼️ Image elements: ${elementsWithImages.length}`);
+    console.log(`   🔄 Rotated elements: ${elementsWithRotation.length}`);
+    
   } catch (error) {
-    console.error('Failed to save state to localStorage:', error);
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.error('localStorage quota exceeded. Drawing too large to save automatically.');
+      // Optionally show a user notification here
+    } else {
+      console.error('Failed to save state to localStorage:', error);
+    }
   }
 }
 
@@ -59,6 +101,7 @@ export function loadStateFromStorage(): Partial<AppState> | null {
   try {
     const saved = localStorage.getItem(AUTO_SAVE_STORAGE_KEY);
     if (!saved) {
+      console.log('📂 No saved drawing found');
       return null;
     }
 
@@ -70,10 +113,32 @@ export function loadStateFromStorage(): Partial<AppState> | null {
       // Could implement migration logic here in the future
     }
 
+    // Enhanced logging with content verification
+    const elementsWithText = savedState.elements.filter(el => el.text);
+    const elementsWithImages = savedState.elements.filter(el => el.imageUrl);
+    const elementsWithRotation = savedState.elements.filter(el => el.angle && el.angle !== 0);
+    
     console.log(`📂 Drawing restored: ${savedState.elements.length} elements`);
+    console.log(`   📝 Text elements: ${elementsWithText.length}`);
+    console.log(`   🖼️ Image elements: ${elementsWithImages.length}`);
+    console.log(`   🔄 Rotated elements: ${elementsWithRotation.length}`);
+    
+    // Detailed debugging for each type
+    if (elementsWithText.length > 0) {
+      console.log('📝 Text content preview:', elementsWithText.map(el => `"${el.text?.substring(0, 30)}..."`));
+    }
+    if (elementsWithImages.length > 0) {
+      console.log('🖼️ Image URLs preview:', elementsWithImages.map(el => `${el.imageUrl?.substring(0, 50)}...`));
+    }
+    if (elementsWithRotation.length > 0) {
+      console.log('🔄 Rotation angles:', elementsWithRotation.map(el => `${el.angle}°`));
+    }
+    
+    // Validate and repair elements to ensure data integrity
+    const repairedElements = validateAndRepairElements(savedState.elements || []);
     
     return {
-      elements: savedState.elements,
+      elements: repairedElements,
       viewport: savedState.viewport,
       toolOptions: savedState.toolOptions,
       theme: savedState.theme,
@@ -112,6 +177,74 @@ export function hasSavedState(): boolean {
 }
 
 /**
+ * Validate and repair element data to ensure all properties are preserved
+ */
+function validateAndRepairElements(elements: any[]): Element[] {
+  return elements.map(element => {
+    // Ensure all required properties exist
+    const repairedElement = {
+      ...element,
+      // Ensure angle is preserved (default to 0 if missing)
+      angle: typeof element.angle === 'number' ? element.angle : 0,
+      // Ensure text is preserved
+      text: element.text || undefined,
+      // Ensure imageUrl is preserved
+      imageUrl: element.imageUrl || undefined,
+      // Ensure other optional properties are preserved
+      points: element.points || undefined,
+      cornerStyle: element.cornerStyle || 'sharp',
+      cornerRadius: element.cornerRadius || 0,
+      locked: element.locked || false,
+      zIndex: element.zIndex || 0,
+    };
+    
+    return repairedElement;
+  });
+}
+
+/**
+ * Get diagnostic information about stored data
+ */
+export function diagnoseSavedData(): void {
+  try {
+    const saved = localStorage.getItem(AUTO_SAVE_STORAGE_KEY);
+    if (!saved) {
+      console.log('🔍 No saved data found in localStorage');
+      return;
+    }
+    
+    const sizeInBytes = new Blob([saved]).size;
+    const sizeInKB = (sizeInBytes / 1024).toFixed(2);
+    
+    console.log(`🔍 Saved data size: ${sizeInKB}KB`);
+    
+    const savedState = JSON.parse(saved);
+    console.log('🔍 Saved state structure:', {
+      elementsCount: savedState.elements?.length || 0,
+      hasViewport: !!savedState.viewport,
+      hasToolOptions: !!savedState.toolOptions,
+      hasTheme: !!savedState.theme,
+      hasUI: !!savedState.ui,
+      version: savedState.version
+    });
+    
+    if (savedState.elements) {
+      const analysis = {
+        total: savedState.elements.length,
+        withText: savedState.elements.filter((el: any) => el.text).length,
+        withImages: savedState.elements.filter((el: any) => el.imageUrl).length,
+        withRotation: savedState.elements.filter((el: any) => el.angle && el.angle !== 0).length,
+        types: [...new Set(savedState.elements.map((el: any) => el.type))]
+      };
+      console.log('🔍 Elements analysis:', analysis);
+    }
+    
+  } catch (error) {
+    console.error('🔍 Error diagnosing saved data:', error);
+  }
+}
+
+/**
  * Debounced save function to prevent excessive writes
  */
 let saveTimeout: number | null = null;
@@ -125,4 +258,10 @@ export function debouncedSave(state: Partial<AppState>, delay: number = 500): vo
     saveStateToStorage(state);
     saveTimeout = null;
   }, delay);
+}
+
+// Expose debugging functions globally
+if (typeof window !== 'undefined') {
+  window.diagnoseSavedData = diagnoseSavedData;
+  window.clearSavedState = clearSavedState;
 }
