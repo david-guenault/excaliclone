@@ -501,3 +501,38 @@
     transform: rotate(360deg);
   }
 }
+
+/* Alignment Buttons */
+.properties-panel__alignment-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 6px !important;
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 4px !important;
+  cursor: pointer;
+  color: #374151 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  transition: all 0.15s ease !important;
+}
+
+.properties-panel__alignment-button:hover {
+  background: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+}
+
+.properties-panel__alignment-button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}
+
+.properties-panel__alignment-button:disabled:hover {
+  background: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}

@@ -47,6 +47,7 @@ function App() {
     selectNext,
     selectPrevious,
     copy,
+    cut,
     paste,
     copyStyle,
     pasteStyle,
@@ -1192,6 +1193,86 @@ function App() {
     fileInput.click();
   };
 
+  // Handle diagram import functionality (Excalidraw and Draw.io)
+  const handleDiagramImport = async () => {
+    const { importDiagramFile } = await import('./utils/fileImport');
+    
+    // Create a file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.excalidraw,.drawio,.xml'; // Accept supported diagram formats
+    fileInput.style.display = 'none';
+    
+    fileInput.onchange = async (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      try {
+        // Import elements from the diagram file
+        const importedElements = await importDiagramFile(file);
+        
+        if (importedElements.length === 0) {
+          alert('No elements found in the diagram file.');
+          return;
+        }
+        
+        // Get center of viewport for positioning
+        const centerX = (-viewport.pan.x + (windowSize.width / 2)) / viewport.zoom;
+        const centerY = (-viewport.pan.y + (windowSize.height / 2)) / viewport.zoom;
+        
+        // Calculate bounding box of imported elements
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        importedElements.forEach(element => {
+          minX = Math.min(minX, element.x);
+          minY = Math.min(minY, element.y);
+          maxX = Math.max(maxX, element.x + element.width);
+          maxY = Math.max(maxY, element.y + element.height);
+        });
+        
+        // Calculate offset to center the imported diagram
+        const diagramCenterX = (minX + maxX) / 2;
+        const diagramCenterY = (minY + maxY) / 2;
+        const offsetX = centerX - diagramCenterX;
+        const offsetY = centerY - diagramCenterY;
+        
+        // Apply offset to all imported elements
+        const centeredElements = importedElements.map(element => ({
+          ...element,
+          x: element.x + offsetX,
+          y: element.y + offsetY,
+        }));
+        
+        // Add all elements to the store
+        const { addElements } = useAppStore.getState();
+        addElements(centeredElements);
+        
+        // Select all imported elements
+        const importedIds = centeredElements.map(el => el.id);
+        selectElements(importedIds);
+        
+        // Switch to selection tool for immediate manipulation
+        setActiveTool('select');
+        
+        // Save to history
+        saveToHistory();
+        
+        // Show success message
+        console.log(`Successfully imported ${centeredElements.length} elements from ${file.name}`);
+        
+      } catch (error) {
+        console.error('Import error:', error);
+        alert(`Failed to import diagram: ${(error as Error).message}`);
+      }
+      
+      // Clean up the file input
+      document.body.removeChild(fileInput);
+    };
+    
+    // Add to DOM and click
+    document.body.appendChild(fileInput);
+    fileInput.click();
+  };
+
 
   const handleCanvasMouseMove = (point: Point, event: MouseEvent) => {
     // Transform canvas coordinates to world coordinates for consistent element manipulation
@@ -2162,7 +2243,9 @@ function App() {
     keyboardManager.on('selectNext', selectNext);
     keyboardManager.on('selectPrevious', selectPrevious);
     keyboardManager.on('copy', copy);
-    // Note: paste handled by clipboard event listener
+    keyboardManager.on('cut', cut);
+    keyboardManager.on('paste', paste);
+    // Note: paste also handled by clipboard event listener for CTRL+V
     keyboardManager.on('copyStyle', copyStyle);
     keyboardManager.on('pasteStyle', pasteStyle);
     keyboardManager.on('resetZoom', resetZoom);
@@ -2179,7 +2262,9 @@ function App() {
       keyboardManager.off('selectNext');
       keyboardManager.off('selectPrevious');
       keyboardManager.off('copy');
-      // Note: paste handled by clipboard event listener
+      keyboardManager.off('cut');
+      keyboardManager.off('paste');
+      // Note: paste also handled by clipboard event listener for CTRL+V
       keyboardManager.off('copyStyle');
       keyboardManager.off('pasteStyle');
       keyboardManager.off('resetZoom');
@@ -2190,7 +2275,7 @@ function App() {
 
   return (
     <div className="excalibox-app">
-      <TopToolbar />
+      <TopToolbar onImportDiagram={handleDiagramImport} />
       <PropertiesPanel />
       <ZoomControl />
       

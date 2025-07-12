@@ -109,6 +109,35 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     onTextChange(newText);
   };
 
+  const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    // Prevent browser's native paste UI from appearing
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Get clipboard text
+    const clipboardData = event.clipboardData;
+    const pastedText = clipboardData?.getData('text/plain') || '';
+    
+    if (pastedText && textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      
+      // Replace selected text with pasted text
+      const newText = text.slice(0, start) + pastedText + text.slice(end);
+      setText(newText);
+      onTextChange(newText);
+      
+      // Set cursor position after pasted text
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const newCursorPos = start + pastedText.length;
+          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    }
+  };
+
   return (
     <div
       className="text-editor-overlay"
@@ -127,6 +156,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
+        onPaste={handlePaste}
         className="text-editor-input"
         style={{
           fontSize: `${fontSize}px`,

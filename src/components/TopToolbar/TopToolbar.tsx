@@ -33,7 +33,11 @@ interface ToolDefinition {
   hasDropdown?: boolean;
 }
 
-export const TopToolbar: React.FC = () => {
+interface TopToolbarProps {
+  onImportDiagram?: () => void;
+}
+
+export const TopToolbar: React.FC<TopToolbarProps> = ({ onImportDiagram }) => {
   const { 
     activeTool, 
     setActiveTool, 
@@ -165,7 +169,7 @@ export const TopToolbar: React.FC = () => {
       </div>
 
       <div className="top-toolbar__actions">
-        <ToolbarMenu />
+        <ToolbarMenu onImportDiagram={onImportDiagram} />
       </div>
     </div>
   );

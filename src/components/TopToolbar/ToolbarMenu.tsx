@@ -5,7 +5,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../../store';
 import './ToolbarMenu.css';
 
-export const ToolbarMenu: React.FC = () => {
+interface ToolbarMenuProps {
+  onImportDiagram?: () => void;
+}
+
+export const ToolbarMenu: React.FC<ToolbarMenuProps> = ({ onImportDiagram }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -50,6 +54,13 @@ export const ToolbarMenu: React.FC = () => {
     openGridDialog(); // Then open dialog
   };
 
+  const handleImportClick = () => {
+    setIsOpen(false); // Close menu first
+    if (onImportDiagram) {
+      onImportDiagram(); // Then trigger import
+    }
+  };
+
 
   return (
     <div className="toolbar-menu" ref={menuRef}>
@@ -84,6 +95,22 @@ export const ToolbarMenu: React.FC = () => {
           role="menu"
           aria-labelledby="toolbar-menu-button"
         >
+          {/* Import Menu Item */}
+          <div className="toolbar-menu__section">
+            <div className="toolbar-menu__item">
+              <button
+                className="toolbar-menu__action"
+                onClick={handleImportClick}
+                role="menuitem"
+                aria-label="Importer un diagramme"
+                title="Importer des fichiers Excalidraw ou Draw.io"
+              >
+                <span className="toolbar-menu__icon">📁</span>
+                <span className="toolbar-menu__label">Importer...</span>
+              </button>
+            </div>
+          </div>
+
           {/* Grid Menu Item */}
           <div className="toolbar-menu__section">
             <div className="toolbar-menu__item">

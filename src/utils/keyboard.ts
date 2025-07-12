@@ -107,7 +107,7 @@ export class KeyboardManager {
     // Linux-style clipboard shortcuts (CTRL+INS / SHIFT+INS format)
     // Support multiple key name variations for better compatibility
     const insertKeyVariations = ['Insert', 'insert', 'Ins', 'ins'];
-    const deleteKeyVariations = ['Delete', 'delete', 'Del', 'del'];
+    const deleteKeyVariations = ['Delete', 'delete', 'Del', 'del', 'Suppr', 'suppr'];
     
     // CTRL+Insert for copy
     insertKeyVariations.forEach(keyName => {
@@ -138,6 +138,7 @@ export class KeyboardManager {
         preventDefault: true,
       });
     });
+
 
     // Style copy/paste shortcuts
     this.addShortcut({
@@ -263,6 +264,7 @@ export class KeyboardManager {
       this.emit('spaceDown');
     }
 
+
     // Don't process shortcuts when input is focused or text editing is active
     if (this.isInputFocused || this.isTextEditingActive) return;
 
@@ -272,6 +274,7 @@ export class KeyboardManager {
       shiftKey: event.shiftKey,
       altKey: event.altKey,
       metaKey: event.metaKey,
+      action: '', // Add required action property (not used in key creation)
     });
 
 

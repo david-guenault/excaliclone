@@ -43,7 +43,15 @@ export const PropertiesPanel: React.FC = () => {
     sendToBack,
     toggleElementLock,
     copyStyle,
-    pasteStyle
+    pasteStyle,
+    alignLeft,
+    alignCenter,
+    alignRight,
+    alignTop,
+    alignMiddle,
+    alignBottom,
+    distributeHorizontally,
+    distributeVertically
   } = useAppStore();
 
   // Font management state
@@ -559,6 +567,87 @@ export const PropertiesPanel: React.FC = () => {
             <span className="opacity-label">100</span>
           </div>
         </div>
+
+        {/* Alignment Controls - Only show for multiple selection */}
+        {isMultipleSelection && (
+          <div className="properties-panel__section">
+            <h4 className="properties-panel__section-title">Alignement</h4>
+            
+            {/* Horizontal Alignment Row */}
+            <div className="properties-panel__preset-row">
+              <button 
+                className="properties-panel__alignment-button"
+                onClick={alignLeft}
+                title="Align Left"
+                aria-label="Align elements to the left"
+              >
+                ⫷
+              </button>
+              <button 
+                className="properties-panel__alignment-button"
+                onClick={alignCenter}
+                title="Align Center"
+                aria-label="Align elements to center horizontally"
+              >
+                ⫸
+              </button>
+              <button 
+                className="properties-panel__alignment-button"
+                onClick={alignRight}
+                title="Align Right" 
+                aria-label="Align elements to the right"
+              >
+                ⫹
+              </button>
+              <button 
+                className="properties-panel__alignment-button"
+                onClick={distributeHorizontally}
+                title="Distribute Horizontally"
+                aria-label="Distribute elements horizontally"
+                disabled={selectedElementIds.length < 3}
+              >
+                ⟷
+              </button>
+            </div>
+
+            {/* Vertical Alignment Row */}
+            <div className="properties-panel__preset-row">
+              <button 
+                className="properties-panel__alignment-button"
+                onClick={alignTop}
+                title="Align Top"
+                aria-label="Align elements to the top"
+              >
+                ⫶
+              </button>
+              <button 
+                className="properties-panel__alignment-button"
+                onClick={alignMiddle}
+                title="Align Middle"
+                aria-label="Align elements to center vertically"
+              >
+                ⫿
+              </button>
+              <button 
+                className="properties-panel__alignment-button"
+                onClick={alignBottom}
+                title="Align Bottom"
+                aria-label="Align elements to the bottom"
+              >
+                ⫱
+              </button>
+              <button 
+                className="properties-panel__alignment-button"
+                onClick={distributeVertically}
+                title="Distribute Vertically"
+                aria-label="Distribute elements vertically"
+                disabled={selectedElementIds.length < 3}
+              >
+                ↕
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 12. Disposition (Layer Management) */}
         <div className="properties-panel__section">

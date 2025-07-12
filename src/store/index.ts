@@ -10,6 +10,7 @@ interface AppStore extends AppState {
   // Actions
   addElement: (element: Omit<Element, 'id'>) => Element;
   addElementSilent: (element: Omit<Element, 'id'>) => Element;
+  addElements: (elements: Element[]) => void;
   updateElement: (id: string, updates: Partial<Element>) => void;
   updateElementSilent: (id: string, updates: Partial<Element>) => void;
   deleteElement: (id: string) => void;
@@ -31,6 +32,7 @@ interface AppStore extends AppState {
   zoomIn: () => void;
   zoomOut: () => void;
   copy: () => void;
+  cut: () => void;
   paste: () => void;
   undo: () => void;
   redo: () => void;
@@ -68,6 +70,15 @@ interface AppStore extends AppState {
   // Style Actions
   copyStyle: () => void;
   pasteStyle: () => void;
+  // Alignment Actions
+  alignLeft: () => void;
+  alignCenter: () => void;
+  alignRight: () => void;
+  alignTop: () => void;
+  alignMiddle: () => void;
+  alignBottom: () => void;
+  distributeHorizontally: () => void;
+  distributeVertically: () => void;
   // History Actions
   saveToHistory: () => void;
   // Direct Text Editing Actions
@@ -200,6 +211,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
     
     return createdElement;
+  },
+
+  addElements: (elements) => {
+    set((state) => {
+      const newElements = [...state.elements, ...elements];
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      return {
+        elements: newElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
   },
 
   updateElement: (id, updates) => {
@@ -564,6 +589,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
   },
 
+  cut: () => {
+    set((state) => {
+      if (state.selectedElementIds.length === 0) return state;
+      
+      // Copy selected elements to clipboard
+      const selectedElements = state.elements.filter((el) =>
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      // Remove selected elements (same logic as deleteSelectedElements)
+      const newElements = state.elements.filter(
+        (el) => !state.selectedElementIds.includes(el.id)
+      );
+      
+      // Save to history
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newElements);
+      
+      return {
+        clipboard: selectedElements,
+        elements: newElements,
+        selectedElementIds: [],
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
   paste: () => {
     set((state) => {
       if (!state.clipboard || state.clipboard.length === 0) return state;
@@ -679,6 +732,295 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
       
       // Save to history
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(updatedElements);
+      
+      return {
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  // Alignment Actions
+  alignLeft: () => {
+    set((state) => {
+      if (state.selectedElementIds.length < 2) return state;
+      
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (selectedElements.length < 2) return state;
+      
+      // Find the leftmost x position
+      const leftmost = Math.min(...selectedElements.map(el => el.x));
+      
+      const updatedElements = state.elements.map((element) => {
+        if (state.selectedElementIds.includes(element.id)) {
+          return { ...element, x: leftmost };
+        }
+        return element;
+      });
+      
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(updatedElements);
+      
+      return {
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  alignCenter: () => {
+    set((state) => {
+      if (state.selectedElementIds.length < 2) return state;
+      
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (selectedElements.length < 2) return state;
+      
+      // Calculate the center x position of the selection
+      const leftmost = Math.min(...selectedElements.map(el => el.x));
+      const rightmost = Math.max(...selectedElements.map(el => el.x + el.width));
+      const centerX = (leftmost + rightmost) / 2;
+      
+      const updatedElements = state.elements.map((element) => {
+        if (state.selectedElementIds.includes(element.id)) {
+          return { ...element, x: centerX - element.width / 2 };
+        }
+        return element;
+      });
+      
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(updatedElements);
+      
+      return {
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  alignRight: () => {
+    set((state) => {
+      if (state.selectedElementIds.length < 2) return state;
+      
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (selectedElements.length < 2) return state;
+      
+      // Find the rightmost edge position
+      const rightmost = Math.max(...selectedElements.map(el => el.x + el.width));
+      
+      const updatedElements = state.elements.map((element) => {
+        if (state.selectedElementIds.includes(element.id)) {
+          return { ...element, x: rightmost - element.width };
+        }
+        return element;
+      });
+      
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(updatedElements);
+      
+      return {
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  alignTop: () => {
+    set((state) => {
+      if (state.selectedElementIds.length < 2) return state;
+      
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (selectedElements.length < 2) return state;
+      
+      // Find the topmost y position
+      const topmost = Math.min(...selectedElements.map(el => el.y));
+      
+      const updatedElements = state.elements.map((element) => {
+        if (state.selectedElementIds.includes(element.id)) {
+          return { ...element, y: topmost };
+        }
+        return element;
+      });
+      
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(updatedElements);
+      
+      return {
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  alignMiddle: () => {
+    set((state) => {
+      if (state.selectedElementIds.length < 2) return state;
+      
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (selectedElements.length < 2) return state;
+      
+      // Calculate the center y position of the selection
+      const topmost = Math.min(...selectedElements.map(el => el.y));
+      const bottommost = Math.max(...selectedElements.map(el => el.y + el.height));
+      const centerY = (topmost + bottommost) / 2;
+      
+      const updatedElements = state.elements.map((element) => {
+        if (state.selectedElementIds.includes(element.id)) {
+          return { ...element, y: centerY - element.height / 2 };
+        }
+        return element;
+      });
+      
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(updatedElements);
+      
+      return {
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  alignBottom: () => {
+    set((state) => {
+      if (state.selectedElementIds.length < 2) return state;
+      
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      );
+      
+      if (selectedElements.length < 2) return state;
+      
+      // Find the bottommost edge position
+      const bottommost = Math.max(...selectedElements.map(el => el.y + el.height));
+      
+      const updatedElements = state.elements.map((element) => {
+        if (state.selectedElementIds.includes(element.id)) {
+          return { ...element, y: bottommost - element.height };
+        }
+        return element;
+      });
+      
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(updatedElements);
+      
+      return {
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  distributeHorizontally: () => {
+    set((state) => {
+      if (state.selectedElementIds.length < 3) return state;
+      
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      ).sort((a, b) => a.x - b.x); // Sort by x position
+      
+      if (selectedElements.length < 3) return state;
+      
+      const leftmost = selectedElements[0].x;
+      const rightmost = selectedElements[selectedElements.length - 1].x + selectedElements[selectedElements.length - 1].width;
+      const totalSpace = rightmost - leftmost;
+      const totalElementWidth = selectedElements.reduce((sum, el) => sum + el.width, 0);
+      const availableSpace = totalSpace - totalElementWidth;
+      const spacing = availableSpace / (selectedElements.length - 1);
+      
+      let currentX = leftmost;
+      const updatedElements = state.elements.map((element) => {
+        const selectedIndex = selectedElements.findIndex(sel => sel.id === element.id);
+        if (selectedIndex !== -1) {
+          if (selectedIndex === 0) {
+            // Keep first element in place
+            currentX = element.x + element.width + spacing;
+            return element;
+          } else if (selectedIndex === selectedElements.length - 1) {
+            // Keep last element in place
+            return element;
+          } else {
+            // Distribute middle elements
+            const newElement = { ...element, x: currentX };
+            currentX += element.width + spacing;
+            return newElement;
+          }
+        }
+        return element;
+      });
+      
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(updatedElements);
+      
+      return {
+        elements: updatedElements,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  distributeVertically: () => {
+    set((state) => {
+      if (state.selectedElementIds.length < 3) return state;
+      
+      const selectedElements = state.elements.filter(el => 
+        state.selectedElementIds.includes(el.id)
+      ).sort((a, b) => a.y - b.y); // Sort by y position
+      
+      if (selectedElements.length < 3) return state;
+      
+      const topmost = selectedElements[0].y;
+      const bottommost = selectedElements[selectedElements.length - 1].y + selectedElements[selectedElements.length - 1].height;
+      const totalSpace = bottommost - topmost;
+      const totalElementHeight = selectedElements.reduce((sum, el) => sum + el.height, 0);
+      const availableSpace = totalSpace - totalElementHeight;
+      const spacing = availableSpace / (selectedElements.length - 1);
+      
+      let currentY = topmost;
+      const updatedElements = state.elements.map((element) => {
+        const selectedIndex = selectedElements.findIndex(sel => sel.id === element.id);
+        if (selectedIndex !== -1) {
+          if (selectedIndex === 0) {
+            // Keep first element in place
+            currentY = element.y + element.height + spacing;
+            return element;
+          } else if (selectedIndex === selectedElements.length - 1) {
+            // Keep last element in place
+            return element;
+          } else {
+            // Distribute middle elements
+            const newElement = { ...element, y: currentY };
+            currentY += element.height + spacing;
+            return newElement;
+          }
+        }
+        return element;
+      });
+      
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(updatedElements);
       

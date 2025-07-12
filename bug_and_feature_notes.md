@@ -2,10 +2,10 @@
 ✅ BUG: quand on double click sur une forme pour ajouter du texte, le curseur devrait directement être visible
 ✅ EVOLUTION: la police par défaut devrait être excalifont
 ✅ BUG: l'outil import d'image ne fonctionne pas. il faut supporter un maximum de format d'image
-- FEATURE: il faut ajouter un outil d'import de diagram compatible avec le format excalidraw et le format drawio. 
+✅ FEATURE: il faut ajouter un outil d'import de diagram compatible avec le format excalidraw et le format drawio. 
 ✅ BUG: l'outil gomme ne fonctionne pas
 ✅ BUG: la propriété angle ne fonctionne pas
-- FEATURE: il manque des outils d'alignement sur selection multiples comme dans excalidraw. Pour le design voir l'image alignement dans design_examples. alignement horizontal (a gauche a droite centré répartit horizontalement) et alignement vertical (en haut en bas au centre repartit verticalement)
+✅ FEATURE: il manque des outils d'alignement sur selection multiples comme dans excalidraw. Pour le design voir l'image alignement dans design_examples. alignement horizontal (a gauche a droite centré répartit horizontalement) et alignement vertical (en haut en bas au centre repartit verticalement)
 ✅ EVOLUTION: harmoniser la taille des icones de fenêtre de propriétés. Boutons carrés tous de la même taille.
 ✅ BUG: l'onglet affiche VITE + REACT + TS en titre. Change cela pour le nom de l'application
 ✅ BUG: en mode édition de texte les touches SUPR et BACKSPACE ne doivent pas supprimer la forme. Dans ce contexte ces touches servent a supprimer du texte édité. 
@@ -43,6 +43,7 @@
 ✅ REGRESSION: quand je fais une navigation par mot. le curseur doit se positionner au début des mots. 
 ✅ EVOLUTION: pour les alignements de texte tout regrouper sous un meme libelle. 
 ✅ BUG: une fois qu'un ensemble de forme a subi une rotation, il est impossible de supprimer les formes. Par contre si on remet l'ensemble comme au positionnement initial on peut a nouveau supprimer les formes. 
-- EVOLUTION: implémente aussi les racourci clavier couper/copier/coller mais au format linux (CTRL+INS / SHIFT+INS)
+✅ EVOLUTION: implémente aussi les racourci clavier couper/copier/coller mais au format linux (CTRL+INS / SHIFT+INS)
 ✅ BUG: lorsque je colle un texte dans une forme, un bouton coller apparait. je ne veux pas de ce bouton mais juste que tu colle le texte. 
 ✅ EVOLUTION: les 6 boutons d'alignement de texte doivent apparaitre sur une seule ligne dans la boite de propriété.
+✅ BUG: lorsque je colle du texte dans une forme, j'ai un bouton coller qui apparait. lorsque je clique sur ce bouton, le texte n'est pas collé. Par contre lorsque je clique en dehors de la forme, le texte apparait. je ne veux pas du bouton coller, et je veux que le texte collé apparaisse immédiatement. 

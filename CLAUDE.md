@@ -119,7 +119,7 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
 - À chaque résolution de bug, feature, evolution, cleanup. met a jour le fichier bug_and_feature.md en ajoutant une coche verte au début de la ligne.
 
 ## Bug and Feature Tracking
-
+- pour les résolution, réfléchit profondément afin de proposer une solution fiable qui n'induira pas de regressions. 
 - Le fichier de suivi des bugs, regression, feature et evolution est bug_and_feature_notes.md. Quand je te dis "résolution bug", charge le et vérifie ce qui n'a pas encore été marqué d'une coche verte. Puis lance les résolution avec un ordre de priorité:
     - REGRESSION
     - BUG
