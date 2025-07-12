@@ -2067,23 +2067,7 @@ function App() {
           const newText = currentText.slice(0, selStart) + currentText.slice(selEnd);
           updateTextContent(newText, selStart);
         }
-      } else if (event.key === 'v' && event.ctrlKey) {
-        event.preventDefault();
-        event.stopPropagation();
-        // Paste text from clipboard
-        navigator.clipboard.readText().then(clipboardText => {
-          if (clipboardText) {
-            if (hasSelection) {
-              // Replace selected text with clipboard content
-              const newText = currentText.slice(0, selStart) + clipboardText + currentText.slice(selEnd);
-              updateTextContent(newText, selStart + clipboardText.length);
-            } else {
-              // Insert clipboard content at cursor position
-              const newText = currentText.slice(0, cursorPos) + clipboardText + currentText.slice(cursorPos);
-              updateTextContent(newText, cursorPos + clipboardText.length);
-            }
-          }
-        }).catch(console.error);
+      // Note: Paste handling moved to separate paste event listener to avoid clipboard permission issues
       } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
         // Regular character input
         event.preventDefault();
@@ -2144,8 +2128,29 @@ function App() {
       event.stopPropagation();
       event.stopImmediatePropagation();
       
-      // Don't handle if text editing is active - text editing uses its own paste handling
-      if (textEditing.isEditing) {
+      // Handle text editing paste without navigator.clipboard API
+      if (textEditing.isEditing && textEditing.elementId) {
+        const clipboardData = event.clipboardData;
+        if (!clipboardData) return;
+        
+        const pastedText = clipboardData.getData('text/plain');
+        if (!pastedText) return;
+        
+        const currentText = textEditing.text;
+        const cursorPos = textEditing.cursorPosition;
+        const selStart = textEditing.selectionStart;
+        const selEnd = textEditing.selectionEnd;
+        const hasSelection = selStart !== selEnd;
+        
+        if (hasSelection) {
+          // Replace selected text with clipboard content
+          const newText = currentText.slice(0, selStart) + pastedText + currentText.slice(selEnd);
+          updateTextContent(newText, selStart + pastedText.length);
+        } else {
+          // Insert clipboard content at cursor position
+          const newText = currentText.slice(0, cursorPos) + pastedText + currentText.slice(cursorPos);
+          updateTextContent(newText, cursorPos + pastedText.length);
+        }
         return;
       }
       

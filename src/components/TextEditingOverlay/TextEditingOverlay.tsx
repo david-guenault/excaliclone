@@ -37,39 +37,6 @@ export const TextEditingOverlay: React.FC<TextEditingOverlayProps> = ({
     }
   }, []);
 
-  // Additional effect to aggressively prevent browser paste UI
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    // Prevent all context menu events that might trigger paste UI
-    const preventContextMenu = (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    };
-
-    // Prevent drag and drop which can also trigger paste-like UI
-    const preventDragDrop = (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
-    // Add multiple event listeners to catch all possible paste UI triggers
-    textarea.addEventListener('contextmenu', preventContextMenu, { passive: false });
-    textarea.addEventListener('dragover', preventDragDrop, { passive: false });
-    textarea.addEventListener('drop', preventDragDrop, { passive: false });
-    textarea.addEventListener('dragenter', preventDragDrop, { passive: false });
-    textarea.addEventListener('dragleave', preventDragDrop, { passive: false });
-
-    return () => {
-      textarea.removeEventListener('contextmenu', preventContextMenu);
-      textarea.removeEventListener('dragover', preventDragDrop);
-      textarea.removeEventListener('drop', preventDragDrop);
-      textarea.removeEventListener('dragenter', preventDragDrop);
-      textarea.removeEventListener('dragleave', preventDragDrop);
-    };
-  }, []);
 
   useEffect(() => {
     // Handle clicks outside the overlay
@@ -143,33 +110,6 @@ export const TextEditingOverlay: React.FC<TextEditingOverlayProps> = ({
     setText(event.target.value);
   };
 
-  const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    // Prevent browser's native paste UI from appearing
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Get clipboard text
-    const clipboardData = event.clipboardData;
-    const pastedText = clipboardData?.getData('text/plain') || '';
-    
-    if (pastedText && textareaRef.current) {
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      
-      // Replace selected text with pasted text
-      const newText = text.slice(0, start) + pastedText + text.slice(end);
-      setText(newText);
-      
-      // Set cursor position after pasted text
-      setTimeout(() => {
-        if (textareaRef.current) {
-          const newCursorPos = start + pastedText.length;
-          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
-        }
-      }, 0);
-    }
-  };
 
   return (
     <div
@@ -186,18 +126,10 @@ export const TextEditingOverlay: React.FC<TextEditingOverlayProps> = ({
         value={text}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
         placeholder="Enter text..."
         aria-label="Edit text"
         rows={3}
         autoFocus
-        autoComplete="off"
-        autoCapitalize="off"
-        autoCorrect="off"
-        spellCheck={false}
-        data-gramm="false"
-        data-gramm_editor="false"
-        data-enable-grammarly="false"
       />
       <div className="text-editing-overlay__hint">
         Press Enter to save, Esc to cancel
