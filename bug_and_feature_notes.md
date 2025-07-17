@@ -56,3 +56,8 @@ BUG: lorsque j'importe un diagramme excalidraw le fond des formes est systémati
 BUG: les images importées ne collent pas a la grille
 REGRESSION: les icones pour aligner les formes dans la barre d'outils ne sont plus bonnes.
 EVOLUTION: ajouter un redimensionnement proportionnel déclenché par l'appui et le maintient de la touche CTRL plus redimensionnement. 
+- BUG: les groupes ne sont pas persisté a la sauvegarde
+- EVOLUTION: la rotation de shape est saccadé, le pas de rotation est trop important. réduis le de façon a ce que la rotation soit plus fluide.
+- EVOLUTION: dans le menu ajoute une boite modale permettant d'afficher tous les racourci clavier. Essaye de catégoriser chaque ensemble de racourci en sections. 
+- BUG: lorsque je commence a faire une rotation la forme part brutalement a + ou - 90 degré selon le sens de rotation. il faudrait un mouvement plus fluide
+- BUG: la boite de propritée déscend trop bas et passe sous le controle de zoom. cela est génant pour l'utilisation des controles action

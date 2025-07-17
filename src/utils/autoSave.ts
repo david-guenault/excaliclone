@@ -87,15 +87,6 @@ export function saveStateToStorage(state: Partial<AppState>): void {
     
     localStorage.setItem(AUTO_SAVE_STORAGE_KEY, serializedData);
     
-    // Enhanced logging with content details
-    const elementsWithText = savedState.elements.filter(el => el.text);
-    const elementsWithImages = savedState.elements.filter(el => el.imageUrl);
-    const elementsWithRotation = savedState.elements.filter(el => el.angle && el.angle !== 0);
-    
-    console.log(`💾 Drawing auto-saved: ${savedState.elements.length} elements (${sizeInKB}KB)`);
-    console.log(`   📝 Text elements: ${elementsWithText.length}`);
-    console.log(`   🖼️ Image elements: ${elementsWithImages.length}`);
-    console.log(`   🔄 Rotated elements: ${elementsWithRotation.length}`);
     
     // Indicate saving completed successfully
     if (setSavingState) {
@@ -136,26 +127,6 @@ export function loadStateFromStorage(): Partial<AppState> | null {
       // Could implement migration logic here in the future
     }
 
-    // Enhanced logging with content verification
-    const elementsWithText = savedState.elements.filter(el => el.text);
-    const elementsWithImages = savedState.elements.filter(el => el.imageUrl);
-    const elementsWithRotation = savedState.elements.filter(el => el.angle && el.angle !== 0);
-    
-    console.log(`📂 Drawing restored: ${savedState.elements.length} elements`);
-    console.log(`   📝 Text elements: ${elementsWithText.length}`);
-    console.log(`   🖼️ Image elements: ${elementsWithImages.length}`);
-    console.log(`   🔄 Rotated elements: ${elementsWithRotation.length}`);
-    
-    // Detailed debugging for each type
-    if (elementsWithText.length > 0) {
-      console.log('📝 Text content preview:', elementsWithText.map(el => `"${el.text?.substring(0, 30)}..."`));
-    }
-    if (elementsWithImages.length > 0) {
-      console.log('🖼️ Image URLs preview:', elementsWithImages.map(el => `${el.imageUrl?.substring(0, 50)}...`));
-    }
-    if (elementsWithRotation.length > 0) {
-      console.log('🔄 Rotation angles:', elementsWithRotation.map(el => `${el.angle}°`));
-    }
     
     // Validate and repair elements to ensure data integrity
     const repairedElements = validateAndRepairElements(savedState.elements || []);

@@ -431,3 +431,4 @@ function distancePointToLineSegment(point: Point, p1: Point, p2: Point): number 
   const dy = point.y - yy;
   return Math.sqrt(dx * dx + dy * dy);
 }
+

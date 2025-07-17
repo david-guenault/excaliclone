@@ -27,6 +27,7 @@ Excalibox is a comprehensive drawing and whiteboarding application designed for 
 - **Canvas Rendering**: HTML5 Canvas with custom rendering engine
 - **Styling**: CSS Modules for component isolation
 - **Drawing Library**: Rough.js for hand-drawn aesthetic
+- **Icons**: Feather Icons as primary icon system, fallback to Font Awesome, Heroicons, or custom SVGs
 
 ### Backend Stack (Future Collaboration)
 - **Runtime**: Node.js with TypeScript
@@ -513,6 +514,40 @@ interface UIState {
 - **Typography**: Small, clean labels in French
 - **Close Behavior**: Click outside to close, Escape key to cancel
 
+#### **Icon System Specification**
+
+##### **Primary Icon Library: Feather Icons**
+- **Source**: react-feather library for consistent, minimalist SVG icons
+- **Style**: Clean, outlined design matching application aesthetic
+- **Coverage**: Comprehensive icon set covering all UI elements and tools
+- **Implementation**: Import specific icons from react-feather as React components
+- **Sizing**: Consistent 16px, 20px, 24px sizes based on context
+
+##### **Icon Usage Guidelines**
+- **Toolbar Tools**: Use Feather Icons for all drawing tools (Square, Circle, Edit3, Type, etc.)
+- **Actions**: Use Feather Icons for operations (Copy, Trash2, Lock, Unlock, etc.)
+- **Navigation**: Use Feather Icons for UI controls (ChevronDown, Menu, X, etc.)
+- **Alignment**: Use Feather Icons for layout controls (AlignLeft, AlignCenter, etc.)
+- **Layer Operations**: Use Feather Icons for z-order (ArrowUp, ArrowDown, etc.)
+
+##### **Fallback Strategy**
+1. **Feather Icons**: Primary choice for all interface elements
+2. **Font Awesome**: Secondary option if specific icon unavailable in Feather
+3. **Heroicons**: Tertiary option for specialized UI components
+4. **Custom SVGs**: Last resort for application-specific tools or unique requirements
+
+##### **Icon Integration Requirements**
+- **Consistent Props**: All icons accept size, color, strokeWidth props
+- **Accessibility**: All icons include aria-label and role attributes
+- **Performance**: Icons are tree-shaken and only imported as needed
+- **Theming**: Icons adapt to current color scheme and hover states
+- **Styling**: Icons inherit color from parent or explicit color prop
+
+##### **Icon Replacement Priority**
+1. **High Priority**: Toolbar tools, primary actions, navigation elements
+2. **Medium Priority**: Properties panel controls, layer management, text formatting
+3. **Low Priority**: Status indicators, decorative elements, secondary actions
+
 #### **Design Principles**
 - **Consistent Spacing**: Uniform gaps between sections and elements
 - **Clear Labels**: French labels in clean, readable font
@@ -526,6 +561,7 @@ interface UIState {
 - **Monochrome Icons**: Icons must never use colors - only black/white/gray
 - **Panel Margins**: Panel must have spacing from screen edge (not flush)
 - **Internal Padding**: All content must have consistent spacing from panel borders
+- **Feather Icon Standard**: All icons must use Feather Icons library for consistency and quality
 
 #### **Interaction Patterns**
 - **Single Click**: Select any preset option immediately

@@ -118,6 +118,12 @@ function App() {
   const [circleStart, setCircleStart] = useState<Point | null>(null);
   const [currentCircleId, setCurrentCircleId] = useState<string | null>(null);
   
+  // Diamond drawing state
+  const [isDrawingDiamond, setIsDrawingDiamond] = useState(false);
+  const [diamondStart, setDiamondStart] = useState<Point | null>(null);
+  const [currentDiamondId, setCurrentDiamondId] = useState<string | null>(null);
+  
+  
   // Drag selection state
   const [isDragSelecting, setIsDragSelecting] = useState(false);
   const [dragSelectionStart, setDragSelectionStart] = useState<Point | null>(null);
@@ -432,6 +438,89 @@ function App() {
     setCurrentCircleId(null);
   };
 
+  const handleDiamondDrawingCanvasMove = (point: Point) => {
+    // Apply grid and magnetic snapping to end point
+    const snappedPoint = applySnapping(point);
+    
+    // Calculate diamond dimensions
+    const modifiers = keyboardManager.getModifierState();
+    let width = snappedPoint.x - diamondStart!.x;
+    let height = snappedPoint.y - diamondStart!.y;
+    
+    // Ignore tiny movements (less than 2 pixels)
+    if (Math.abs(width) < 2 && Math.abs(height) < 2) {
+      return;
+    }
+    
+    // Constrain to square with Shift
+    if (modifiers.shift) {
+      const size = Math.max(Math.abs(width), Math.abs(height));
+      width = width >= 0 ? size : -size;
+      height = height >= 0 ? size : -size;
+    }
+    
+    const finalUpdate = {
+      width: Math.abs(width),
+      height: Math.abs(height),
+      x: width >= 0 ? diamondStart!.x : diamondStart!.x + width,
+      y: height >= 0 ? diamondStart!.y : diamondStart!.y + height,
+    };
+    
+    const { updateElementSilent } = useAppStore.getState();
+    updateElementSilent(currentDiamondId!, finalUpdate);
+  };
+
+  const handleDiamondDrawingCanvasUp = (point: Point) => {
+    // Apply grid and magnetic snapping to final end point
+    const snappedPoint = applySnapping(point);
+    
+    // Calculate final diamond dimensions
+    const modifiers = keyboardManager.getModifierState();
+    let width = snappedPoint.x - diamondStart!.x;
+    let height = snappedPoint.y - diamondStart!.y;
+    
+    // Constrain to square with Shift
+    if (modifiers.shift) {
+      const size = Math.max(Math.abs(width), Math.abs(height));
+      width = width >= 0 ? size : -size;
+      height = height >= 0 ? size : -size;
+    }
+    
+    const finalWidth = Math.abs(width);
+    const finalHeight = Math.abs(height);
+    const minSize = 10; // Minimum diamond size
+    
+    // If the diamond is too small, remove it
+    if (finalWidth < minSize || finalHeight < minSize) {
+      const { deleteElement } = useAppStore.getState();
+      deleteElement(currentDiamondId!);
+    } else {
+      // Update final position and size
+      const { updateElement, selectElements } = useAppStore.getState();
+      updateElement(currentDiamondId!, {
+        width: finalWidth,
+        height: finalHeight,
+        x: width >= 0 ? diamondStart!.x : diamondStart!.x + width,
+        y: height >= 0 ? diamondStart!.y : diamondStart!.y + height,
+      });
+      
+      // Auto-select the created diamond
+      selectElements([currentDiamondId!]);
+      
+      // Auto-activate selection tool for immediate manipulation
+      setActiveTool('select');
+      
+      // Save to history for undo/redo
+      saveToHistory();
+    }
+    
+    // Reset diamond drawing state
+    setIsDrawingDiamond(false);
+    setDiamondStart(null);
+    setCurrentDiamondId(null);
+  };
+
+
   const handleGlobalMouseUp = (event: MouseEvent) => {
     // Handle line drawing completion
     if (isDrawingLine && lineStart && currentLineId) {
@@ -486,7 +575,7 @@ function App() {
     setCurrentLineId(null);
     
     // Remove global event listeners if no other drawing is active
-    if (!isDrawingArrow && !isDrawingRectangle && !isDrawingCircle) {
+    if (!isDrawingArrow && !isDrawingRectangle && !isDrawingCircle && !isDrawingDiamond) {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     }
@@ -532,7 +621,7 @@ function App() {
     setCurrentArrowId(null);
     
     // Remove global event listeners if no other drawing is active
-    if (!isDrawingLine && !isDrawingRectangle && !isDrawingCircle) {
+    if (!isDrawingLine && !isDrawingRectangle && !isDrawingCircle && !isDrawingDiamond) {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     }
@@ -615,164 +704,183 @@ function App() {
       y: (point.y / viewport.zoom) + viewport.pan.y,
     };
     
-    
+    console.log('🖱️ Mouse down:', { activeTool, selectedElementIds, worldPoint });
     
     // Check for space+drag panning or hand tool panning
     if (keyboardManager.isSpacePressedNow() || activeTool === 'hand') {
+      console.log('🤚 Starting pan mode');
       setIsPanning(true);
       setPanStart(point);
       panStartViewport.current = { ...viewport.pan };
       return;
     }
     
-    // Check if we're clicking on an existing element (for selection)
-    if (activeTool === 'select') {
-      // Check for multi-selection group operations first
-      if (selectedElementIds.length > 1) {
-        const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
-        const multiSelectionBounds = getMultiSelectionBounds(selectedElements);
-        
-        if (multiSelectionBounds) {
-          const groupHandle = findMultiSelectionHandle(worldPoint, multiSelectionBounds);
-          if (groupHandle) {
-            if (groupHandle === 'rotation') {
-              // Start group rotation
-              setIsGroupRotating(true);
-              setGroupRotationCenter(multiSelectionBounds.center);
-              
-              // Store initial rotation angle and element states
-              const initialAngle = Math.atan2(
-                worldPoint.y - multiSelectionBounds.center.y,
-                worldPoint.x - multiSelectionBounds.center.x
-              );
-              setGroupRotationStartAngle(initialAngle);
-              setGroupRotationStartElements(selectedElements.slice());
-              
-              const canvas = event.target as HTMLElement;
-              canvas.style.cursor = 'grabbing';
-            } else {
-              // Start group resize
-              setIsGroupResizing(true);
-              setGroupResizeHandle(groupHandle);
-              setGroupResizeStartPoint(worldPoint);
-              setGroupResizeStartBounds(multiSelectionBounds);
-              // Save initial state of elements
-              const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
-              setGroupResizeStartElements(selectedElements.slice());
-            }
-            return;
-          }
-        }
-      }
+    // Check for element interaction first (selection, dragging, resizing) regardless of active tool
+    // This ensures selected elements can always be moved, even if tool hasn't switched to select yet
+    
+    // Check for multi-selection group operations first
+    if (selectedElementIds.length > 1) {
+      const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
+      const multiSelectionBounds = getMultiSelectionBounds(selectedElements);
       
-      // Check if we're clicking on a resize handle of a selected element (ONLY for single selection)
-      if (selectedElementIds.length === 1) {
-        for (const elementId of selectedElementIds) {
-          const element = elements.find(el => el.id === elementId);
-          if (!element || element.locked) continue;
-          
-          const handle = findResizeHandle(worldPoint, element);
-          if (handle) {
-            if (handle === 'rotation') {
-              // Start rotation operation
-              setIsRotating(true);
-              setRotationElementId(elementId);
-              
-              // Change cursor to grabbing for rotation
-              const canvas = event.target as HTMLElement;
-              canvas.style.cursor = 'grabbing';
-            } else {
-              // Start resize operation
-              setIsResizing(true);
-              setResizeElementId(elementId);
-              setResizeHandle(handle);
-              setResizeStartPoint(worldPoint);
-              setResizeStartBounds({
-                x: element.x,
-                y: element.y,
-                width: element.width,
-                height: element.height,
-              });
-            }
-            return;
-          }
-        }
-      }
-      
-      // Use spatial index for optimized hit testing
-      const { spatialHitTest } = useAppStore.getState();
-      const clickedElement = spatialHitTest(worldPoint);
-      
-      if (clickedElement) {
-        // Check for modifier keys
-        const isShiftClick = event.shiftKey;
-        const isSelectedElement = selectedElementIds.includes(clickedElement.id);
-        
-        if (isShiftClick) {
-          // Shift+Click: Toggle element or group in selection
-          const elementGroup = getElementGroup(clickedElement.id);
-          if (elementGroup) {
-            // Toggle all elements in the group
-            const groupElements = getGroupElements(elementGroup.id);
-            const allSelected = groupElements.every(el => selectedElementIds.includes(el.id));
-            if (allSelected) {
-              // Remove all group elements from selection
-              groupElements.forEach(el => toggleSelection(el.id));
-            } else {
-              // Add all group elements to selection
-              groupElements.forEach(el => {
-                if (!selectedElementIds.includes(el.id)) {
-                  toggleSelection(el.id);
-                }
-              });
-            }
+      if (multiSelectionBounds) {
+        const groupHandle = findMultiSelectionHandle(worldPoint, multiSelectionBounds);
+        if (groupHandle) {
+          if (groupHandle === 'rotation') {
+            // Start group rotation
+            setIsGroupRotating(true);
+            setGroupRotationCenter(multiSelectionBounds.center);
+            
+            // Store initial rotation angle and element states
+            const initialAngle = Math.atan2(
+              worldPoint.y - multiSelectionBounds.center.y,
+              worldPoint.x - multiSelectionBounds.center.x
+            );
+            setGroupRotationStartAngle(initialAngle);
+            setGroupRotationStartElements(selectedElements.slice());
+            
+            const canvas = event.target as HTMLElement;
+            canvas.style.cursor = 'grabbing';
           } else {
-            // Single element toggle
-            toggleSelection(clickedElement.id);
+            // Start group resize
+            setIsGroupResizing(true);
+            setGroupResizeHandle(groupHandle);
+            setGroupResizeStartPoint(worldPoint);
+            setGroupResizeStartBounds(multiSelectionBounds);
+            // Save initial state of elements
+            const selectedElements = elements.filter(el => selectedElementIds.includes(el.id) && !el.locked);
+            setGroupResizeStartElements(selectedElements.slice());
           }
           return;
-        } else if (isSelectedElement) {
-          // If clicking on a selected element without Shift, start dragging
-          setIsDraggingElements(true);
-          setDragStart(worldPoint); // Use world coordinates for consistent drag calculations
-          
-          // Store initial positions of all selected elements for history
-          const initialPositions = new Map<string, Point>();
-          selectedElementIds.forEach(elementId => {
-            const element = elements.find(el => el.id === elementId);
-            if (element) {
-              initialPositions.set(elementId, { x: element.x, y: element.y });
-            }
-          });
-          setDragStartPositions(initialPositions);
+        }
+      }
+    }
+    
+    // Check if we're clicking on a resize handle of a selected element (ONLY for single selection)
+    if (selectedElementIds.length === 1) {
+      for (const elementId of selectedElementIds) {
+        const element = elements.find(el => el.id === elementId);
+        if (!element || element.locked) continue;
+        
+        const handle = findResizeHandle(worldPoint, element);
+        if (handle) {
+          if (handle === 'rotation') {
+            // Start rotation operation
+            setIsRotating(true);
+            setRotationElementId(elementId);
+            
+            // Change cursor to grabbing for rotation
+            const canvas = event.target as HTMLElement;
+            canvas.style.cursor = 'grabbing';
+          } else {
+            // Start resize operation
+            setIsResizing(true);
+            setResizeElementId(elementId);
+            setResizeHandle(handle);
+            setResizeStartPoint(worldPoint);
+            setResizeStartBounds({
+              x: element.x,
+              y: element.y,
+              width: element.width,
+              height: element.height,
+            });
+          }
           return;
+        }
+      }
+    }
+    
+    // Use spatial index for optimized hit testing
+    const { spatialHitTest } = useAppStore.getState();
+    const clickedElement = spatialHitTest(worldPoint);
+    
+    if (clickedElement) {
+      // Check for modifier keys
+      const isShiftClick = event.shiftKey;
+      const isSelectedElement = selectedElementIds.includes(clickedElement.id);
+      
+      if (isShiftClick) {
+        // Shift+Click: Toggle element or group in selection
+        const elementGroup = getElementGroup(clickedElement.id);
+        if (elementGroup) {
+          // Toggle all elements in the group
+          const groupElements = getGroupElements(elementGroup.id);
+          const allSelected = groupElements.every(el => selectedElementIds.includes(el.id));
+          if (allSelected) {
+            // Remove all group elements from selection
+            groupElements.forEach(el => toggleSelection(el.id));
+          } else {
+            // Add all group elements to selection
+            groupElements.forEach(el => {
+              if (!selectedElementIds.includes(el.id)) {
+                toggleSelection(el.id);
+              }
+            });
+          }
         } else {
-          // Single element selection (replace current selection)
-          const elementGroup = getElementGroup(clickedElement.id);
-          if (elementGroup) {
-            // Select all elements in the group
-            const groupElements = getGroupElements(elementGroup.id);
-            selectElements(groupElements.map(el => el.id));
-          } else {
-            // Single element selection
-            selectElement(clickedElement.id);
-          }
-          return;
-        }
-      } else {
-        // Start drag selection on empty area
-        const snappedPoint = applySnapping(worldPoint);
-        setIsDragSelecting(true);
-        setDragSelectionStart(snappedPoint);
-        setDragSelectionEnd(snappedPoint);
-        setDragSelectionShiftKey(event.shiftKey); // Capture Shift key state
-        
-        // Only clear selection if not holding Shift (allows additive drag selection)
-        if (!event.shiftKey) {
-          clearSelection();
+          // Single element toggle
+          toggleSelection(clickedElement.id);
         }
         return;
+      } else if (isSelectedElement) {
+        // If clicking on a selected element without Shift, start dragging
+        setIsDraggingElements(true);
+        setDragStart(worldPoint); // Use world coordinates for consistent drag calculations
+        
+        // Store initial positions of all selected elements for history
+        const initialPositions = new Map<string, Point>();
+        selectedElementIds.forEach(elementId => {
+          const element = elements.find(el => el.id === elementId);
+          if (element) {
+            initialPositions.set(elementId, { x: element.x, y: element.y });
+          }
+        });
+        setDragStartPositions(initialPositions);
+        return;
+      } else {
+        // Single element selection (replace current selection)
+        const elementGroup = getElementGroup(clickedElement.id);
+        if (elementGroup) {
+          // Select all elements in the group
+          const groupElements = getGroupElements(elementGroup.id);
+          selectElements(groupElements.map(el => el.id));
+        } else {
+          // Single element selection
+          selectElement(clickedElement.id);
+        }
+        
+        // Start dragging immediately after selection
+        setIsDraggingElements(true);
+        setDragStart(worldPoint);
+        
+        // Store initial positions of all selected elements for history
+        const initialPositions = new Map<string, Point>();
+        const elementsToMove = elementGroup ? 
+          getGroupElements(elementGroup.id) : 
+          [clickedElement];
+        
+        elementsToMove.forEach(element => {
+          initialPositions.set(element.id, { x: element.x, y: element.y });
+        });
+        setDragStartPositions(initialPositions);
+        return;
       }
+    }
+    
+    // If we get here and activeTool is 'select', start drag selection
+    if (activeTool === 'select') {
+      // Start drag selection on empty area
+      const snappedPoint = applySnapping(worldPoint);
+      setIsDragSelecting(true);
+      setDragSelectionStart(snappedPoint);
+      setDragSelectionEnd(snappedPoint);
+      setDragSelectionShiftKey(event.shiftKey); // Capture Shift key state
+      
+      // Only clear selection if not holding Shift (allows additive drag selection)
+      if (!event.shiftKey) {
+        clearSelection();
+      }
+      return;
     }
     
     if (activeTool === 'rectangle') {
@@ -833,6 +941,34 @@ function App() {
       setCurrentCircleId(createdElement.id);
       
       // NOTE: Circle drawing uses Canvas events only - no global listeners needed
+    } else if (activeTool === 'diamond') {
+      // Apply grid and magnetic snapping to start point
+      const snappedPoint = applySnapping(worldPoint);
+      
+      // Start diamond drawing
+      setIsDrawingDiamond(true);
+      setDiamondStart(snappedPoint);
+      
+      // Create a temporary diamond element with minimal size
+      const createdElement = addElementSilent({
+        type: 'diamond',
+        x: snappedPoint.x,
+        y: snappedPoint.y,
+        width: 1, // Start with minimal size
+        height: 1,
+        angle: 0,
+        strokeColor: toolOptions.strokeColor,
+        backgroundColor: toolOptions.backgroundColor,
+        strokeWidth: toolOptions.strokeWidth,
+        strokeStyle: toolOptions.strokeStyle,
+        fillStyle: toolOptions.fillStyle,
+        roughness: toolOptions.roughness,
+        opacity: toolOptions.opacity,
+      });
+      
+      setCurrentDiamondId(createdElement.id);
+      
+      // NOTE: Diamond drawing uses Canvas events only - no global listeners needed
     } else if (activeTool === 'line') {
       // Apply grid and magnetic snapping to start point
       const snappedPoint = applySnapping(worldPoint);
@@ -1401,6 +1537,12 @@ function App() {
       handleCircleDrawingCanvasMove(worldPoint);
     }
     
+    // Handle diamond drawing with world coordinates
+    if (isDrawingDiamond && diamondStart && currentDiamondId) {
+      handleDiamondDrawingCanvasMove(worldPoint);
+    }
+    
+    
     // Handle pen drawing
     if (isDrawingPen && currentPenId) {
       const snappedPoint = applySnapping(worldPoint);
@@ -1557,7 +1699,8 @@ function App() {
     
     // Handle element resizing completion
     if (isResizing) {
-      // Save the resized elements to history
+      // Element has already been updated by updateElementSilent during mousemove
+      // Just trigger save to history and reset state
       saveToHistory();
       setIsResizing(false);
       setResizeElementId(null);
@@ -1572,7 +1715,8 @@ function App() {
     
     // Handle element rotation completion
     if (isRotating) {
-      // Save the rotated element to history
+      // Element has already been updated by updateElementSilent during mousemove
+      // Just trigger save to history and reset state
       saveToHistory();
       setIsRotating(false);
       setRotationElementId(null);
@@ -1591,6 +1735,12 @@ function App() {
     if (isDrawingCircle && circleStart && currentCircleId) {
       handleCircleDrawingCanvasUp(worldPoint);
     }
+    
+    // Handle diamond drawing completion
+    if (isDrawingDiamond && diamondStart && currentDiamondId) {
+      handleDiamondDrawingCanvasUp(worldPoint);
+    }
+    
     
     // Handle pen drawing completion
     if (isDrawingPen && currentPenId) {
@@ -1699,36 +1849,8 @@ function App() {
           case 'rectangle':
           case 'text':
           case 'image':
+          case 'circle':
             return isPointInRotatedElement(worldPoint, element);
-          case 'circle': {
-            // First check if we're in the rotated bounding box
-            if (!isPointInRotatedElement(worldPoint, element)) return false;
-            
-            // Then check if we're actually inside the ellipse
-            const centerX = element.x + element.width / 2;
-            const centerY = element.y + element.height / 2;
-            const radiusX = element.width / 2;
-            const radiusY = element.height / 2;
-            
-            // Handle rotation for circles
-            if (element.angle && element.angle !== 0) {
-              // Transform click point to element's local coordinate system
-              const cos = Math.cos(-element.angle);
-              const sin = Math.sin(-element.angle);
-              const dx = worldPoint.x - centerX;
-              const dy = worldPoint.y - centerY;
-              const localX = dx * cos - dy * sin;
-              const localY = dx * sin + dy * cos;
-              
-              // Check if the local point is inside the ellipse
-              return (localX / radiusX) * (localX / radiusX) + (localY / radiusY) * (localY / radiusY) <= 1;
-            } else {
-              // Non-rotated case
-              const dx = (worldPoint.x - centerX) / radiusX;
-              const dy = (worldPoint.y - centerY) / radiusY;
-              return dx * dx + dy * dy <= 1;
-            }
-          }
           case 'line':
           case 'arrow': {
             // Simple line hit test with tolerance
@@ -1853,7 +1975,7 @@ function App() {
       lines,
       currentLine,
       positionInLine,
-      lineStarts: lines.reduce((acc, line, index) => {
+      lineStarts: lines.reduce((acc, _, index) => {
         if (index === 0) {
           acc.push(0);
         } else {

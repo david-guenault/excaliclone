@@ -6,22 +6,21 @@ import { useAppStore } from '../../store';
 import type { ToolType } from '../../types';
 import { KEYBOARD_SHORTCUTS } from '../../constants';
 import {
-  LockIcon,
-  UnlockIcon,
-  HandIcon,
-  SelectionIcon,
-  RectangleIcon,
-  DiamondIcon,
-  CircleIcon,
-  ArrowIcon,
-  LineIcon,
-  PenIcon,
-  TextIcon,
-  ImageIcon,
-  EraserIcon,
-  MenuIcon,
-  ChevronDownIcon,
-} from '../UI/Icons';
+  Lock,
+  Unlock,
+  Move,
+  MousePointer,
+  Square,
+  Circle,
+  ArrowUpRight,
+  Minus,
+  Edit3,
+  Type,
+  Image,
+  Trash2,
+  Menu,
+  ChevronDown,
+} from 'react-feather';
 import { ToolbarMenu } from './ToolbarMenu';
 import { DrawingWeightIndicator } from '../DrawingWeightIndicator';
 import './TopToolbar.css';
@@ -51,74 +50,74 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({ onImportDiagram }) => {
       type: 'lock',
       name: ui.canvasLocked ? 'Unlock Canvas' : 'Lock Canvas',
       shortcut: KEYBOARD_SHORTCUTS.LOCK,
-      icon: ui.canvasLocked ? <UnlockIcon /> : <LockIcon />,
+      icon: ui.canvasLocked ? <Unlock size={20} /> : <Lock size={20} />,
     },
     {
       type: 'hand',
       name: 'Hand Tool',
       shortcut: KEYBOARD_SHORTCUTS.HAND.toUpperCase(),
-      icon: <HandIcon />,
+      icon: <Move size={20} />,
     },
     {
       type: 'select',
       name: 'Selection Tool',
       shortcut: KEYBOARD_SHORTCUTS.SELECT.toUpperCase(),
-      icon: <SelectionIcon />,
+      icon: <MousePointer size={20} />,
       hasDropdown: true,
     },
     {
       type: 'rectangle',
       name: 'Rectangle',
       shortcut: KEYBOARD_SHORTCUTS.RECTANGLE.toUpperCase(),
-      icon: <RectangleIcon />,
+      icon: <Square size={20} />,
     },
     {
       type: 'diamond',
       name: 'Diamond',
       shortcut: KEYBOARD_SHORTCUTS.DIAMOND.toUpperCase(),
-      icon: <DiamondIcon />,
+      icon: <Square size={20} style={{ transform: 'rotate(45deg)' }} />,
     },
     {
       type: 'circle',
       name: 'Circle',
       shortcut: KEYBOARD_SHORTCUTS.CIRCLE.toUpperCase(),
-      icon: <CircleIcon />,
+      icon: <Circle size={20} />,
     },
     {
       type: 'arrow',
       name: 'Arrow',
       shortcut: KEYBOARD_SHORTCUTS.ARROW.toUpperCase(),
-      icon: <ArrowIcon />,
+      icon: <ArrowUpRight size={20} />,
     },
     {
       type: 'line',
       name: 'Line',
       shortcut: KEYBOARD_SHORTCUTS.LINE.toUpperCase(),
-      icon: <LineIcon />,
+      icon: <Minus size={20} />,
     },
     {
       type: 'pen',
       name: 'Pen',
       shortcut: KEYBOARD_SHORTCUTS.PEN.toUpperCase(),
-      icon: <PenIcon />,
+      icon: <Edit3 size={20} />,
     },
     {
       type: 'text',
       name: 'Text',
       shortcut: KEYBOARD_SHORTCUTS.TEXT.toUpperCase(),
-      icon: <TextIcon />,
+      icon: <Type size={20} />,
     },
     {
       type: 'image',
       name: 'Image',
       shortcut: KEYBOARD_SHORTCUTS.IMAGE.toUpperCase(),
-      icon: <ImageIcon />,
+      icon: <Image size={20} />,
     },
     {
       type: 'eraser',
       name: 'Eraser',
       shortcut: KEYBOARD_SHORTCUTS.ERASER.toUpperCase(),
-      icon: <EraserIcon />,
+      icon: <Trash2 size={20} />,
     },
   ];
 
@@ -156,7 +155,7 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({ onImportDiagram }) => {
               </span>
               {tool.hasDropdown && (
                 <span className="top-toolbar__tool-dropdown">
-                  <ChevronDownIcon size={12} />
+                  <ChevronDown size={12} />
                 </span>
               )}
             </button>

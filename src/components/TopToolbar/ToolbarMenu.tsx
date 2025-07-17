@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../../store';
+import { MoreHorizontal, Folder, Grid } from 'react-feather';
 import './ToolbarMenu.css';
 
 interface ToolbarMenuProps {
@@ -73,20 +74,7 @@ export const ToolbarMenu: React.FC<ToolbarMenuProps> = ({ onImportDiagram }) => 
         aria-haspopup="true"
         title="Menu des options"
       >
-        <svg 
-          width="20" 
-          height="20" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="1"/>
-          <circle cx="19" cy="12" r="1"/>
-          <circle cx="5" cy="12" r="1"/>
-        </svg>
+        <MoreHorizontal size={20} />
       </button>
 
       {isOpen && (
@@ -105,7 +93,7 @@ export const ToolbarMenu: React.FC<ToolbarMenuProps> = ({ onImportDiagram }) => 
                 aria-label="Importer un diagramme"
                 title="Importer des fichiers Excalidraw ou Draw.io"
               >
-                <span className="toolbar-menu__icon">📁</span>
+                <span className="toolbar-menu__icon"><Folder size={16} /></span>
                 <span className="toolbar-menu__label">Importer...</span>
               </button>
             </div>
@@ -121,7 +109,7 @@ export const ToolbarMenu: React.FC<ToolbarMenuProps> = ({ onImportDiagram }) => 
                 aria-label="Configuration de la grille"
                 title="Ouvrir les paramètres de grille"
               >
-                <span className="toolbar-menu__icon">⊞</span>
+                <span className="toolbar-menu__icon"><Grid size={16} /></span>
                 <span className="toolbar-menu__label">Grille...</span>
               </button>
             </div>

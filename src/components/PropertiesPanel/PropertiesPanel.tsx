@@ -25,6 +25,24 @@ import {
 import type { StrokeStyle, FillStyle, CornerStyle, TextAlign, TextVerticalAlign, FontWeight, FontStyle, TextDecoration, ArrowheadType } from '../../types';
 import { SimpleColorPalette } from './SimpleColorPalette';
 import { fontManager } from '../../utils/fontManager';
+import { 
+  AlignLeft,
+  AlignCenter, 
+  AlignRight,
+  AlignJustify,
+  MoreHorizontal,
+  MoreVertical,
+  Copy,
+  Trash2,
+  Lock,
+  Unlock,
+  Link,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  X
+} from 'react-feather';
 import './PropertiesPanel.css';
 import './SimpleColorPalette.css';
 
@@ -186,7 +204,7 @@ export const PropertiesPanel: React.FC = () => {
           onClick={clearSelection}
           aria-label="Clear selection"
         >
-          ×
+          <X size={16} />
         </button>
       </div>
 
@@ -573,77 +591,73 @@ export const PropertiesPanel: React.FC = () => {
           <div className="properties-panel__section">
             <h4 className="properties-panel__section-title">Alignement</h4>
             
-            {/* Horizontal Alignment Row */}
+            {/* Tous les 6 boutons d'alignement sur une seule ligne */}
             <div className="properties-panel__preset-row">
               <button 
                 className="properties-panel__alignment-button"
                 onClick={alignLeft}
-                title="Align Left"
+                title="Aligner à gauche"
                 aria-label="Align elements to the left"
               >
-                ⫷
+                <AlignLeft size={16} />
               </button>
               <button 
                 className="properties-panel__alignment-button"
                 onClick={alignCenter}
-                title="Align Center"
+                title="Centrer horizontalement"
                 aria-label="Align elements to center horizontally"
               >
-                ⫸
+                <AlignCenter size={16} />
               </button>
               <button 
                 className="properties-panel__alignment-button"
                 onClick={alignRight}
-                title="Align Right" 
+                title="Aligner à droite" 
                 aria-label="Align elements to the right"
               >
-                ⫹
+                <AlignRight size={16} />
               </button>
-              <button 
-                className="properties-panel__alignment-button"
-                onClick={distributeHorizontally}
-                title="Distribute Horizontally"
-                aria-label="Distribute elements horizontally"
-                disabled={selectedElementIds.length < 3}
-              >
-                ⟷
-              </button>
-            </div>
-
-            {/* Vertical Alignment Row */}
-            <div className="properties-panel__preset-row">
               <button 
                 className="properties-panel__alignment-button"
                 onClick={alignTop}
-                title="Align Top"
+                title="Aligner en haut"
                 aria-label="Align elements to the top"
               >
-                ⫶
+                <AlignJustify size={16} style={{transform: 'rotate(90deg)'}} />
               </button>
               <button 
                 className="properties-panel__alignment-button"
                 onClick={alignMiddle}
-                title="Align Middle"
+                title="Centrer verticalement"
                 aria-label="Align elements to center vertically"
               >
-                ⫿
+                <AlignCenter size={16} style={{transform: 'rotate(90deg)'}} />
               </button>
               <button 
                 className="properties-panel__alignment-button"
                 onClick={alignBottom}
-                title="Align Bottom"
+                title="Aligner en bas"
                 aria-label="Align elements to the bottom"
               >
-                ⫱
+                <AlignJustify size={16} style={{transform: 'rotate(-90deg)'}} />
+              </button>
+              <button 
+                className="properties-panel__alignment-button"
+                onClick={distributeHorizontally}
+                title="Distribuer horizontalement"
+                aria-label="Distribute elements horizontally"
+                disabled={selectedElementIds.length < 3}
+              >
+                <MoreHorizontal size={16} />
               </button>
               <button 
                 className="properties-panel__alignment-button"
                 onClick={distributeVertically}
-                title="Distribute Vertically"
+                title="Distribuer verticalement"
                 aria-label="Distribute elements vertically"
                 disabled={selectedElementIds.length < 3}
               >
-                ↕
+                <MoreVertical size={16} />
               </button>
             </div>
           </div>
@@ -661,7 +675,7 @@ export const PropertiesPanel: React.FC = () => {
               }
               title="Send to back"
             >
-              ⬇
+              <ArrowDownCircle size={16} />
             </button>
             <button 
               className="properties-panel__layer-button"
@@ -671,7 +685,7 @@ export const PropertiesPanel: React.FC = () => {
               }
               title="Send backward"
             >
-              ↓
+              <ArrowDown size={16} />
             </button>
             <button 
               className="properties-panel__layer-button"
@@ -681,7 +695,7 @@ export const PropertiesPanel: React.FC = () => {
               }
               title="Bring forward"
             >
-              ↑
+              <ArrowUp size={16} />
             </button>
             <button 
               className="properties-panel__layer-button"
@@ -691,7 +705,7 @@ export const PropertiesPanel: React.FC = () => {
               }
               title="Bring to front"
             >
-              ⬆
+              <ArrowUpCircle size={16} />
             </button>
           </div>
         </div>
@@ -705,14 +719,14 @@ export const PropertiesPanel: React.FC = () => {
               onClick={copyStyle}
               title="Copy Style (Ctrl+Shift+C)"
             >
-              🎨
+              <Copy size={16} />
             </button>
             <button 
               className="properties-panel__action-button"
               onClick={pasteStyle}
               title="Paste Style (Ctrl+Shift+V)"
             >
-              🖌️
+              <Copy size={16} style={{transform: 'scaleX(-1)'}} />
             </button>
             <button 
               className="properties-panel__action-button"
@@ -722,7 +736,7 @@ export const PropertiesPanel: React.FC = () => {
               }
               title="Duplicate"
             >
-              📋
+              <Copy size={16} />
             </button>
             <button 
               className="properties-panel__action-button"
@@ -732,7 +746,7 @@ export const PropertiesPanel: React.FC = () => {
               }
               title="Delete"
             >
-              🗑️
+              <Trash2 size={16} />
             </button>
             <button 
               className="properties-panel__action-button"
@@ -742,13 +756,13 @@ export const PropertiesPanel: React.FC = () => {
               }
               title={getCurrentValue('locked') ? 'Unlock' : 'Lock'}
             >
-              {getCurrentValue('locked') ? '🔓' : '🔒'}
+              {getCurrentValue('locked') ? <Unlock size={16} /> : <Lock size={16} />}
             </button>
             <button 
               className="properties-panel__action-button"
               title="Link"
             >
-              🔗
+              <Link size={16} />
             </button>
           </div>
         </div>

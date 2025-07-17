@@ -4,6 +4,7 @@
 import React from 'react';
 import { useAppStore } from '../../store';
 import { CANVAS_CONFIG } from '../../constants';
+import { Minus, Plus } from 'react-feather';
 import './ZoomControl.css';
 
 export const ZoomControl: React.FC = () => {
@@ -51,7 +52,7 @@ export const ZoomControl: React.FC = () => {
         title="Zoom out (Ctrl + scroll down)"
         type="button"
       >
-        −
+        <Minus size={16} />
       </button>
       
       <span 
@@ -70,7 +71,7 @@ export const ZoomControl: React.FC = () => {
         title="Zoom in (Ctrl + scroll up)"
         type="button"
       >
-        +
+        <Plus size={16} />
       </button>
     </div>
   );

@@ -2000,34 +2000,23 @@ export const useAppStore = create<AppStore>((set, get) => {
   },
 
   finishTextEditing: () => {
-    set((state) => {
-      if (!state.textEditing.isEditing || !state.textEditing.elementId) return state;
+    const state = get();
+    if (!state.textEditing.isEditing || !state.textEditing.elementId) return;
 
-      // Update the element with the final text
-      const newElements = state.elements.map((el) =>
-        el.id === state.textEditing.elementId 
-          ? { ...el, text: state.textEditing.text }
-          : el
-      );
+    // Update the element with the final text using updateElement (which handles saveToHistory)
+    get().updateElement(state.textEditing.elementId, { text: state.textEditing.text });
 
-      // Save to history when finishing text editing
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(newElements);
-
-      return {
-        elements: newElements,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-        textEditing: {
-          isEditing: false,
-          elementId: null,
-          text: '',
-          cursorPosition: 0,
-          selectionStart: 0,
-          selectionEnd: 0,
-          cursorVisible: true,
-        },
-      };
+    // Reset text editing state
+    set({
+      textEditing: {
+        isEditing: false,
+        elementId: null,
+        text: '',
+        cursorPosition: 0,
+        selectionStart: 0,
+        selectionEnd: 0,
+        cursorVisible: false,
+      },
     });
   },
 

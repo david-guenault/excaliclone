@@ -46,6 +46,7 @@ export class CanvasRenderer {
       key += `-points:${element.points.length}`;
     }
     
+    
     return key;
   }
 
@@ -68,6 +69,7 @@ export class CanvasRenderer {
   clearCache() {
     this.shapeCache.clear();
   }
+
 
   clear() {
     if (this.ctx && this.ctx.canvas) {
@@ -112,6 +114,9 @@ export class CanvasRenderer {
         break;
       case 'circle':
         this.drawCircle(element, editingInfo);
+        break;
+      case 'diamond':
+        this.drawDiamond(element, editingInfo);
         break;
       case 'line':
         this.drawLine(element, editingInfo);
@@ -249,7 +254,7 @@ export class CanvasRenderer {
     }
     
     // Draw text if present
-    if (element.text && element.text.trim() !== '') {
+    if (element.text || textEditing) {
       this.drawTextInShape(element, textEditing);
     }
   }
@@ -279,6 +284,93 @@ export class CanvasRenderer {
     this.ctx.lineTo(x, y + radius);
     this.ctx.quadraticCurveTo(x, y, x + radius, y);
     this.ctx.closePath();
+  }
+
+  private drawDiamond(element: Element, textEditing?: { cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
+    if (this.useRoughJs) {
+      if (!this.rough || !this.rough.generator) return;
+      
+      const options: any = {
+        roughness: element.roughness || 1,
+      };
+
+      if (element.backgroundColor !== 'transparent') {
+        options.fill = element.backgroundColor;
+        options.fillStyle = element.fillStyle;
+      } else {
+        options.fill = undefined;
+        options.fillStyle = element.fillStyle;
+      }
+
+      if (element.strokeColor && element.strokeColor !== 'transparent') {
+        options.stroke = element.strokeColor;
+        options.strokeWidth = element.strokeWidth;
+        
+        if (element.strokeStyle === 'dashed') {
+          options.strokeLineDash = [element.strokeWidth * 3, element.strokeWidth * 2];
+        } else if (element.strokeStyle === 'dotted') {
+          options.strokeLineDash = [element.strokeWidth, element.strokeWidth * 1.5];
+        }
+      } else {
+        options.stroke = 'none';
+      }
+
+      // Create diamond path (rotated square)
+      const centerX = element.width / 2;
+      const centerY = element.height / 2;
+      const pathData = `M ${centerX} 0 L ${element.width} ${centerY} L ${centerX} ${element.height} L 0 ${centerY} Z`;
+      
+      const shape = this.getCachedShape(element, () => 
+        this.rough.generator.path(pathData, options)
+      );
+      
+      this.rough.draw(shape);
+    } else {
+      // Canvas native fallback
+      this.ctx.save();
+      
+      if (element.strokeColor && element.strokeColor !== 'transparent') {
+        this.ctx.strokeStyle = element.strokeColor;
+        this.ctx.lineWidth = element.strokeWidth;
+        
+        if (element.strokeStyle === 'dashed') {
+          this.ctx.setLineDash([element.strokeWidth * 3, element.strokeWidth * 2]);
+        } else if (element.strokeStyle === 'dotted') {
+          this.ctx.setLineDash([element.strokeWidth, element.strokeWidth * 1.5]);
+        } else {
+          this.ctx.setLineDash([]);
+        }
+      }
+      
+      // Draw diamond
+      const centerX = element.width / 2;
+      const centerY = element.height / 2;
+      
+      this.ctx.beginPath();
+      this.ctx.moveTo(centerX, 0);
+      this.ctx.lineTo(element.width, centerY);
+      this.ctx.lineTo(centerX, element.height);
+      this.ctx.lineTo(0, centerY);
+      this.ctx.closePath();
+      
+      // Fill diamond
+      if (element.backgroundColor !== 'transparent') {
+        this.ctx.fillStyle = element.backgroundColor;
+        this.ctx.fill();
+      }
+      
+      // Stroke diamond  
+      if (element.strokeColor && element.strokeColor !== 'transparent') {
+        this.ctx.stroke();
+      }
+      
+      this.ctx.restore();
+    }
+    
+    // Draw text if present
+    if (element.text || textEditing) {
+      this.drawTextInShape(element, textEditing);
+    }
   }
 
   private drawCircle(element: Element, textEditing?: { cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
@@ -367,10 +459,12 @@ export class CanvasRenderer {
     }
     
     // Draw text if present
-    if (element.text && element.text.trim() !== '') {
+    if (element.text || textEditing) {
       this.drawTextInShape(element, textEditing);
     }
   }
+
+
 
   private drawLine(element: Element, textEditing?: { cursorPosition: number; selectionStart: number; selectionEnd: number; cursorVisible: boolean }) {
     if (!this.rough || !this.rough.generator) return;
@@ -872,6 +966,18 @@ export class CanvasRenderer {
       // Draw bounding box (back to original element-space coordinates)
       if (element.type === 'rectangle' || element.type === 'circle') {
         this.ctx.strokeRect(-2, -2, element.width + 4, element.height + 4);
+      } else if (element.type === 'polygon' || element.type === 'star') {
+        // For polygons and stars, calculate actual bounds and offset from element origin
+        const actualBounds = this.getActualShapeBounds(element);
+        const offsetX = actualBounds.x - element.x;
+        const offsetY = actualBounds.y - element.y;
+        
+        this.ctx.strokeRect(
+          offsetX - 2, 
+          offsetY - 2, 
+          actualBounds.width + 4, 
+          actualBounds.height + 4
+        );
       } else if (element.type === 'line' || element.type === 'arrow') {
         // For lines/arrows, draw a box around the line bounds
         const minX = Math.min(0, element.width) - 2;
@@ -898,7 +1004,7 @@ export class CanvasRenderer {
       const handleSize = HANDLE_SIZE / this.viewport.zoom; // Scale with zoom like original
       const halfHandle = handleSize / 2;
       
-      if (element.type === 'rectangle' || element.type === 'circle') {
+      if (element.type === 'rectangle' || element.type === 'circle' || element.type === 'polygon' || element.type === 'star') {
         // Corner handles
         const positions = [
           [-halfHandle, -halfHandle], // Top-left
@@ -1314,6 +1420,8 @@ export class CanvasRenderer {
     switch (element.type) {
       case 'rectangle':
       case 'circle':
+      case 'polygon':
+      case 'star':
         // Center of shape
         textX = element.x + element.width / 2;
         textY = element.y + element.height / 2;
@@ -1416,6 +1524,12 @@ export class CanvasRenderer {
     } else if (element.type === 'circle') {
       // For circles, use inscribed rectangle (width and height reduced by ~30%)
       const inscribedSize = Math.min(element.width, element.height) * 0.7;
+      maxWidth = Math.max(inscribedSize - (padding * 2), 20);
+      centerX = element.width / 2;
+      centerY = element.height / 2;
+    } else if (element.type === 'polygon' || element.type === 'star') {
+      // For polygons and stars, use inscribed rectangle similar to circles
+      const inscribedSize = Math.min(element.width, element.height) * 0.6;
       maxWidth = Math.max(inscribedSize - (padding * 2), 20);
       centerX = element.width / 2;
       centerY = element.height / 2;
@@ -1783,4 +1897,6 @@ export class CanvasRenderer {
       }
     }
   }
+
+
 }

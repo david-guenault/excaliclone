@@ -333,5 +333,6 @@ export const ARROWHEAD_TYPES = [
   { type: 'circle' as const, icon: '●', label: 'Point/Cercle' },
 ] as const;
 
+
 // Re-export color constants
 export * from './colors';

@@ -99,8 +99,8 @@ export interface Element {
   fillStyle: FillStyle;
   roughness: number;
   opacity: number;
-  cornerStyle?: CornerStyle; // For rectangles/polygons - sharp or rounded style
-  cornerRadius?: number; // For rectangles/polygons - radius value in pixels
+  cornerStyle?: CornerStyle; // For rectangles - sharp or rounded style
+  cornerRadius?: number; // For rectangles - radius value in pixels
   points?: Point[]; // For pen tool and arrows
   text?: string; // For text elements
   fontFamily?: string; // For text elements

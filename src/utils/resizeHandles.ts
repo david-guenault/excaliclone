@@ -5,6 +5,7 @@ import type { Element, Point, ResizeHandle, ResizeHandleType } from '../types';
 
 const HANDLE_SIZE = 8;
 
+
 /**
  * Transform a point from local element coordinates to world coordinates
  */
