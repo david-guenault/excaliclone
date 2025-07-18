@@ -793,6 +793,7 @@ function App() {
     // Use spatial index for optimized hit testing
     const { spatialHitTest } = useAppStore.getState();
     const clickedElement = spatialHitTest(worldPoint);
+    console.log('🎯 Hit test result:', { clickedElement, worldPoint });
     
     if (clickedElement) {
       // Check for modifier keys
@@ -824,6 +825,7 @@ function App() {
         return;
       } else if (isSelectedElement) {
         // If clicking on a selected element without Shift, start dragging
+        console.log('🚀 Starting drag for selected element:', clickedElement.id);
         setIsDraggingElements(true);
         setDragStart(worldPoint); // Use world coordinates for consistent drag calculations
         
@@ -850,6 +852,7 @@ function App() {
         }
         
         // Start dragging immediately after selection
+        console.log('🚀 Starting drag for newly selected element:', clickedElement.id);
         setIsDraggingElements(true);
         setDragStart(worldPoint);
         
@@ -1567,6 +1570,7 @@ function App() {
     
     // Handle element dragging
     if (isDraggingElements && dragStart && dragStartPositions.size > 0) {
+      console.log('🎯 Dragging elements:', { selectedElementIds, dragStart, worldPoint });
       // Get the primary element being dragged (first selected element)
       const primaryElementId = selectedElementIds[0];
       const primaryElement = elements.find(el => el.id === primaryElementId);
